@@ -2,6 +2,15 @@
 
 Calculate or lookup network addresses.
 
+# install
+
+```
+$ git clone 'https://gitlab.com/edneville/ripcalc.git'
+$ cd ripcalc \
+  && cargo build --release \
+  && please install -m 0755 -s target/release/ripcalc /usr/local/bin
+```
+
 # usage
 
 Ripcalc allows networks to be provided by argument
