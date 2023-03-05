@@ -3,9 +3,16 @@ name = "ripcalc"
 version = "0.1.0"
 authors = ["ed neville <ed@s5h.net>"]
 edition = "2018"
+license = "GPL-3.0-or-later"
+homepage = "https://www.usenix.org.uk/content/ripcalc.html"
+repository = "https://gitlab.com/edneville/ripcalc"
+readme = "README.md"
+categories = ["command-line-utilities"]
+documentation = "https://www.usenix.org.uk/content/ripcalc.html"
+keywords = ["ip","network","csv"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-getopts = "*"
-csv = "*"
+getopts = "0.2.21"
+csv = "1.1"
