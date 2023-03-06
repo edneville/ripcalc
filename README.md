@@ -38,6 +38,27 @@ select * from IP6 where (ip >= 42540724579414763292693624807812497408 and ip <= 
 update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 and ip <= 42540724579414763311140368881522049023) and active = 1;
 ```
 
+| placeholder | effect |
+|-------------|--------|
+| %a          | IP address string |
+| %xa         | IP address in hex quad |
+| %c          | cidr mask |
+| %la         | IP in unsigned numeric |
+| %b          | broadcast in string format |
+| %xb         | broadcast in hex quad |
+| %lb         | broadcast in numeric |
+| %n          | network in string format |
+| %xn         | network in hex quad |
+| %ln         | network in numeric |
+| %s          | subnet in string format |
+| %xs         | subnet in hex quad |
+| %ls         | subnet in numeric |
+| %w          | wildcard in string format |
+| %xw         | wildcard in hex quad |
+| %lw         | wildcard in numeric |
+| %t          | network size |
+| %r          | network reservation information (if available) |
+
 With a csv it can find networks that an IP address is within, use `%{field}` to print matches:
 
 ```
