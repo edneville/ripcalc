@@ -2,25 +2,45 @@ use getopts::Options;
 use ripcalc::*;
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::{BufReader, BufRead};
+use std::io::{BufRead, BufReader};
 use std::net::Ipv4Addr;
 use std::net::Ipv6Addr;
+use std::net::ToSocketAddrs;
 use std::str::FromStr;
-use std::net::{ToSocketAddrs};
 
 fn print_details(ip: &Ip, matches: &getopts::Matches, rows: &Option<HashMap<Ip, NetRow>>) {
     if matches.opt_present("f") {
         let formatted = matches.opt_str("f").unwrap();
+
+        if matches.opt_present("l") {
+            for ip_copy in addresses(&ip.clone()) {
+                if let Some(m) = format_details(&ip_copy, formatted.to_string(), rows) {
+                    print!("{}", m);
+                }
+            }
+            return;
+        }
+
         if let Some(m) = format_details(ip, formatted, rows) {
             print!("{}", m);
         }
+
         return;
     }
 
     let default = match ip.address {
-        Addr::V4(_) => "IP is: %a/%c\nUnsigned IP: %la\nBroadcast is: %b\nUnsigned broadcast: %lb\nNetwork is: %n\nUnsigned network: %ln\nSubnet is: %s\nUnsigned subnet: %ls\nWildcard is: %w\nUnsigned wildcard: %lw\nNetwork size: %t\n".to_string(),
-        Addr::V6(_) => "IP is: %a/%c\nExpanded: %xa\nUnsigned IP: %la\nNetwork is: %xn\nLast host address: %xb\nUnsigned network: %ln\nSubnet is: %s\nUnsigned subnet: %ls\nNetwork size: %t\n".to_string(),
+        Addr::V4(_) => "IP is: %a/%c\nBroadcast is: %b\nNetwork is: %n\nSubnet is: %s\nWildcard is: %w\nNetwork size: %t\n".to_string(),
+        Addr::V6(_) => "IP is: %a/%c\nExpanded: %xa\nNetwork is: %xn\nLast host address: %xb\nSubnet is: %s\nNetwork size: %t\n".to_string(),
     };
+
+    if matches.opt_present("l") {
+        for ip_copy in addresses(&ip.clone()) {
+            if let Some(m) = format_details(&ip_copy, default.to_string(), rows) {
+                print!("{}", m);
+            }
+        }
+        return;
+    }
 
     if let Some(m) = format_details(ip, default, rows) {
         print!("{}", m);
@@ -118,21 +138,21 @@ fn process_csv(
 fn parse_mask(mask: &str) -> Option<u32> {
     match mask.parse::<u32>() {
         Ok(n) => Some(n),
-        Err(_) => { None }
+        Err(_) => None,
     }
 }
 
 fn parse_v6(address: &str) -> Option<Addr> {
     match Ipv6Addr::from_str(address) {
         Ok(i) => Some(Addr::V6(i)),
-        Err(_) => { None }
+        Err(_) => None,
     }
 }
 
 fn parse_v4(address: &str) -> Option<Addr> {
     match Ipv4Addr::from_str(address) {
         Ok(i) => Some(Addr::V4(i)),
-        Err(_) => { None }
+        Err(_) => None,
     }
 }
 
@@ -150,7 +170,7 @@ fn parse_v4_v6(address: &str) -> Option<Addr> {
 
 fn parse_address_mask(a: &str) -> Option<Ip> {
     let parts: Vec<&str> = a.split('/').collect();
-    
+
     let mut arg = parts[0];
 
     let mut input_mask = 24;
@@ -162,35 +182,32 @@ fn parse_address_mask(a: &str) -> Option<Ip> {
 
     let input_ip = parse_v4_v6(arg);
 
-    if input_ip.is_some() {
-        return Some( Ip {
-            address: input_ip.unwrap(),
+    if let Some(input_ip) = input_ip {
+        return Some(Ip {
+            address: input_ip,
             cidr: input_mask,
         });
     }
- 
+
     let addrs_iter = format!("{}:443", arg).to_socket_addrs();
     let mut buffer: String;
 
-    match addrs_iter {
-        Ok(address) => {
-            buffer = format!("{}", address.clone().next().unwrap());
-            let v: Vec<&str> = buffer.split(":").collect();
-            buffer = v[0].to_string();
-            arg = buffer.as_str();
-        },
-        Err(_) => {}
+    if let Ok(mut address) = addrs_iter {
+        buffer = format!("{}", address.next().unwrap());
+        let v: Vec<&str> = buffer.split(':').collect();
+        buffer = v[0].to_string();
+        arg = buffer.as_str();
     }
 
     let input_ip = parse_v4_v6(arg);
 
-    if input_ip.is_some() {
-        return Some( Ip {
-            address: input_ip.unwrap(),
+    if let Some(input_ip) = input_ip {
+        return Some(Ip {
+            address: input_ip,
             cidr: input_mask,
         });
     }
-   
+
     None
 }
 
@@ -200,13 +217,14 @@ fn main() {
     let mut input_ip: Option<Addr> = None;
     let mut input_mask: Option<u32> = None;
     let args: Vec<String> = std::env::args().collect();
-    opts.parsing_style( getopts::ParsingStyle::FloatingFrees );
+    opts.parsing_style(getopts::ParsingStyle::FloatingFrees);
     opts.optopt("4", "ipv4", "ipv4 address", "IPv4");
     opts.optopt("6", "ipv6", "ipv6 address", "IPv6");
     opts.optopt("f", "format", "format output", "STRING");
     opts.optopt("m", "mask", "cidr mask", "CIDR");
     opts.optopt("c", "csv", "csv reference file", "PATH");
     opts.optopt("i", "field", "csv field", "FIELD");
+    opts.optflag("l", "list", "list all addresses in network");
     opts.optflag("h", "help", "display help");
     opts.optopt("s", "file", "lookup addresses from, - for stdin", "PATH");
 
@@ -246,10 +264,11 @@ fn main() {
     if !free_arg.is_empty() {
         let arg = free_arg[0].to_string();
 
-        let ip = parse_address_mask( &arg );
-        if ip.is_some() {
-            input_ip = Some(ip.clone().unwrap().address);
-            input_mask = Some(ip.clone().unwrap().cidr);
+        let ip = parse_address_mask(&arg);
+
+        if let Some(ip) = ip {
+            input_ip = Some(ip.address);
+            input_mask = Some(ip.cidr);
         }
     }
 
@@ -261,13 +280,12 @@ fn main() {
         let path = matches.opt_str("s").unwrap();
         let reader: Box<dyn BufRead> = if path == "-" {
             Box::new(BufReader::new(std::io::stdin()))
-        }
-        else {
-            Box::new(BufReader::new(File::open( path ).unwrap()))
+        } else {
+            Box::new(BufReader::new(File::open(path).unwrap()))
         };
 
         for line in reader.lines() {
-            let ip = parse_address_mask( &line.unwrap() );
+            let ip = parse_address_mask(&line.unwrap());
             if ip.is_none() {
                 continue;
             }
@@ -276,7 +294,7 @@ fn main() {
         std::process::exit(0);
     }
 
-    if input_ip.is_none()  {
+    if input_ip.is_none() {
         eprintln!("Need to provide v4 or v6 address.");
         eprintln!("--help for information");
         std::process::exit(1);
@@ -297,13 +315,13 @@ fn main() {
                 eprintln!("V4 mask cannot be greater than 32");
                 std::process::exit(1);
             }
-        },
+        }
         Addr::V6(_) => {
             if num.cidr > 128 {
                 eprintln!("V6 mask cannot be greater than 128");
                 std::process::exit(1);
             }
-        },
+        }
     }
 
     print_details(&num, &matches, &rows);
