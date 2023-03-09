@@ -75,6 +75,7 @@ Options:
     -m, --mask CIDR     cidr mask
     -c, --csv PATH      csv reference file
     -i, --field FIELD   csv field
+    -l, --list          list all addresses in network
     -h, --help          display help
     -s, --file PATH     lookup addresses from, - for stdin
 ```
