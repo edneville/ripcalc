@@ -18,15 +18,10 @@ Ripcalc allows networks to be provided by argument
 ```
 $ ripcalc 127.0.0.1/8
 IP is: 127.0.0.1/8
-Unsigned IP: 2130706433
 Broadcast is: 127.255.255.255
-Unsigned broadcast: 2147483647
 Network is: 127.0.0.0
-Unsigned network: 2130706432
 Subnet is: 255.0.0.0
-Unsigned subnet: 4278190080
 Wildcard is: 0.255.255.255
-Unsigned wildcard: 16777215
 Network size: 16777216
 ```
 

@@ -241,5 +241,31 @@ mod test {
         );
     }
 
+    #[test]
+    fn test_network_iter() {
+        let net = Ip {
+            address: Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()),
+            cidr: 30,
+        };
 
+        let mut i = addresses(&net);
+
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("192.168.0.1").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("192.168.0.2").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("192.168.0.3").unwrap())
+        );
+        assert_eq!(i.next(), None);
+    }
 }
