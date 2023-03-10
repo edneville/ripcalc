@@ -9,40 +9,25 @@ use std::net::ToSocketAddrs;
 use std::str::FromStr;
 
 fn print_details(ip: &Ip, matches: &getopts::Matches, rows: &Option<HashMap<Ip, NetRow>>) {
-    if matches.opt_present("f") {
-        let formatted = matches.opt_str("f").unwrap();
-
-        if matches.opt_present("l") {
-            for ip_copy in addresses(&ip.clone()) {
-                if let Some(m) = format_details(&ip_copy, formatted.to_string(), rows) {
-                    print!("{}", m);
-                }
-            }
-            return;
+    let formatted = if matches.opt_present("f") {
+        matches.opt_str("f").unwrap()
+    } else {
+        match ip.address {
+            Addr::V4(_) => "IP is: %a/%c\nBroadcast is: %b\nNetwork is: %n\nSubnet is: %s\nWildcard is: %w\nNetwork size: %t\n".to_string(),
+            Addr::V6(_) => "IP is: %a/%c\nExpanded: %xa\nNetwork is: %xn\nLast host address: %xb\nSubnet is: %s\nNetwork size: %t\n".to_string(),
         }
-
-        if let Some(m) = format_details(ip, formatted, rows) {
-            print!("{}", m);
-        }
-
-        return;
-    }
-
-    let default = match ip.address {
-        Addr::V4(_) => "IP is: %a/%c\nBroadcast is: %b\nNetwork is: %n\nSubnet is: %s\nWildcard is: %w\nNetwork size: %t\n".to_string(),
-        Addr::V6(_) => "IP is: %a/%c\nExpanded: %xa\nNetwork is: %xn\nLast host address: %xb\nSubnet is: %s\nNetwork size: %t\n".to_string(),
     };
 
     if matches.opt_present("l") {
-        for ip_copy in addresses(&ip.clone()) {
-            if let Some(m) = format_details(&ip_copy, default.to_string(), rows) {
+        for ip_copy in addresses(ip) {
+            if let Some(m) = format_details(&ip_copy, formatted.to_string(), rows) {
                 print!("{}", m);
             }
         }
         return;
     }
 
-    if let Some(m) = format_details(ip, default, rows) {
+    if let Some(m) = format_details(ip, formatted, rows) {
         print!("{}", m);
     }
 }
