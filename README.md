@@ -62,13 +62,29 @@ network,range,owner
 rfc1918,192.168.0.0/16,bob
 rfc1918,172.16.0.0/12,cliff
 rfc1918,10.0.0.0/8,mr nobody
-
 $ ripcalc --csv nets.csv -i range --format '%{owner}\n' 192.168.0.0
 bob
 ```
 
+Addresses can be read via file or from stdin (-):
+
 ```
+$ cat list
+127.0.0.1/28
+10.0.0.1/28
+192.168.1.1/30
+172.18.1.1/30
+10.0.0.0/30
+$ ripcalc --csv nets.csv -i range --format '%{range} %{owner}\n' -s list
+10.0.0.0/8 mr nobody
+192.168.0.0/16 bob
+172.16.0.0/12 cliff
+10.0.0.0/8 mr nobody
+```
+
 Options:
+
+```
     -4, --ipv4 IPv4     ipv4 address
     -6, --ipv6 IPv6     ipv6 address
     -f, --format STRING format output

@@ -280,8 +280,8 @@ fn main() {
     }
 
     if input_ip.is_none() {
+        println!("{}", opts.usage("ripcalc"));
         eprintln!("Need to provide v4 or v6 address.");
-        eprintln!("--help for information");
         std::process::exit(1);
     }
 
