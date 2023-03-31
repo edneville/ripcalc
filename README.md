@@ -37,20 +37,30 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
 |-------------|--------|
 | %a          | IP address string |
 | %xa         | IP address in hex quad |
-| %c          | cidr mask |
 | %la         | IP in unsigned numeric |
+| %Ba         | IP in binary |
+| %Sa         | IP in binary broken with space at network |
 | %b          | broadcast in string format |
 | %xb         | broadcast in hex quad |
 | %lb         | broadcast in numeric |
+| %Bb         | broadcast in binary |
+| %Sb         | broadcast in binary broken with space at network |
 | %n          | network in string format |
 | %xn         | network in hex quad |
 | %ln         | network in numeric |
+| %Bn         | network in binary |
+| %Sn         | network in binary broken with space at network |
 | %s          | subnet in string format |
 | %xs         | subnet in hex quad |
 | %ls         | subnet in numeric |
+| %Bs         | subnet in binary |
+| %Ss         | subnet in binary broken with space at network |
 | %w          | wildcard in string format |
 | %xw         | wildcard in hex quad |
 | %lw         | wildcard in numeric |
+| %Bw         | wildcard in binary |
+| %Sw         | wildcard in binary broken with space at network |
+| %c          | cidr mask |
 | %t          | network size |
 | %r          | network reservation information (if available) |
 
