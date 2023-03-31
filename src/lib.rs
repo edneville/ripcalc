@@ -35,8 +35,8 @@ impl Ip {
     }
     fn bin_split_representation(&self) -> String {
         let mut s = match self.address {
-            Addr::V4(x) => format!("{:032b}", u32::from(x)).to_string(),
-            Addr::V6(x) => format!("{:0128b}", u128::from(x)).to_string(),
+            Addr::V4(x) => format!("{:032b}", u32::from(x)),
+            Addr::V6(x) => format!("{:0128b}", u128::from(x)),
         };
         s.insert(self.cidr as usize, ' ');
         s
@@ -596,35 +596,30 @@ pub fn format_details(
             .replace("\\n", "\n")
             .replace("%c", &ip.cidr.to_string())
             .replace("%t", &network_size(ip).to_string())
-
             .replace("%a", &ip.to_string())
             .replace("%Ba", &ip.bin_representation())
             .replace("%Sa", &ip.bin_split_representation())
             .replace("%xa", &ip.hex_quad_representation())
             .replace("%la", &ip.num_representation())
-
             .replace("%b", &b.to_string())
             .replace("%Bb", &b.bin_representation())
             .replace("%Sb", &b.bin_split_representation())
             .replace("%xb", &b.hex_quad_representation())
             .replace("%lb", &b.num_representation())
-
             .replace("%n", &n.to_string())
             .replace("%Bn", &n.bin_representation())
             .replace("%Sn", &n.bin_split_representation())
             .replace("%xn", &n.hex_quad_representation())
             .replace("%ln", &n.num_representation())
-
             .replace("%s", &s.to_string())
             .replace("%Bs", &s.bin_representation())
             .replace("%Ss", &s.bin_split_representation())
             .replace("%xs", &s.hex_quad_representation())
             .replace("%ls", &s.num_representation())
-
             .replace("%w", &w.to_string())
             .replace("%Bw", &w.bin_representation())
             .replace("%Sw", &w.bin_split_representation())
             .replace("%xw", &w.hex_quad_representation())
-            .replace("%lw", &w.num_representation())
+            .replace("%lw", &w.num_representation()),
     )
 }
