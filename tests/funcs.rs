@@ -268,4 +268,138 @@ mod test {
         );
         assert_eq!(i.next(), None);
     }
+
+    #[test]
+    fn test_format_ng_ip() {
+        let net = Ip {
+            address: Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()),
+            cidr: 30,
+        };
+
+        let f = format_details(&net, "%a".to_string(), &None);
+
+        assert_eq!(f, Some("192.168.0.0".to_string()));
+    }
+
+    #[test]
+    fn test_format_ng_percent() {
+        let f = format_details(
+            &Ip {
+                address: Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()),
+                cidr: 30,
+            },
+            "%".to_string(),
+            &None,
+        );
+
+        assert_eq!(f, Some("%".to_string()));
+
+        let f = format_details(
+            &Ip {
+                address: Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()),
+                cidr: 30,
+            },
+            "%%".to_string(),
+            &None,
+        );
+
+        assert_eq!(f, Some("%".to_string()));
+
+        let f = format_details(
+            &Ip {
+                address: Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()),
+                cidr: 30,
+            },
+            "%%%".to_string(),
+            &None,
+        );
+
+        assert_eq!(f, Some("%%".to_string()));
+
+        let f = format_details(
+            &Ip {
+                address: Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()),
+                cidr: 30,
+            },
+            "%%%%".to_string(),
+            &None,
+        );
+
+        assert_eq!(f, Some("%%".to_string()));
+    }
+
+    #[test]
+    fn test_format_ng_boilerplate() {
+        let net = Ip {
+            address: Addr::V6(Ipv6Addr::from_str("2001:ba8:1f1:f1cb::4").unwrap()),
+            cidr: 64,
+        };
+
+        let f = format_details(&net, "select * from IP6 where (ip >= %ln and ip <= %lb) and active = 1;\nupdate IP6 set active = 0 where (ip >= %ln and ip <= %lb) and active = 1;".to_string(), &None);
+
+        assert_eq!(f, Some("select * from IP6 where (ip >= 42540724579414763292693624807812497408 and ip <= 42540724579414763311140368881522049023) and active = 1;
+update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 and ip <= 42540724579414763311140368881522049023) and active = 1;".to_string()));
+    }
+
+    #[test]
+    fn test_format_ng_percent_marker() {
+        let net = Ip {
+            address: Addr::V6(Ipv6Addr::from_str("2001:ba8:1f1:f1cb::4").unwrap()),
+            cidr: 64,
+        };
+
+        let f = format_details(&net, "%%b".to_string(), &None);
+
+        assert_eq!(f, Some("%b".to_string()));
+    }
+
+    #[test]
+    fn test_format_ng_long_broadcast() {
+        let net = Ip {
+            address: Addr::V6(Ipv6Addr::from_str("2001:ba8:1f1:f1cb::4").unwrap()),
+            cidr: 64,
+        };
+
+        let f = format_details(&net, "%lb".to_string(), &None);
+
+        assert_eq!(
+            f,
+            Some("42540724579414763311140368881522049023".to_string())
+        );
+    }
+
+    #[test]
+    fn test_format_ng_long_broadcast_backslash() {
+        let net = Ip {
+            address: Addr::V6(Ipv6Addr::from_str("2001:ba8:1f1:f1cb::4").unwrap()),
+            cidr: 64,
+        };
+
+        let f = format_details(&net, "%lb\n\n\n%%".to_string(), &None);
+
+        assert_eq!(
+            f,
+            Some("42540724579414763311140368881522049023\n\n\n%".to_string())
+        );
+    }
+
+    #[test]
+    fn test_format_ng_backslash() {
+        let net = Ip {
+            address: Addr::V6(Ipv6Addr::from_str("2001:ba8:1f1:f1cb::4").unwrap()),
+            cidr: 64,
+        };
+
+        let f = format_details(&net, "\n".to_string(), &None);
+        assert_eq!(f, Some("\n".to_string()));
+
+        let f = format_details(&net, "\\".to_string(), &None);
+        assert_eq!(f, Some('\\'.to_string()));
+
+        let f = format_details(&net, "\\i".to_string(), &None);
+        assert_eq!(f, Some("i".to_string()));
+
+        let f = format_details(&net, "\\t".to_string(), &None);
+        assert_eq!(f, Some("\t".to_string()));
+    }
 }
