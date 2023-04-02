@@ -20,6 +20,21 @@ pub struct NetRow {
     pub row: HashMap<String, String>,
 }
 
+pub enum FormatMode {
+    Text,
+    Binary,
+    SplitBinary,
+    Integer,
+    Hex,
+    Backslash,
+}
+
+pub enum FormatProcessor {
+    Percent,
+    Backslash,
+    None,
+}
+
 impl Ip {
     fn num_representation(&self) -> String {
         match self.address {
@@ -500,6 +515,17 @@ pub fn network_size(ip: &Ip) -> u128 {
     1
 }
 
+pub fn formatted_address(ip: &Ip, mode: &FormatMode) -> String {
+    match mode {
+        FormatMode::Text => ip.to_string(),
+        FormatMode::Integer => ip.num_representation(),
+        FormatMode::Hex => ip.hex_quad_representation(),
+        FormatMode::SplitBinary => ip.bin_split_representation(),
+        FormatMode::Binary => ip.bin_representation(),
+        FormatMode::Backslash => "".to_string(),
+    }
+}
+
 pub fn format_details(
     ip: &Ip,
     formatted: String,
@@ -581,7 +607,6 @@ pub fn format_details(
             return None;
         }
     }
-
     let b = broadcast(ip);
     let n = network(ip);
     let s = subnet(ip);
@@ -591,35 +616,107 @@ pub fn format_details(
         reformatted = reformatted.replace("%r", &r);
     }
 
-    Some(
-        reformatted
-            .replace("\\n", "\n")
-            .replace("%c", &ip.cidr.to_string())
-            .replace("%t", &network_size(ip).to_string())
-            .replace("%a", &ip.to_string())
-            .replace("%Ba", &ip.bin_representation())
-            .replace("%Sa", &ip.bin_split_representation())
-            .replace("%xa", &ip.hex_quad_representation())
-            .replace("%la", &ip.num_representation())
-            .replace("%b", &b.to_string())
-            .replace("%Bb", &b.bin_representation())
-            .replace("%Sb", &b.bin_split_representation())
-            .replace("%xb", &b.hex_quad_representation())
-            .replace("%lb", &b.num_representation())
-            .replace("%n", &n.to_string())
-            .replace("%Bn", &n.bin_representation())
-            .replace("%Sn", &n.bin_split_representation())
-            .replace("%xn", &n.hex_quad_representation())
-            .replace("%ln", &n.num_representation())
-            .replace("%s", &s.to_string())
-            .replace("%Bs", &s.bin_representation())
-            .replace("%Ss", &s.bin_split_representation())
-            .replace("%xs", &s.hex_quad_representation())
-            .replace("%ls", &s.num_representation())
-            .replace("%w", &w.to_string())
-            .replace("%Bw", &w.bin_representation())
-            .replace("%Sw", &w.bin_split_representation())
-            .replace("%xw", &w.hex_quad_representation())
-            .replace("%lw", &w.num_representation()),
-    )
+    let mut mode = FormatMode::Text;
+    let mut out_str = "".to_string();
+    let chars: Vec<_> = reformatted.chars().collect();
+
+    let mut format_processor = FormatProcessor::None;
+    for k in chars {
+        match format_processor {
+            FormatProcessor::Percent => {
+                format_processor = FormatProcessor::None;
+                match k {
+                    'B' => {
+                        format_processor = FormatProcessor::Percent;
+                        mode = FormatMode::Binary;
+                    }
+                    'S' => {
+                        format_processor = FormatProcessor::Percent;
+                        mode = FormatMode::SplitBinary;
+                    }
+                    'l' => {
+                        format_processor = FormatProcessor::Percent;
+                        mode = FormatMode::Integer;
+                    }
+                    'x' => {
+                        format_processor = FormatProcessor::Percent;
+                        mode = FormatMode::Hex;
+                    }
+                    'a' => {
+                        out_str.push_str(&formatted_address(ip, &mode));
+                    }
+                    'b' => {
+                        out_str.push_str(&formatted_address(&b, &mode));
+                    }
+                    'n' => {
+                        out_str.push_str(&formatted_address(&n, &mode));
+                    }
+                    'w' => {
+                        out_str.push_str(&formatted_address(&w, &mode));
+                    }
+                    's' => {
+                        out_str.push_str(&formatted_address(&s, &mode));
+                    }
+                    'c' => {
+                        out_str.push_str(&ip.cidr.to_string());
+                    }
+                    't' => {
+                        out_str.push_str(&network_size(ip).to_string());
+                    }
+                    '%' => {
+                        out_str.push('%');
+                    }
+                    _ => {
+                        out_str.push(k);
+                    }
+                }
+                continue;
+            }
+            FormatProcessor::Backslash => {
+                format_processor = FormatProcessor::None;
+                match k {
+                    'n' => {
+                        out_str.push('\n');
+                        mode = FormatMode::Text;
+                    }
+                    't' => {
+                        out_str.push('\t');
+                        mode = FormatMode::Text;
+                    }
+                    '\\' => {
+                        out_str.push('\\');
+                        mode = FormatMode::Text;
+                    }
+                    _ => {
+                        out_str.push(k);
+                        mode = FormatMode::Text;
+                    }
+                }
+                continue;
+            }
+            FormatProcessor::None => {}
+        }
+
+        match k {
+            '%' => {
+                format_processor = FormatProcessor::Percent;
+                mode = FormatMode::Text;
+            }
+            '\\' => {
+                format_processor = FormatProcessor::Backslash;
+                mode = FormatMode::Text;
+            }
+            _ => {
+                out_str.push(k);
+            }
+        }
+    }
+
+    match format_processor {
+        FormatProcessor::Percent => out_str.push('%'),
+        FormatProcessor::Backslash => out_str.push('\\'),
+        FormatProcessor::None => {}
+    }
+
+    Some(out_str)
 }
