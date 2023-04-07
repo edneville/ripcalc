@@ -227,7 +227,14 @@ fn main() {
     }
 
     if matches.opt_present("c") {
-        let reader = csv::Reader::from_path(matches.opt_str("c").unwrap()).unwrap();
+        let path = matches.opt_str("c").unwrap();
+        let reader = match csv::Reader::from_path(&path) {
+            Ok(r) => r,
+            Err(x) => {
+                eprintln!("Cannot open {}: {}", &path, x);
+                std::process::exit(1);
+            },
+        };
         let field_name = if matches.opt_present("i") {
             matches.opt_str("i").unwrap()
         } else {

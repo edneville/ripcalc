@@ -61,11 +61,8 @@ impl Ip {
             Addr::V4(x) => {
                 let mut s: String = "".to_string();
                 let octet = x.octets();
-                for (i, o) in octet.iter().enumerate() {
+                for o in &octet {
                     s.push_str(&format!("{:02x}", o));
-                    if i % 2 == 1 && i != 3 {
-                        s.push(':');
-                    }
                 }
                 s.to_string()
             }
