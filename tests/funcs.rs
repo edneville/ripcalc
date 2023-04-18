@@ -248,7 +248,7 @@ mod test {
             cidr: 30,
         };
 
-        let mut i = addresses(&net);
+        let mut i = addresses(&net, None);
 
         assert_eq!(
             i.next().as_ref().unwrap().address,

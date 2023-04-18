@@ -81,34 +81,68 @@ impl Ip {
     }
 }
 
-pub fn addresses(ip: &Ip) -> impl std::iter::Iterator<Item = Ip> {
+pub fn addresses<'a>(
+    ip: &'a Ip,
+    used: Option<&'a HashMap<Addr, bool>>,
+) -> impl std::iter::Iterator<Item = Ip> + 'a {
     let b = broadcast(ip);
     let mut net = network(ip);
 
     std::iter::from_fn(move || {
-        if let Addr::V4(x) = net.address {
+        if let Addr::V4(mut x) = net.address {
             if let Addr::V4(y) = b.address {
-                if x <= y {
+                while u32::from(x) <= u32::from(y) {
+                    match &used {
+                        Some(map) => {
+                            if map.get(&net.address).is_some() {
+                                continue;
+                            }
+                        }
+                        None => {}
+                    }
+
                     net = Ip {
                         address: Addr::V4(Ipv4Addr::from(u32::from(x) + 1)),
                         cidr: net.cidr,
                     };
+
+                    if let Addr::V4(a) = net.address {
+                        x = a
+                    };
+
                     return Some(Ip {
-                        address: Addr::V4(Ipv4Addr::from(u32::from(x))),
+                        address: Addr::V4(Ipv4Addr::from(u32::from(x)-1)),
                         cidr: net.cidr,
                     });
                 }
             }
         }
 
-        if let Addr::V6(x) = net.address {
+        if let Addr::V6(mut x) = net.address {
             if let Addr::V6(y) = b.address {
-                if x < y {
+                while u128::from(x) < u128::from(y) {
+                    match &used {
+                        Some(map) => {
+                            if map.get(&net.address).is_some() {
+                                continue;
+                            }
+                        }
+                        None => {}
+                    }
+
                     net = Ip {
                         address: Addr::V6(Ipv6Addr::from(u128::from(x) + 1)),
                         cidr: net.cidr,
                     };
-                    return Some(net.clone());
+
+                    if let Addr::V6(a) = net.address {
+                        x = a
+                    };
+
+                    return Some(Ip {
+                        address: Addr::V6(Ipv6Addr::from(u128::from(x)-1)),
+                        cidr: net.cidr,
+                    });
                 }
             }
         }
