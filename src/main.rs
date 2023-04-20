@@ -8,7 +8,12 @@ use std::net::Ipv6Addr;
 use std::net::ToSocketAddrs;
 use std::str::FromStr;
 
-fn print_details(ip: &Ip, matches: &getopts::Matches, rows: &Option<HashMap<Ip, NetRow>>) {
+fn print_details(
+    ip: &Ip,
+    matches: &getopts::Matches,
+    rows: &Option<HashMap<Ip, NetRow>>,
+    used: Option<&HashMap<Addr, bool>>,
+) {
     let formatted = if matches.opt_present("f") {
         matches.opt_str("f").unwrap()
     } else {
@@ -19,7 +24,7 @@ fn print_details(ip: &Ip, matches: &getopts::Matches, rows: &Option<HashMap<Ip, 
     };
 
     if matches.opt_present("l") {
-        for ip_copy in addresses(ip) {
+        for ip_copy in addresses(ip, used) {
             if let Some(m) = format_details(&ip_copy, formatted.to_string(), rows) {
                 print!("{}", m);
             }
@@ -211,6 +216,7 @@ fn main() {
     opts.optopt("i", "field", "csv field", "FIELD");
     opts.optflag("l", "list", "list all addresses in network");
     opts.optflag("h", "help", "display help");
+    opts.optflag("a", "available", "display unused addresses");
     opts.optopt("s", "file", "lookup addresses from, - for stdin", "PATH");
 
     let matches = match opts.parse(&args[1..]) {
@@ -276,12 +282,35 @@ fn main() {
             Box::new(BufReader::new(File::open(path).unwrap()))
         };
 
+        let mut used: HashMap<Addr, bool> = HashMap::new();
+        if matches.opt_present("a") {
+            for line in reader.lines() {
+                let ip = parse_address_mask(&line.unwrap()).unwrap();
+                used.insert(ip.address.clone(), true);
+            }
+            if input_ip.is_none() || input_mask.is_none() {
+                eprintln!("No network specified");
+                std::process::exit(1);
+            }
+
+            print_details(
+                &Ip {
+                    address: input_ip.expect("nopes"),
+                    cidr: input_mask.expect("not cidr"),
+                },
+                &matches,
+                &rows,
+                Some(&used),
+            );
+            std::process::exit(0);
+        }
+
         for line in reader.lines() {
             let ip = parse_address_mask(&line.unwrap());
             if ip.is_none() {
                 continue;
             }
-            print_details(&ip.unwrap(), &matches, &rows);
+            print_details(&ip.unwrap(), &matches, &rows, None);
         }
         std::process::exit(0);
     }
@@ -316,6 +345,6 @@ fn main() {
         }
     }
 
-    print_details(&num, &matches, &rows);
+    print_details(&num, &matches, &rows, None);
     std::process::exit(0);
 }
