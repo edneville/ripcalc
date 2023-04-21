@@ -293,7 +293,13 @@ fn main() {
         let mut used: HashMap<Addr, bool> = HashMap::new();
         if matches.opt_present("a") {
             for line in reader.lines() {
-                let ip = parse_address_mask(&line.unwrap()).unwrap();
+                let ip = match parse_address_mask(&line.as_ref().unwrap()) {
+                    Some(x) => { x },
+                    None => {
+                        eprintln!("Could not parse {}", &line.as_ref().unwrap());
+                        continue;
+                    }
+                };
                 used.insert(ip.address.clone(), true);
             }
             if input_ip.is_none() || input_mask.is_none() {
