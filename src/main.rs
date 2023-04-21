@@ -14,7 +14,7 @@ fn print_details(
     rows: &Option<HashMap<Ip, NetRow>>,
     used: Option<&HashMap<Addr, bool>>,
 ) {
-    let formatted = if matches.opt_present("f") {
+    let mut formatted = if matches.opt_present("f") {
         matches.opt_str("f").unwrap()
     } else {
         match ip.address {
@@ -22,6 +22,14 @@ fn print_details(
             Addr::V6(_) => "IP is: %a/%c\nExpanded: %xa\nNetwork is: %xn\nLast host address: %xb\nSubnet is: %s\nNetwork size: %t\n".to_string(),
         }
     };
+
+    if formatted == "cidr" {
+        formatted = "%a/%c\n".to_string();
+    }
+
+    if formatted == "short" {
+        formatted = "%a\n".to_string();
+    }
 
     if matches.opt_present("l") {
         for ip_copy in addresses(ip, used) {
@@ -210,7 +218,7 @@ fn main() {
     opts.parsing_style(getopts::ParsingStyle::FloatingFrees);
     opts.optopt("4", "ipv4", "ipv4 address", "IPv4");
     opts.optopt("6", "ipv6", "ipv6 address", "IPv6");
-    opts.optopt("f", "format", "format output", "STRING");
+    opts.optopt("f", "format", "format output\n'cidr' expands to %a/%c\\n\n'short' expands to %a\\n\nSee manual for more options", "STRING");
     opts.optopt("m", "mask", "cidr mask", "CIDR");
     opts.optopt("c", "csv", "csv reference file", "PATH");
     opts.optopt("i", "field", "csv field", "FIELD");

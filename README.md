@@ -35,6 +35,8 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
 
 | placeholder | effect |
 |-------------|--------|
+| cidr        | expands to %a/%c\n |
+| short       | expands to %a\n |
 | %a          | IP address string |
 | %xa         | IP address in hex quad |
 | %la         | IP in unsigned numeric |
@@ -92,17 +94,23 @@ $ ripcalc --csv nets.csv -i range --format '%{range} %{owner}\n' -s list
 10.0.0.0/8 mr nobody
 ```
 
+When `-a` is used, addresses read from `-s` will not be shown when listing `-l` a network, showing only available addresses.
+
 Options:
 
 ```
     -4, --ipv4 IPv4     ipv4 address
     -6, --ipv6 IPv6     ipv6 address
     -f, --format STRING format output
+                        'cidr' expands to %a/%c\n,
+                        'short' expands to %a\n
+                        See manual for more options
     -m, --mask CIDR     cidr mask
     -c, --csv PATH      csv reference file
     -i, --field FIELD   csv field
     -l, --list          list all addresses in network
     -h, --help          display help
+    -a, --available     display unused addresses
     -s, --file PATH     lookup addresses from, - for stdin
 ```
 

@@ -4,7 +4,7 @@ section: 1
 header: User Manual
 footer: ripcalc 0.1.6
 author: Ed Neville (ed-ripcalc@s5h.net)
-date: 07 April 2023
+date: 21 April 2023
 ---
 
 # NAME
@@ -26,6 +26,8 @@ ripcalc - a tool for network addresses
 **ripcalc -c/--csv path/to/csv [-i/--field network] 127.0.0.1**
 
 **ripcalc -l/--list 127.0.0.1**
+
+**ripcalc -a/--available**
 
 **ripcalc -s/--file [-] 127.0.0.1**
 
@@ -105,4 +107,5 @@ When using **CSV** fields can be matched by **name** when network matched:
 --format '%{name}'
 ```
 
+When `-a` is used, addresses read from `-s` will not be shown when listing `-l` a network, showing only available addresses.
 
