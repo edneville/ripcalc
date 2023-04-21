@@ -92,15 +92,6 @@ pub fn addresses<'a>(
         if let Addr::V4(mut x) = net.address {
             if let Addr::V4(y) = b.address {
                 while u32::from(x) <= u32::from(y) {
-                    match &used {
-                        Some(map) => {
-                            if map.get(&net.address).is_some() {
-                                continue;
-                            }
-                        }
-                        None => {}
-                    }
-
                     net = Ip {
                         address: Addr::V4(Ipv4Addr::from(u32::from(x) + 1)),
                         cidr: net.cidr,
@@ -109,6 +100,15 @@ pub fn addresses<'a>(
                     if let Addr::V4(a) = net.address {
                         x = a
                     };
+
+                    match &used {
+                        Some(map) => {
+                            if map.get(&Addr::V4(Ipv4Addr::from(u32::from(x)-1))).is_some() {
+                                continue;
+                            }
+                        }
+                        None => {}
+                    }
 
                     return Some(Ip {
                         address: Addr::V4(Ipv4Addr::from(u32::from(x)-1)),
@@ -121,15 +121,6 @@ pub fn addresses<'a>(
         if let Addr::V6(mut x) = net.address {
             if let Addr::V6(y) = b.address {
                 while u128::from(x) < u128::from(y) {
-                    match &used {
-                        Some(map) => {
-                            if map.get(&net.address).is_some() {
-                                continue;
-                            }
-                        }
-                        None => {}
-                    }
-
                     net = Ip {
                         address: Addr::V6(Ipv6Addr::from(u128::from(x) + 1)),
                         cidr: net.cidr,
@@ -138,6 +129,15 @@ pub fn addresses<'a>(
                     if let Addr::V6(a) = net.address {
                         x = a
                     };
+
+                    match &used {
+                        Some(map) => {
+                            if map.get(&Addr::V6(Ipv6Addr::from(u128::from(x)-1))).is_some() {
+                                continue;
+                            }
+                        }
+                        None => {}
+                    }
 
                     return Some(Ip {
                         address: Addr::V6(Ipv6Addr::from(u128::from(x)-1)),
