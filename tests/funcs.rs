@@ -1,6 +1,7 @@
 use std::net::Ipv4Addr;
 use std::net::Ipv6Addr;
 use std::str::FromStr;
+use std::collections::HashMap;
 
 #[cfg(test)]
 mod test {
@@ -401,5 +402,40 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
 
         let f = format_details(&net, "\\t".to_string(), &None);
         assert_eq!(f, Some("\t".to_string()));
+    }
+
+    #[test]
+    fn test_address_space_use() {
+        let net = Ip {
+            address: Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()),
+            cidr: 30,
+        };
+
+        let mut hm: HashMap<Addr, bool> = HashMap::new();
+
+        hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()), true); 
+        hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.0.1").unwrap()), true); 
+        hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.0.2").unwrap()), true); 
+
+        let mut i = addresses(&net, Some(&hm));
+
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("192.168.0.3").unwrap())
+        );
+        assert_eq!(i.next(), None);
+
+        let mut hm: HashMap<Addr, bool> = HashMap::new();
+
+        hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.1.0").unwrap()), true); 
+        hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.1.1").unwrap()), true); 
+        hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.1.2").unwrap()), true); 
+
+        let mut i = addresses(&net, Some(&hm));
+
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap())
+        );
     }
 }
