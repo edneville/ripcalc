@@ -166,15 +166,15 @@ fn parse_v4_v6(address: &str) -> Option<Addr> {
     None
 }
 
-fn parse_address_mask(a: &str) -> Option<Ip> {
+fn parse_address_mask(a: &str, default_v4_mask: Option<u32>, default_v6_mask: Option<u32>) -> Option<Ip> {
     let parts: Vec<&str> = a.split('/').collect();
 
     let mut arg = parts[0];
 
-    let mut input_mask = 24;
+    let mut input_mask: Option<u32> = None;
     if parts.len() > 1 {
         if let Some(m) = parse_mask(parts[1]) {
-            input_mask = m;
+            input_mask = Some(m);
         }
     };
 
@@ -182,8 +182,11 @@ fn parse_address_mask(a: &str) -> Option<Ip> {
 
     if let Some(input_ip) = input_ip {
         return Some(Ip {
-            address: input_ip,
-            cidr: input_mask,
+            address: input_ip.clone(),
+            cidr: match input_ip {
+                Addr::V4(_) => input_mask.unwrap_or(default_v4_mask.unwrap_or(24)),
+                Addr::V6(_) => input_mask.unwrap_or(default_v6_mask.unwrap_or(64)),
+            },
         });
     }
 
@@ -201,8 +204,12 @@ fn parse_address_mask(a: &str) -> Option<Ip> {
 
     if let Some(input_ip) = input_ip {
         return Some(Ip {
-            address: input_ip,
-            cidr: input_mask,
+            address: input_ip.clone(),
+            cidr: match input_ip {
+                Addr::V4(_) => input_mask.unwrap_or(24),
+                Addr::V6(_) => input_mask.unwrap_or(64),
+            },
+
         });
     }
 
@@ -270,7 +277,7 @@ fn main() {
     if !free_arg.is_empty() {
         let arg = free_arg[0].to_string();
 
-        let ip = parse_address_mask(&arg);
+        let ip = parse_address_mask(&arg, None, None);
 
         if let Some(ip) = ip {
             input_ip = Some(ip.address);
@@ -293,14 +300,16 @@ fn main() {
         let mut used: HashMap<Addr, bool> = HashMap::new();
         if matches.opt_present("a") {
             for line in reader.lines() {
-                let ip = match parse_address_mask(&line.as_ref().unwrap()) {
+                let ip = match parse_address_mask(&line.as_ref().unwrap(), Some(32), Some(128)) {
                     Some(x) => { x },
                     None => {
                         eprintln!("Could not parse {}", &line.as_ref().unwrap());
                         continue;
                     }
                 };
-                used.insert(ip.address.clone(), true);
+                for ip in addresses(&ip, None) {
+                    used.insert(ip.address, true);
+                }
             }
             if input_ip.is_none() || input_mask.is_none() {
                 eprintln!("No network specified");
@@ -320,7 +329,7 @@ fn main() {
         }
 
         for line in reader.lines() {
-            let ip = parse_address_mask(&line.unwrap());
+            let ip = parse_address_mask(&line.unwrap(), None, None);
             if ip.is_none() {
                 continue;
             }
