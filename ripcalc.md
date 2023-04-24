@@ -31,6 +31,8 @@ ripcalc - a tool for network addresses
 
 **ripcalc -s/--file [-] 127.0.0.1**
 
+**ripcalc -e/--encapsulating -s**
+
 **ripcalc -h/--help**
 
 # DESCRIPTION

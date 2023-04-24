@@ -4,13 +4,13 @@ use std::net::Ipv4Addr;
 use std::net::Ipv6Addr;
 use std::str::FromStr;
 
-#[derive(Debug, PartialEq, Hash, Eq, Clone)]
+#[derive(Debug, PartialEq, PartialOrd, Hash, Eq, Clone)]
 pub enum Addr {
     V6(Ipv6Addr),
     V4(Ipv4Addr),
 }
 
-#[derive(Debug, PartialEq, Hash, Eq, Clone)]
+#[derive(Debug, PartialEq, PartialOrd, Hash, Eq, Clone)]
 pub struct Ip {
     pub address: Addr,
     pub cidr: u32,
@@ -103,7 +103,10 @@ pub fn addresses<'a>(
 
                     match &used {
                         Some(map) => {
-                            if map.get(&Addr::V4(Ipv4Addr::from(u32::from(x)-1))).is_some() {
+                            if map
+                                .get(&Addr::V4(Ipv4Addr::from(u32::from(x) - 1)))
+                                .is_some()
+                            {
                                 continue;
                             }
                         }
@@ -111,7 +114,7 @@ pub fn addresses<'a>(
                     }
 
                     return Some(Ip {
-                        address: Addr::V4(Ipv4Addr::from(u32::from(x)-1)),
+                        address: Addr::V4(Ipv4Addr::from(u32::from(x) - 1)),
                         cidr: net.cidr,
                     });
                 }
@@ -132,7 +135,10 @@ pub fn addresses<'a>(
 
                     match &used {
                         Some(map) => {
-                            if map.get(&Addr::V6(Ipv6Addr::from(u128::from(x)-1))).is_some() {
+                            if map
+                                .get(&Addr::V6(Ipv6Addr::from(u128::from(x) - 1)))
+                                .is_some()
+                            {
                                 continue;
                             }
                         }
@@ -140,7 +146,7 @@ pub fn addresses<'a>(
                     }
 
                     return Some(Ip {
-                        address: Addr::V6(Ipv6Addr::from(u128::from(x)-1)),
+                        address: Addr::V6(Ipv6Addr::from(u128::from(x) - 1)),
                         cidr: net.cidr,
                     });
                 }
@@ -150,6 +156,63 @@ pub fn addresses<'a>(
         None
     })
 }
+
+pub fn smallest_group_network(networks: &HashMap<Ip, bool>) -> Option<Ip> {
+    if networks.is_empty() {
+        return None;
+    }
+
+    let ip = networks.keys().next().unwrap();
+    let mut ip = Ip {
+        address: match ip.address {
+            Addr::V4(x) => Addr::V4(x),
+            Addr::V6(x) => Addr::V6(x),
+        },
+        cidr: ip.cidr,
+    };
+
+    for key in networks.keys().skip(1) {
+        let mut key = key.clone();
+        match (&ip.address, &key.address) {
+            (Addr::V4(_), Addr::V4(_)) => {
+                if key.cidr < ip.cidr {
+                    ip.cidr = key.cidr;
+                }
+                key.cidr = ip.cidr;
+                while network(&key) != network(&ip) {
+                    // println!("{} {}", ip.bin_split_representation(), key.bin_split_representation());
+                    if ip.cidr == 0 {
+                        return None;
+                    }
+                    ip.cidr -= 1;
+                    key.cidr = ip.cidr;
+                }
+                ip = network(&ip);
+            }
+            (Addr::V6(_), Addr::V6(_)) => {
+                if key.cidr < ip.cidr {
+                    ip.cidr = key.cidr;
+                }
+                key.cidr = ip.cidr;
+                while network(&key) != network(&ip) {
+                    // println!("{} {}", ip.bin_split_representation(), key.bin_split_representation());
+                    if ip.cidr == 0 {
+                        return None;
+                    }
+                    ip.cidr -= 1;
+                    key.cidr = ip.cidr;
+                }
+                ip = network(&ip);
+            }
+            (_, _) => {
+                return None;
+            }
+        }
+    }
+
+    Some(ip)
+}
+
 impl fmt::Display for Ip {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.address {

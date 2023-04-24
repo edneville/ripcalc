@@ -166,7 +166,11 @@ fn parse_v4_v6(address: &str) -> Option<Addr> {
     None
 }
 
-fn parse_address_mask(a: &str, default_v4_mask: Option<u32>, default_v6_mask: Option<u32>) -> Option<Ip> {
+fn parse_address_mask(
+    a: &str,
+    default_v4_mask: Option<u32>,
+    default_v6_mask: Option<u32>,
+) -> Option<Ip> {
     let parts: Vec<&str> = a.split('/').collect();
 
     let mut arg = parts[0];
@@ -209,7 +213,6 @@ fn parse_address_mask(a: &str, default_v4_mask: Option<u32>, default_v6_mask: Op
                 Addr::V4(_) => input_mask.unwrap_or(24),
                 Addr::V6(_) => input_mask.unwrap_or(64),
             },
-
         });
     }
 
@@ -233,6 +236,11 @@ fn main() {
     opts.optflag("h", "help", "display help");
     opts.optflag("a", "available", "display unused addresses");
     opts.optopt("s", "file", "lookup addresses from, - for stdin", "PATH");
+    opts.optflag(
+        "e",
+        "encapsulating",
+        "display encapsulating network from lookup list",
+    );
 
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
@@ -254,7 +262,7 @@ fn main() {
             Err(x) => {
                 eprintln!("Cannot open {}: {}", &path, x);
                 std::process::exit(1);
-            },
+            }
         };
         let field_name = if matches.opt_present("i") {
             matches.opt_str("i").unwrap()
@@ -300,8 +308,8 @@ fn main() {
         let mut used: HashMap<Addr, bool> = HashMap::new();
         if matches.opt_present("a") {
             for line in reader.lines() {
-                let ip = match parse_address_mask(&line.as_ref().unwrap(), Some(32), Some(128)) {
-                    Some(x) => { x },
+                let ip = match parse_address_mask(line.as_ref().unwrap(), Some(32), Some(128)) {
+                    Some(x) => x,
                     None => {
                         eprintln!("Could not parse {}", &line.as_ref().unwrap());
                         continue;
@@ -325,6 +333,32 @@ fn main() {
                 &rows,
                 Some(&used),
             );
+            std::process::exit(0);
+        }
+
+        if matches.opt_present("e") {
+            let mut used: HashMap<Ip, bool> = HashMap::new();
+            for line in reader.lines() {
+                let ip = match parse_address_mask(line.as_ref().unwrap(), Some(32), Some(128)) {
+                    Some(x) => x,
+                    None => {
+                        eprintln!("Could not parse {}", &line.as_ref().unwrap());
+                        continue;
+                    }
+                };
+                used.insert(ip, true);
+            }
+
+            match smallest_group_network(&used) {
+                Some(x) => {
+                    println!("{}", x);
+                }
+                None => {
+                    eprintln!("Could not find an encapsulating network, sorry");
+                    std::process::exit(1);
+                }
+            }
+
             std::process::exit(0);
         }
 

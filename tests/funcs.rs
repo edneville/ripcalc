@@ -1,7 +1,7 @@
+use std::collections::HashMap;
 use std::net::Ipv4Addr;
 use std::net::Ipv6Addr;
 use std::str::FromStr;
-use std::collections::HashMap;
 
 #[cfg(test)]
 mod test {
@@ -413,9 +413,9 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
 
         let mut hm: HashMap<Addr, bool> = HashMap::new();
 
-        hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()), true); 
-        hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.0.1").unwrap()), true); 
-        hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.0.2").unwrap()), true); 
+        hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()), true);
+        hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.0.1").unwrap()), true);
+        hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.0.2").unwrap()), true);
 
         let mut i = addresses(&net, Some(&hm));
 
@@ -427,15 +427,151 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
 
         let mut hm: HashMap<Addr, bool> = HashMap::new();
 
-        hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.1.0").unwrap()), true); 
-        hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.1.1").unwrap()), true); 
-        hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.1.2").unwrap()), true); 
+        hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.1.0").unwrap()), true);
+        hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.1.1").unwrap()), true);
+        hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.1.2").unwrap()), true);
 
         let mut i = addresses(&net, Some(&hm));
 
         assert_eq!(
             i.next().as_ref().unwrap().address,
             Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap())
+        );
+    }
+
+    #[test]
+    fn test_smallest_network() {
+        let mut hm: HashMap<Ip, bool> = HashMap::new();
+
+        let net = Ip {
+            address: Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()),
+            cidr: 30,
+        };
+        hm.insert(net, true);
+
+        let net = Ip {
+            address: Addr::V4(Ipv4Addr::from_str("192.168.1.0").unwrap()),
+            cidr: 24,
+        };
+        hm.insert(net, true);
+
+        let net = Ip {
+            address: Addr::V4(Ipv4Addr::from_str("192.168.2.0").unwrap()),
+            cidr: 24,
+        };
+        hm.insert(net, true);
+        let net = Ip {
+            address: Addr::V4(Ipv4Addr::from_str("192.168.3.0").unwrap()),
+            cidr: 24,
+        };
+        hm.insert(net, true);
+
+        let net = Ip {
+            address: Addr::V4(Ipv4Addr::from_str("192.168.4.0").unwrap()),
+            cidr: 24,
+        };
+        hm.insert(net, true);
+
+        let net = Ip {
+            address: Addr::V4(Ipv4Addr::from_str("192.168.5.0").unwrap()),
+            cidr: 24,
+        };
+        hm.insert(net, true);
+
+        let net = Ip {
+            address: Addr::V4(Ipv4Addr::from_str("192.168.2.0").unwrap()),
+            cidr: 24,
+        };
+        hm.insert(net, true);
+
+        assert_eq!(
+            smallest_group_network(&hm),
+            Some(Ip {
+                address: Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()),
+                cidr: 21,
+            })
+        );
+
+        let mut hm: HashMap<Ip, bool> = HashMap::new();
+
+        let net = Ip {
+            address: Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()),
+            cidr: 24,
+        };
+        hm.insert(net, true);
+        let net = Ip {
+            address: Addr::V4(Ipv4Addr::from_str("192.168.1.0").unwrap()),
+            cidr: 24,
+        };
+        hm.insert(net, true);
+        let net = Ip {
+            address: Addr::V4(Ipv4Addr::from_str("192.168.20.0").unwrap()),
+            cidr: 24,
+        };
+        hm.insert(net, true);
+        let net = Ip {
+            address: Addr::V4(Ipv4Addr::from_str("192.168.40.0").unwrap()),
+            cidr: 24,
+        };
+        hm.insert(net, true);
+        let net = Ip {
+            address: Addr::V4(Ipv4Addr::from_str("192.168.70.0").unwrap()),
+            cidr: 24,
+        };
+        hm.insert(net, true);
+        let net = Ip {
+            address: Addr::V4(Ipv4Addr::from_str("192.168.90.0").unwrap()),
+            cidr: 24,
+        };
+        hm.insert(net, true);
+        let net = Ip {
+            address: Addr::V4(Ipv4Addr::from_str("192.168.200.0").unwrap()),
+            cidr: 24,
+        };
+        hm.insert(net, true);
+        let net = Ip {
+            address: Addr::V4(Ipv4Addr::from_str("192.168.255.0").unwrap()),
+            cidr: 24,
+        };
+        hm.insert(net, true);
+
+        let net = Ip {
+            address: Addr::V4(Ipv4Addr::from_str("192.168.220.0").unwrap()),
+            cidr: 24,
+        };
+        hm.insert(net, true);
+
+        assert_eq!(
+            smallest_group_network(&hm),
+            Some(Ip {
+                address: Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()),
+                cidr: 16,
+            })
+        );
+
+        let mut hm: HashMap<Ip, bool> = HashMap::new();
+        let net = Ip {
+            address: Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()),
+            cidr: 30,
+        };
+        hm.insert(net, true);
+        let net = Ip {
+            address: Addr::V4(Ipv4Addr::from_str("192.168.0.1").unwrap()),
+            cidr: 30,
+        };
+        hm.insert(net, true);
+        let net = Ip {
+            address: Addr::V4(Ipv4Addr::from_str("192.168.0.2").unwrap()),
+            cidr: 30,
+        };
+        hm.insert(net, true);
+
+        assert_eq!(
+            smallest_group_network(&hm),
+            Some(Ip {
+                address: Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()),
+                cidr: 30,
+            })
         );
     }
 }

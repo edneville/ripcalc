@@ -96,13 +96,15 @@ $ ripcalc --csv nets.csv -i range --format '%{range} %{owner}\n' -s list
 
 When `-a` is used, addresses read from `-s` will not be shown when listing `-l` a network, showing only available addresses.
 
+When `-e` is used with `-s` the smallest encapsulating network will be returned.
+
 Options:
 
 ```
     -4, --ipv4 IPv4     ipv4 address
     -6, --ipv6 IPv6     ipv6 address
     -f, --format STRING format output
-                        'cidr' expands to %a/%c\n,
+                        'cidr' expands to %a/%c\n
                         'short' expands to %a\n
                         See manual for more options
     -m, --mask CIDR     cidr mask
@@ -112,6 +114,8 @@ Options:
     -h, --help          display help
     -a, --available     display unused addresses
     -s, --file PATH     lookup addresses from, - for stdin
+    -e, --encapsulating 
+                        display encapsulating network from lookup list
 ```
 
 
