@@ -17,9 +17,10 @@ fn print_details(
     let mut formatted = if matches.opt_present("f") {
         matches.opt_str("f").unwrap()
     } else {
+        let width=25;
         match ip.address {
-            Addr::V4(_) => "IP is: %a/%c\nBroadcast is: %b\nNetwork is: %n\nSubnet is: %s\nWildcard is: %w\nNetwork size: %t\n".to_string(),
-            Addr::V6(_) => "IP is: %a/%c\nExpanded: %xa\nNetwork is: %xn\nLast host address: %xb\nSubnet is: %s\nNetwork size: %t\n".to_string(),
+            Addr::V4(_) => format!("{ip:>width$}/{cidr}\n{broadcast:>width$}\n{network:>width$}\n{subnet:>width$}\n{wildcard:>width$}\n{network_size:>width$}\n", ip="IP is: %a", cidr="%c", broadcast="Broadcast is: %b", network="Network is %n", subnet="Subnet is: %s", wildcard="Wildcard is: %w", network_size="Network size: %t", width=width),
+            Addr::V6(_) => format!("{ip:>width$}/{cidr}\n{expanded:>width$}\n{network:>width$}\n{last_host_address:>width$}\n{subnet:>width$}\n{network_size:>widthn$}\n", ip="IP is: %a", cidr="%c", expanded="Expanded: %xa", network="Network is: %xn", last_host_address="Last host address: %xb", subnet="Subnet is: %xs", network_size="Network size: %t", width=width, widthn=width-1),
         }
     };
 
@@ -351,7 +352,7 @@ fn main() {
 
             match smallest_group_network(&used) {
                 Some(x) => {
-                    println!("{}", x);
+                    print_details(&x, &matches, &rows, None);
                 }
                 None => {
                     eprintln!("Could not find an encapsulating network, sorry");
