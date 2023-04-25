@@ -180,7 +180,6 @@ pub fn smallest_group_network(networks: &HashMap<Ip, bool>) -> Option<Ip> {
                 }
                 key.cidr = ip.cidr;
                 while network(&key) != network(&ip) {
-                    // println!("{} {}", ip.bin_split_representation(), key.bin_split_representation());
                     if ip.cidr == 0 {
                         return None;
                     }
@@ -195,7 +194,6 @@ pub fn smallest_group_network(networks: &HashMap<Ip, bool>) -> Option<Ip> {
                 }
                 key.cidr = ip.cidr;
                 while network(&key) != network(&ip) {
-                    // println!("{} {}", ip.bin_split_representation(), key.bin_split_representation());
                     if ip.cidr == 0 {
                         return None;
                     }
