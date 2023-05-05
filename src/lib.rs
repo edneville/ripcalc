@@ -1,7 +1,12 @@
+use nix::ifaddrs::*;
+use nix::sys::socket::AddressFamily;
+use nix::sys::socket::SockaddrLike;
+use nix::sys::socket::SockaddrStorage;
 use std::collections::HashMap;
 use std::fmt;
 use std::net::Ipv4Addr;
 use std::net::Ipv6Addr;
+use std::net::ToSocketAddrs;
 use std::str::FromStr;
 
 #[derive(Debug, PartialEq, PartialOrd, Hash, Eq, Clone)]
@@ -79,6 +84,92 @@ impl Ip {
             }
         }
     }
+}
+
+pub fn parse_mask(mask: &str) -> Option<u32> {
+    match mask.parse::<u32>() {
+        Ok(n) => Some(n),
+        Err(_) => None,
+    }
+}
+
+pub fn parse_v6(address: &str) -> Option<Addr> {
+    match Ipv6Addr::from_str(address) {
+        Ok(i) => Some(Addr::V6(i)),
+        Err(_) => None,
+    }
+}
+
+pub fn parse_v4(address: &str) -> Option<Addr> {
+    match Ipv4Addr::from_str(address) {
+        Ok(i) => Some(Addr::V4(i)),
+        Err(_) => None,
+    }
+}
+
+pub fn parse_v4_v6(address: &str) -> Option<Addr> {
+    if address.find(':').is_some() {
+        return parse_v6(address);
+    }
+
+    if address.find('.').is_some() {
+        return parse_v4(address);
+    }
+
+    None
+}
+
+pub fn parse_address_mask(
+    a: &str,
+    default_v4_mask: Option<u32>,
+    default_v6_mask: Option<u32>,
+) -> Option<Ip> {
+    let parts: Vec<&str> = a.split('/').collect();
+
+    let mut arg = parts[0];
+
+    let mut input_mask: Option<u32> = None;
+    if parts.len() > 1 {
+        if let Some(m) = parse_mask(parts[1]) {
+            input_mask = Some(m);
+        }
+    };
+
+    let input_ip = parse_v4_v6(arg);
+
+    if let Some(input_ip) = input_ip {
+        return Some(Ip {
+            address: input_ip.clone(),
+            cidr: match input_ip {
+                Addr::V4(_) => input_mask.unwrap_or(default_v4_mask.unwrap_or(24)),
+                Addr::V6(_) => input_mask.unwrap_or(default_v6_mask.unwrap_or(64)),
+            },
+        });
+    }
+
+    let addrs_iter = format!("{}:443", arg).to_socket_addrs();
+    let mut buffer: String;
+
+    if let Ok(mut address) = addrs_iter {
+        buffer = format!("{}", address.next().unwrap());
+        let v: Vec<&str> = buffer.split(':').collect();
+        buffer = v[0].to_string();
+        arg = buffer.as_str();
+    }
+
+    let input_ip = parse_v4_v6(arg);
+
+    if let Some(input_ip) = input_ip {
+        return Some(Ip {
+            address: input_ip.clone(),
+            cidr: match input_ip {
+                Addr::V4(_) => input_mask.unwrap_or(24),
+                Addr::V6(_) => input_mask.unwrap_or(64),
+            },
+        });
+    }
+
+    None
 }
 
 pub fn addresses<'a>(
@@ -595,6 +686,54 @@ pub fn wildcard(ip: &Ip) -> Ip {
     }
 }
 
+pub fn matching_network_interface(ip: &Ip, interfaces: &Vec<InterfaceAddress>) -> String {
+    let net = network(ip);
+    for ifaddr in interfaces {
+        if let Some(address) = ifaddr.address {
+            // println!("interface {} address {}", ifaddr.interface_name, address);
+            let ss: SockaddrStorage = address;
+
+            match address.family() {
+                Some(AddressFamily::Inet) => {
+                    let if_addr = ss.as_sockaddr_in().unwrap().ip();
+                    let if_addr_bin = if_addr;
+
+                    if let Some(netmask) = ifaddr.netmask {
+                        if let Addr::V4(x) = net.address {
+                            let bin = u32::from(x);
+                            let a = netmask.as_sockaddr_in().unwrap().ip();
+
+                            if (bin & a) == (if_addr_bin & a) {
+                                //println!("{:#?} in {} {}", ip, bin, a);
+                                return ifaddr.interface_name.to_string();
+                            }
+                        }
+                    }
+                }
+                Some(AddressFamily::Inet6) => {
+                    let if_addr = ss.as_sockaddr_in6().unwrap().ip();
+                    let if_addr_bin = u128::from(if_addr);
+
+                    if let Some(netmask) = ifaddr.netmask {
+                        if let Addr::V6(x) = net.address {
+                            let bin = u128::from(x);
+                            let a = u128::from(netmask.as_sockaddr_in6().unwrap().ip());
+                            if (bin & a) == (if_addr_bin & a) {
+                                // println!("{:#?} block {} {}", ip, bin, a);
+                                return ifaddr.interface_name.to_string();
+                            }
+                        }
+                    }
+                }
+                _ => {
+                    continue;
+                }
+            }
+        }
+    }
+    "".to_string()
+}
+
 pub fn network_size(ip: &Ip) -> u128 {
     let start = network(ip);
     let end = broadcast(ip);
@@ -708,6 +847,11 @@ pub fn format_details(
         reformatted = reformatted.replace("%r", &r);
     }
 
+    let interfaces: Vec<InterfaceAddress> = match nix::ifaddrs::getifaddrs() {
+        Ok(x) => x.collect(),
+        Err(_) => vec![],
+    };
+
     let mut mode = FormatMode::Text;
     let mut out_str = "".to_string();
     let chars: Vec<_> = reformatted.chars().collect();
@@ -754,6 +898,9 @@ pub fn format_details(
                     }
                     't' => {
                         out_str.push_str(&network_size(ip).to_string());
+                    }
+                    'd' => {
+                        out_str.push_str(&matching_network_interface(ip, &interfaces));
                     }
                     '%' => {
                         out_str.push('%');

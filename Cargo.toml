@@ -17,3 +17,4 @@ keywords = ["ip","network","csv"]
 [dependencies]
 getopts = "0.2"
 csv = "1"
+nix = "0.25"
