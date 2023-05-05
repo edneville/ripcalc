@@ -5,7 +5,6 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::net::Ipv4Addr;
 use std::net::Ipv6Addr;
-use std::net::ToSocketAddrs;
 use std::str::FromStr;
 
 fn print_details(
@@ -17,7 +16,7 @@ fn print_details(
     let mut formatted = if matches.opt_present("f") {
         matches.opt_str("f").unwrap()
     } else {
-        let width=25;
+        let width = 25;
         match ip.address {
             Addr::V4(_) => format!("{ip:>width$}/{cidr}\n{broadcast:>width$}\n{network:>width$}\n{subnet:>width$}\n{wildcard:>width$}\n{network_size:>width$}\n", ip="IP is: %a", cidr="%c", broadcast="Broadcast is: %b", network="Network is %n", subnet="Subnet is: %s", wildcard="Wildcard is: %w", network_size="Network size: %t", width=width),
             Addr::V6(_) => format!("{ip:>width$}/{cidr}\n{expanded:>width$}\n{network:>width$}\n{last_host_address:>width$}\n{subnet:>width$}\n{network_size:>widthn$}\n", ip="IP is: %a", cidr="%c", expanded="Expanded: %xa", network="Network is: %xn", last_host_address="Last host address: %xb", subnet="Subnet is: %xs", network_size="Network size: %t", width=width, widthn=width-1),
@@ -132,92 +131,6 @@ fn process_csv(
                 .insert(ip.clone(), NetRow { row: hm.clone() });
         }
     }
-}
-
-fn parse_mask(mask: &str) -> Option<u32> {
-    match mask.parse::<u32>() {
-        Ok(n) => Some(n),
-        Err(_) => None,
-    }
-}
-
-fn parse_v6(address: &str) -> Option<Addr> {
-    match Ipv6Addr::from_str(address) {
-        Ok(i) => Some(Addr::V6(i)),
-        Err(_) => None,
-    }
-}
-
-fn parse_v4(address: &str) -> Option<Addr> {
-    match Ipv4Addr::from_str(address) {
-        Ok(i) => Some(Addr::V4(i)),
-        Err(_) => None,
-    }
-}
-
-fn parse_v4_v6(address: &str) -> Option<Addr> {
-    if address.find(':').is_some() {
-        return parse_v6(address);
-    }
-
-    if address.find('.').is_some() {
-        return parse_v4(address);
-    }
-
-    None
-}
-
-fn parse_address_mask(
-    a: &str,
-    default_v4_mask: Option<u32>,
-    default_v6_mask: Option<u32>,
-) -> Option<Ip> {
-    let parts: Vec<&str> = a.split('/').collect();
-
-    let mut arg = parts[0];
-
-    let mut input_mask: Option<u32> = None;
-    if parts.len() > 1 {
-        if let Some(m) = parse_mask(parts[1]) {
-            input_mask = Some(m);
-        }
-    };
-
-    let input_ip = parse_v4_v6(arg);
-
-    if let Some(input_ip) = input_ip {
-        return Some(Ip {
-            address: input_ip.clone(),
-            cidr: match input_ip {
-                Addr::V4(_) => input_mask.unwrap_or(default_v4_mask.unwrap_or(24)),
-                Addr::V6(_) => input_mask.unwrap_or(default_v6_mask.unwrap_or(64)),
-            },
-        });
-    }
-
-    let addrs_iter = format!("{}:443", arg).to_socket_addrs();
-    let mut buffer: String;
-
-    if let Ok(mut address) = addrs_iter {
-        buffer = format!("{}", address.next().unwrap());
-        let v: Vec<&str> = buffer.split(':').collect();
-        buffer = v[0].to_string();
-        arg = buffer.as_str();
-    }
-
-    let input_ip = parse_v4_v6(arg);
-
-    if let Some(input_ip) = input_ip {
-        return Some(Ip {
-            address: input_ip.clone(),
-            cidr: match input_ip {
-                Addr::V4(_) => input_mask.unwrap_or(24),
-                Addr::V6(_) => input_mask.unwrap_or(64),
-            },
-        });
-    }
-
-    None
 }
 
 fn main() {
