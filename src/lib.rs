@@ -141,8 +141,8 @@ pub fn parse_address_mask(
         return Some(Ip {
             address: input_ip.clone(),
             cidr: match input_ip {
-                Addr::V4(_) => input_mask.unwrap_or(default_v4_mask.unwrap_or(24)),
-                Addr::V6(_) => input_mask.unwrap_or(default_v6_mask.unwrap_or(64)),
+                Addr::V4(_) => input_mask.unwrap_or_else(|| default_v4_mask.unwrap_or(24)),
+                Addr::V6(_) => input_mask.unwrap_or_else(|| default_v6_mask.unwrap_or(64)),
             },
         });
     }
@@ -686,7 +686,11 @@ pub fn wildcard(ip: &Ip) -> Ip {
     }
 }
 
-pub fn matching_network_interface(ip: &Ip, interfaces: &Vec<InterfaceAddress>) -> String {
+pub fn matching_network_interface(
+    ip: &Ip,
+    interfaces: &[InterfaceAddress],
+    ip_only: bool,
+) -> String {
     let net = network(ip);
     for ifaddr in interfaces {
         if let Some(address) = ifaddr.address {
@@ -695,8 +699,16 @@ pub fn matching_network_interface(ip: &Ip, interfaces: &Vec<InterfaceAddress>) -
 
             match address.family() {
                 Some(AddressFamily::Inet) => {
-                    let if_addr = ss.as_sockaddr_in().unwrap().ip();
-                    let if_addr_bin = if_addr;
+                    let if_addr_bin = ss.as_sockaddr_in().unwrap().ip();
+
+                    if ip_only {
+                        if let Addr::V4(x) = ip.address {
+                            if if_addr_bin == u32::from(x) {
+                                return ifaddr.interface_name.to_string();
+                            }
+                        }
+                        continue;
+                    }
 
                     if let Some(netmask) = ifaddr.netmask {
                         if let Addr::V4(x) = net.address {
@@ -711,8 +723,16 @@ pub fn matching_network_interface(ip: &Ip, interfaces: &Vec<InterfaceAddress>) -
                     }
                 }
                 Some(AddressFamily::Inet6) => {
-                    let if_addr = ss.as_sockaddr_in6().unwrap().ip();
-                    let if_addr_bin = u128::from(if_addr);
+                    let if_addr_bin = u128::from(ss.as_sockaddr_in6().unwrap().ip());
+
+                    if ip_only {
+                        if let Addr::V6(x) = ip.address {
+                            if if_addr_bin == u128::from(x) {
+                                return ifaddr.interface_name.to_string();
+                            }
+                        }
+                        continue;
+                    }
 
                     if let Some(netmask) = ifaddr.netmask {
                         if let Addr::V6(x) = net.address {
@@ -899,8 +919,11 @@ pub fn format_details(
                     't' => {
                         out_str.push_str(&network_size(ip).to_string());
                     }
+                    'm' => {
+                        out_str.push_str(&matching_network_interface(ip, &interfaces, false));
+                    }
                     'd' => {
-                        out_str.push_str(&matching_network_interface(ip, &interfaces));
+                        out_str.push_str(&matching_network_interface(ip, &interfaces, true));
                     }
                     '%' => {
                         out_str.push('%');
