@@ -754,6 +754,27 @@ pub fn matching_network_interface(
     "".to_string()
 }
 
+pub fn rbl_format(ip: &Ip) -> String {
+    match ip.address {
+        Addr::V4(x) => {
+            let f = format!("{}", x);
+            let v: Vec<&str> = f.rsplit('.').collect();
+            v.join(".")
+        }
+        Addr::V6(x) => {
+            let mut v = vec![];
+            let octet = x.octets();
+            for (_, o) in octet.iter().rev().enumerate() {
+                let r = format!("{:02x}", o);
+
+                v.push(r.get(1..2).unwrap().to_string());
+                v.push(r.get(0..1).unwrap().to_string());
+            }
+            v.join(".")
+        }
+    }
+}
+
 pub fn network_size(ip: &Ip) -> u128 {
     let start = network(ip);
     let end = broadcast(ip);
@@ -924,6 +945,9 @@ pub fn format_details(
                     }
                     'd' => {
                         out_str.push_str(&matching_network_interface(ip, &interfaces, true));
+                    }
+                    'k' => {
+                        out_str.push_str(&rbl_format(ip));
                     }
                     '%' => {
                         out_str.push('%');
