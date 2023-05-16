@@ -33,38 +33,46 @@ select * from IP6 where (ip >= 42540724579414763292693624807812497408 and ip <= 
 update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 and ip <= 42540724579414763311140368881522049023) and active = 1;
 ```
 
+*%* denotes a format control character, followed by one of the following:
+
 | placeholder | effect |
 |-------------|--------|
-| cidr        | expands to %a/%c\n |
-| short       | expands to %a\n |
 | %a          | IP address string |
-| %xa         | IP address in hex quad |
-| %la         | IP in unsigned numeric |
-| %Ba         | IP in binary |
-| %Sa         | IP in binary broken with space at network |
-| %b          | broadcast in string format |
-| %xb         | broadcast in hex quad |
-| %lb         | broadcast in numeric |
-| %Bb         | broadcast in binary |
-| %Sb         | broadcast in binary broken with space at network |
-| %n          | network in string format |
-| %xn         | network in hex quad |
-| %ln         | network in numeric |
-| %Bn         | network in binary |
-| %Sn         | network in binary broken with space at network |
-| %s          | subnet in string format |
-| %xs         | subnet in hex quad |
-| %ls         | subnet in numeric |
-| %Bs         | subnet in binary |
-| %Ss         | subnet in binary broken with space at network |
-| %w          | wildcard in string format |
-| %xw         | wildcard in hex quad |
-| %lw         | wildcard in numeric |
-| %Bw         | wildcard in binary |
-| %Sw         | wildcard in binary broken with space at network |
-| %c          | cidr mask |
-| %t          | network size |
-| %r          | network reservation information (if available) |
+| %n          | Network address string |
+| %s          | Subnet address string |
+| %w          | Wildcard address string |
+| %b          | Broadcast address string |
+
+Additional characters prefixing the above placeholder can control the representation:
+
+| placeholder | effect |
+|-------------|--------|
+| %B          | Binary address string |
+| %S          | Split binary at network boundary string |
+| %l          | Unsigned integer string |
+| %x          | Hex address string |
+
+Other format characters:
+
+| placeholder | effect |
+|-------------|--------|
+| %c          | CIDR mask |
+| %t          | Network size |
+| %r          | Network reservation information (if available) |
+| %d          | Matching device interface by IP |
+| %m          | Matching media link interface by network |
+| %k          | RBL-style format |
+| %%          | % |
+| \n          | Line break |
+| \t          | Tab character |
+
+For example:
+
+```
+$ ripcalc --format '%k.all.s5h.net\n' 192.168.1.2
+2.1.168.192.all.s5h.net
+```
+
 
 With a csv it can find networks that an IP address is within, use `%{field}` to print matches:
 
