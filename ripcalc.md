@@ -4,7 +4,7 @@ section: 1
 header: User Manual
 footer: ripcalc 0.1.7
 author: Ed Neville (ed-ripcalc@s5h.net)
-date: 11 May 2023
+date: 16 May 2023
 ---
 
 # NAME
@@ -94,11 +94,14 @@ Additional characters prefixing the above placeholder can control the representa
 
 Other format characters:
 
+| placeholder | effect |
+|-------------|--------|
 | %c          | CIDR mask |
 | %t          | Network size |
 | %r          | Network reservation information (if available) |
 | %d          | Matching device interface by IP |
 | %m          | Matching media link interface by network |
+| %k          | RBL-style format |
 | %%          | % |
 | \n          | Line break |
 | \t          | Tab character |
