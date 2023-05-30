@@ -100,29 +100,58 @@ pub fn parse_v6(address: &str) -> Option<Addr> {
     }
 }
 
-pub fn parse_v4(address: &str) -> Option<Addr> {
-    match Ipv4Addr::from_str(address) {
-        Ok(i) => Some(Addr::V4(i)),
-        Err(_) => None,
+pub fn parse_v4(address: &str, input_base: Option<i32>) -> Option<Addr> {
+    match input_base {
+        Some(base) => {
+            let parts: Vec<String>;
+            let chars: Vec<char>;
+
+            let split = if address.find('.').is_none() {
+                chars = address.chars().collect();
+
+                chars
+                    .chunks(2)
+                    .map(|c| c.iter().collect::<String>())
+                    .collect::<Vec<_>>()
+            } else {
+                parts = address.split('.').map(|s| s.to_string()).collect();
+                parts
+            };
+
+            let mut arr: [u8; 4] = [0, 0, 0, 0];
+
+            for (x, y) in split.iter().enumerate() {
+                arr[x] = match u8::from_str_radix(y, base as u32) {
+                    Ok(y) => y,
+                    Err(e) => {
+                        println!("cannot convert {}: {}", y, e);
+                        return None;
+                    }
+                }
+            }
+
+            Some(Addr::V4(Ipv4Addr::from(arr)))
+        }
+        None => match Ipv4Addr::from_str(address) {
+            Ok(i) => Some(Addr::V4(i)),
+            Err(_) => None,
+        },
     }
 }
 
-pub fn parse_v4_v6(address: &str) -> Option<Addr> {
+pub fn parse_v4_v6(address: &str, input_base: Option<i32>) -> Option<Addr> {
     if address.find(':').is_some() {
         return parse_v6(address);
     }
 
-    if address.find('.').is_some() {
-        return parse_v4(address);
-    }
-
-    None
+    parse_v4(address, input_base)
 }
 
 pub fn parse_address_mask(
     a: &str,
     default_v4_mask: Option<u32>,
     default_v6_mask: Option<u32>,
+    input_base: Option<i32>,
 ) -> Option<Ip> {
     let parts: Vec<&str> = a.split('/').collect();
 
@@ -135,7 +164,7 @@ pub fn parse_address_mask(
         }
     };
 
-    let input_ip = parse_v4_v6(arg);
+    let input_ip = parse_v4_v6(arg, input_base);
 
     if let Some(input_ip) = input_ip {
         return Some(Ip {
@@ -157,7 +186,7 @@ pub fn parse_address_mask(
         arg = buffer.as_str();
     }
 
-    let input_ip = parse_v4_v6(arg);
+    let input_ip = parse_v4_v6(arg, input_base);
 
     if let Some(input_ip) = input_ip {
         return Some(Ip {

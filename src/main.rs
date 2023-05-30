@@ -138,6 +138,7 @@ fn main() {
     let mut rows: Option<HashMap<Ip, NetRow>> = None;
     let mut input_ip: Option<Addr> = None;
     let mut input_mask: Option<u32> = None;
+    let mut input_base: Option<i32> = None;
     let args: Vec<String> = std::env::args().collect();
     opts.parsing_style(getopts::ParsingStyle::FloatingFrees);
     opts.optopt("4", "ipv4", "ipv4 address", "IPv4");
@@ -148,6 +149,7 @@ fn main() {
     opts.optopt("i", "field", "csv field", "FIELD");
     opts.optflag("l", "list", "list all addresses in network");
     opts.optflag("h", "help", "display help");
+    opts.optopt("b", "base", "ipv4 base format, default to oct", "INTEGER");
     opts.optflag("a", "available", "display unused addresses");
     opts.optopt("s", "file", "lookup addresses from, - for stdin", "PATH");
     opts.optflag(
@@ -169,6 +171,16 @@ fn main() {
         std::process::exit(0);
     }
 
+    if matches.opt_present("b") {
+        input_base = match i32::from_str(&matches.opt_str("b").unwrap()) {
+            Ok(x) => Some(x),
+            Err(x) => {
+                println!("Cannot convert to an integer base: {}", x);
+                std::process::exit(1);
+            }
+        };
+    }
+
     if matches.opt_present("c") {
         let path = matches.opt_str("c").unwrap();
         let reader = match csv::Reader::from_path(&path) {
@@ -188,7 +200,7 @@ fn main() {
     }
 
     if let Some(v) = matches.opt_str("4") {
-        input_ip = parse_v4(&v);
+        input_ip = parse_v4(&v, input_base);
     }
 
     if let Some(v) = matches.opt_str("6") {
@@ -199,7 +211,7 @@ fn main() {
     if !free_arg.is_empty() {
         let arg = free_arg[0].to_string();
 
-        let ip = parse_address_mask(&arg, None, None);
+        let ip = parse_address_mask(&arg, None, None, input_base);
 
         if let Some(ip) = ip {
             input_ip = Some(ip.address);
@@ -216,13 +228,26 @@ fn main() {
         let reader: Box<dyn BufRead> = if path == "-" {
             Box::new(BufReader::new(std::io::stdin()))
         } else {
+            let path = std::path::Path::new(&path);
+            if !path.exists() {
+                println!(
+                    "Could not open {} as it does not exist",
+                    path.to_string_lossy()
+                );
+                std::process::exit(1);
+            }
             Box::new(BufReader::new(File::open(path).unwrap()))
         };
 
         let mut used: HashMap<Addr, bool> = HashMap::new();
         if matches.opt_present("a") {
             for line in reader.lines() {
-                let ip = match parse_address_mask(line.as_ref().unwrap(), Some(32), Some(128)) {
+                let ip = match parse_address_mask(
+                    line.as_ref().unwrap(),
+                    Some(32),
+                    Some(128),
+                    input_base,
+                ) {
                     Some(x) => x,
                     None => {
                         eprintln!("Could not parse {}", &line.as_ref().unwrap());
@@ -253,7 +278,12 @@ fn main() {
         if matches.opt_present("e") {
             let mut used: HashMap<Ip, bool> = HashMap::new();
             for line in reader.lines() {
-                let ip = match parse_address_mask(line.as_ref().unwrap(), Some(32), Some(128)) {
+                let ip = match parse_address_mask(
+                    line.as_ref().unwrap(),
+                    Some(32),
+                    Some(128),
+                    input_base,
+                ) {
                     Some(x) => x,
                     None => {
                         eprintln!("Could not parse {}", &line.as_ref().unwrap());
@@ -277,7 +307,7 @@ fn main() {
         }
 
         for line in reader.lines() {
-            let ip = parse_address_mask(&line.unwrap(), None, None);
+            let ip = parse_address_mask(&line.unwrap(), None, None, input_base);
             if ip.is_none() {
                 continue;
             }
