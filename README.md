@@ -120,6 +120,7 @@ Options:
     -i, --field FIELD   csv field
     -l, --list          list all addresses in network
     -h, --help          display help
+    -b, --base INTEGER  ipv4 base format, default to oct
     -a, --available     display unused addresses
     -s, --file PATH     lookup addresses from, - for stdin
     -e, --encapsulating 

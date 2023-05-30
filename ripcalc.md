@@ -2,9 +2,9 @@
 title: ripcalc
 section: 1
 header: User Manual
-footer: ripcalc 0.1.7
+footer: ripcalc 0.1.8
 author: Ed Neville (ed-ripcalc@s5h.net)
-date: 16 May 2023
+date: 30 May 2023
 ---
 
 # NAME
@@ -33,6 +33,8 @@ ripcalc - a tool for network addresses
 
 **ripcalc -e/--encapsulating -s**
 
+**ripcalc -b/--base [8, 10, 16 etc]**
+
 **ripcalc -h/--help**
 
 # DESCRIPTION
@@ -40,6 +42,8 @@ ripcalc - a tool for network addresses
 **ripcalc** can read IPv4/IPv6 addresses from command line or standard input and output different formats or associated networks from **CSV**.
 
 **ripcalc** can format network addresses, find matches in **CSV** or process a list.
+
+**ripcalc** can convert input addresses that are in other number formats such as hex or octal.
 
 # CSV
 
