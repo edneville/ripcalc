@@ -3,8 +3,6 @@ use ripcalc::*;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
-use std::net::Ipv4Addr;
-use std::net::Ipv6Addr;
 use std::str::FromStr;
 
 fn print_details(
@@ -19,7 +17,7 @@ fn print_details(
         let width = 25;
         match ip.address {
             Addr::V4(_) => format!("{ip:>width$}/{cidr}\n{broadcast:>width$}\n{network:>width$}\n{subnet:>width$}\n{wildcard:>width$}\n{network_size:>width$}\n", ip="IP is: %a", cidr="%c", broadcast="Broadcast is: %b", network="Network is %n", subnet="Subnet is: %s", wildcard="Wildcard is: %w", network_size="Network size: %t", width=width),
-            Addr::V6(_) => format!("{ip:>width$}/{cidr}\n{expanded:>width$}\n{network:>width$}\n{last_host_address:>width$}\n{subnet:>width$}\n{network_size:>widthn$}\n", ip="IP is: %a", cidr="%c", expanded="Expanded: %xa", network="Network is: %xn", last_host_address="Last host address: %xb", subnet="Subnet is: %xs", network_size="Network size: %t", width=width, widthn=width-1),
+            Addr::V6(_) => format!("{ip:>widthn$}/{cidr}\n{expanded:>width$}\n{network:>width$}\n{last_host_address:>width$}\n{subnet:>width$}\n{network_size:>widthn$}\n", ip="IP is: %a", cidr="%c", expanded="Expanded: %xa", network="Network is: %xn", last_host_address="Last host address: %xb", subnet="Subnet is: %xs", network_size="Network size: %t", width=width, widthn=width-1),
         }
     };
 
@@ -49,6 +47,8 @@ fn process_csv(
     mut reader: csv::Reader<File>,
     field_name: String,
     rows: &mut Option<HashMap<Ip, NetRow>>,
+    input_base: Option<i32>,
+    reverse: &Reverse,
 ) {
     let headers = reader.headers().unwrap();
     let mut header_names: Vec<String> = vec![];
@@ -84,12 +84,13 @@ fn process_csv(
                     *rows = Some(HashMap::new());
                 }
 
-                let v6 = Ipv6Addr::from_str(parts[0]);
-                if v6.is_err() {
+                let v6 = parse_v6(parts[0], match reverse { Reverse::Both | Reverse::Source => true, _ => false });
+
+                if v6.is_none() {
                     eprintln!("{}: not in ip/cidr format", rec);
                     continue;
                 }
-                row_ip = Some(Addr::V6(v6.unwrap()));
+                row_ip = v6;
             }
 
             if parts[0].contains('.') {
@@ -97,12 +98,13 @@ fn process_csv(
                     *rows = Some(HashMap::new());
                 }
 
-                let v4 = Ipv4Addr::from_str(parts[0]);
-                if v4.is_err() {
+                let v4 = parse_v4(parts[0], input_base, match reverse { Reverse::Both | Reverse::Source => true, _ => false });
+
+                if v4.is_none() {
                     eprintln!("{}: not in ip/cidr format", rec);
                     continue;
                 }
-                row_ip = Some(Addr::V4(v4.unwrap()));
+                row_ip = v4;
             }
 
             let cidr = parts[1].to_string().parse::<u32>();
@@ -139,6 +141,7 @@ fn main() {
     let mut input_ip: Option<Addr> = None;
     let mut input_mask: Option<u32> = None;
     let mut input_base: Option<i32> = None;
+    let mut reverse = Reverse::None;
     let args: Vec<String> = std::env::args().collect();
     opts.parsing_style(getopts::ParsingStyle::FloatingFrees);
     opts.optopt("4", "ipv4", "ipv4 address", "IPv4");
@@ -151,6 +154,7 @@ fn main() {
     opts.optflag("h", "help", "display help");
     opts.optopt("b", "base", "ipv4 base format, default to oct", "INTEGER");
     opts.optflag("a", "available", "display unused addresses");
+    opts.optopt("r", "reverse", "(none, inputs, sources or both) v4 octets, v6 hex", "");
     opts.optopt("s", "file", "lookup addresses from, - for stdin", "PATH");
     opts.optflag(
         "e",
@@ -169,6 +173,24 @@ fn main() {
     if matches.opt_present("h") {
         println!("{}", opts.usage("ripcalc"));
         std::process::exit(0);
+    }
+
+    if matches.opt_present("r") {
+        match matches.opt_str("r").unwrap().as_str() {
+            "inputs" => {
+                reverse = Reverse::Input;
+            }
+            "sources" => {
+                reverse = Reverse::Source;
+            }
+            "both" => {
+                reverse = Reverse::Both;
+            }
+            _ => {
+                println!("reverse is not one of inputs, sources or both");
+                std::process::exit(1);
+            }
+        }
     }
 
     if matches.opt_present("b") {
@@ -196,22 +218,27 @@ fn main() {
             "network".to_string()
         };
 
-        process_csv(reader, field_name, &mut rows);
+        process_csv(reader, field_name, &mut rows, input_base, &reverse);
     }
 
     if let Some(v) = matches.opt_str("4") {
-        input_ip = parse_v4(&v, input_base);
+        input_ip = parse_v4(&v, input_base, match reverse { Reverse::Both | Reverse::Input => true, _ => false } );
     }
 
     if let Some(v) = matches.opt_str("6") {
-        input_ip = parse_v6(&v);
+        input_ip = parse_v6(&v, 
+match reverse { Reverse::Both | Reverse::Input => true, _ => false } 
+            );
     }
 
     let free_arg = matches.free.clone();
     if !free_arg.is_empty() {
         let arg = free_arg[0].to_string();
 
-        let ip = parse_address_mask(&arg, None, None, input_base);
+        let ip = parse_address_mask(&arg, None, None, input_base, 
+match reverse { Reverse::Both | Reverse::Input => true, _ => false }
+
+            );
 
         if let Some(ip) = ip {
             input_ip = Some(ip.address);
@@ -247,6 +274,7 @@ fn main() {
                     Some(32),
                     Some(128),
                     input_base,
+match reverse { Reverse::Both | Reverse::Input => true, _ => false }
                 ) {
                     Some(x) => x,
                     None => {
@@ -283,6 +311,7 @@ fn main() {
                     Some(32),
                     Some(128),
                     input_base,
+match reverse { Reverse::Both | Reverse::Input => true, _ => false }
                 ) {
                     Some(x) => x,
                     None => {
@@ -307,7 +336,7 @@ fn main() {
         }
 
         for line in reader.lines() {
-            let ip = parse_address_mask(&line.unwrap(), None, None, input_base);
+            let ip = parse_address_mask(&line.unwrap(), None, None, input_base, match reverse { Reverse::Both | Reverse::Source => true, _ => false });
             if ip.is_none() {
                 continue;
             }
