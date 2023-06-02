@@ -40,6 +40,13 @@ pub enum FormatProcessor {
     None,
 }
 
+pub enum Reverse {
+    None,
+    Input,
+    Source,
+    Both,
+}
+
 impl Ip {
     fn num_representation(&self) -> String {
         match self.address {
@@ -93,14 +100,25 @@ pub fn parse_mask(mask: &str) -> Option<u32> {
     }
 }
 
-pub fn parse_v6(address: &str) -> Option<Addr> {
+pub fn parse_v6(address: &str, reverse: bool) -> Option<Addr> {
     match Ipv6Addr::from_str(address) {
-        Ok(i) => Some(Addr::V6(i)),
+        Ok(mut i) => {
+            if reverse {
+                let mut j = i.octets();
+                j.reverse();
+                for i in 0..j.len() {
+                    j[i] = (( j[i] & 0x0f ) << 4 )| ( j[i] & 0xf0 ) >> 4;
+                }
+
+                i = Ipv6Addr::from(j);
+            }
+            Some(Addr::V6(i))
+        },
         Err(_) => None,
     }
 }
 
-pub fn parse_v4(address: &str, input_base: Option<i32>) -> Option<Addr> {
+pub fn parse_v4(address: &str, input_base: Option<i32>, reverse: bool) -> Option<Addr> {
     match input_base {
         Some(base) => {
             let parts: Vec<String>;
@@ -130,21 +148,32 @@ pub fn parse_v4(address: &str, input_base: Option<i32>) -> Option<Addr> {
                 }
             }
 
+            if reverse {
+                arr.reverse();
+            }
+
             Some(Addr::V4(Ipv4Addr::from(arr)))
         }
         None => match Ipv4Addr::from_str(address) {
-            Ok(i) => Some(Addr::V4(i)),
+            Ok(mut i) => {
+                if reverse {
+                    let mut j = i.octets();
+                    j.reverse();
+                    i = Ipv4Addr::from(j);
+                }
+                Some(Addr::V4(i))
+            },
             Err(_) => None,
         },
     }
 }
 
-pub fn parse_v4_v6(address: &str, input_base: Option<i32>) -> Option<Addr> {
+pub fn parse_v4_v6(address: &str, input_base: Option<i32>, reverse: bool) -> Option<Addr> {
     if address.find(':').is_some() {
-        return parse_v6(address);
+        return parse_v6(address, reverse);
     }
 
-    parse_v4(address, input_base)
+    parse_v4(address, input_base, reverse)
 }
 
 pub fn parse_address_mask(
@@ -152,6 +181,7 @@ pub fn parse_address_mask(
     default_v4_mask: Option<u32>,
     default_v6_mask: Option<u32>,
     input_base: Option<i32>,
+    reverse: bool,
 ) -> Option<Ip> {
     let parts: Vec<&str> = a.split('/').collect();
 
@@ -164,7 +194,7 @@ pub fn parse_address_mask(
         }
     };
 
-    let input_ip = parse_v4_v6(arg, input_base);
+    let input_ip = parse_v4_v6(arg, input_base, reverse);
 
     if let Some(input_ip) = input_ip {
         return Some(Ip {
@@ -186,7 +216,7 @@ pub fn parse_address_mask(
         arg = buffer.as_str();
     }
 
-    let input_ip = parse_v4_v6(arg, input_base);
+    let input_ip = parse_v4_v6(arg, input_base, reverse);
 
     if let Some(input_ip) = input_ip {
         return Some(Ip {
