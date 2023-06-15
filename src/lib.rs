@@ -30,6 +30,7 @@ pub enum FormatMode {
     Binary,
     SplitBinary,
     Integer,
+    SignedInteger,
     Hex,
     Backslash,
 }
@@ -52,6 +53,17 @@ impl Ip {
         match self.address {
             Addr::V4(x) => u32::from(x).to_string(),
             Addr::V6(x) => u128::from(x).to_string(),
+        }
+    }
+    fn signed_num_representation(&self) -> String {
+        match self.address {
+            Addr::V4(x) => { let n = u32::from(x) as i32;
+                n.to_string()
+            },
+            Addr::V6(x) => {
+                let n = u128::from(x) as i128;
+                n.to_string()
+            }
         }
     }
     fn bin_representation(&self) -> String {
@@ -850,6 +862,7 @@ pub fn formatted_address(ip: &Ip, mode: &FormatMode) -> String {
     match mode {
         FormatMode::Text => ip.to_string(),
         FormatMode::Integer => ip.num_representation(),
+        FormatMode::SignedInteger => ip.signed_num_representation(),
         FormatMode::Hex => ip.hex_quad_representation(),
         FormatMode::SplitBinary => ip.bin_split_representation(),
         FormatMode::Binary => ip.bin_representation(),
@@ -973,6 +986,10 @@ pub fn format_details(
                     'l' => {
                         format_processor = FormatProcessor::Percent;
                         mode = FormatMode::Integer;
+                    }
+                    'L' => {
+                        format_processor = FormatProcessor::Percent;
+                        mode = FormatMode::SignedInteger;
                     }
                     'x' => {
                         format_processor = FormatProcessor::Percent;

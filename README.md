@@ -50,6 +50,7 @@ Additional characters prefixing the above placeholder can control the representa
 | %B          | Binary address string |
 | %S          | Split binary at network boundary string |
 | %l          | Unsigned integer string |
+| %L          | Signed integer string |
 | %x          | Hex address string |
 
 Other format characters:

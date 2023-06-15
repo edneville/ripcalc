@@ -8,8 +8,9 @@ build:
 
 doc:
 	( cat ripcalc.md | sed -e 's/^footer: \(\S\+\) \S\+$$/footer: \1 $(VERSION)/g' -e 's/^date:.*/date: $(MDDATE)/g' ) > ripcalc.md.tmp && mv ripcalc.md.tmp ripcalc.md
-	cat ripcalc.md | sed -e '/^|/s/\\n/\\\\n/g' -e '/^|/s/\\t/\\\\t/g' > ripcalc.man.md
+	cat ripcalc.md | sed -e 's,\([^ -]\)--\([^-]\),\1\\--\2,g' -e '/^|/s/\\n/\\\\n/g' -e '/^|/s/\\t/\\\\t/g' > ripcalc.man.md
 	pandoc --standalone --ascii --to man ripcalc.man.md -o ripcalc.1
+	rm ripcalc.man.md
 
 test:
 	cargo test
