@@ -618,4 +618,29 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             })
         );
     }
+
+    #[test]
+    fn test_signed_ints() {
+        let net = Ip {
+            address: Addr::V4(Ipv4Addr::from_str("147.147.137.206").unwrap()),
+            cidr: 30,
+        };
+
+        let f = format_details(&net, "%La".to_string(), &None);
+        assert_eq!(f, Some("-1819047474".to_string()));
+        let f = format_details(&net, "%la".to_string(), &None);
+        assert_eq!(f, Some("2475919822".to_string()));
+
+        let net = Ip {
+            address: Addr::V6(Ipv6Addr::from_str("ffff::ffff").unwrap()),
+            cidr: 30,
+        };
+
+        let f = format_details(&net, "%La".to_string(), &None);
+        assert_eq!(f, Some("-5192296858534827628530496329154561".to_string()));
+        let f = format_details(&net, "%la".to_string(), &None);
+        assert_eq!(f, Some("340277174624079928635746076935439056895".to_string()));
+    }
+
+
 }

@@ -15,7 +15,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "ripcalc" "1" "14 June 2023" "ripcalc 0.1.9" "User Manual"
+.TH "ripcalc" "1" "15 June 2023" "ripcalc 0.1.9" "User Manual"
 .hy
 .SH NAME
 .PP
@@ -24,28 +24,27 @@ ripcalc - a tool for network addresses
 .PP
 \f[B]ripcalc 127.0.0.1\f[R]
 .PP
-\f[B]ripcalc -4/\[en]ipv4 127.0.0.1\f[R]
+\f[B]ripcalc -4/--ipv4 127.0.0.1\f[R]
 .PP
-\f[B]ripcalc -6/\[en]ipv6 ::1\f[R]
+\f[B]ripcalc -6/--ipv6 ::1\f[R]
 .PP
-\f[B]ripcalc -f/\[en]format \[lq]%a/%c\[rq] 127.0.0.1\f[R]
+\f[B]ripcalc -f/--format \[lq]%a/%c\[rq] 127.0.0.1\f[R]
 .PP
-\f[B]ripcalc -m/\[en]mask 28 127.0.0.1\f[R]
+\f[B]ripcalc -m/--mask 28 127.0.0.1\f[R]
 .PP
-\f[B]ripcalc -c/\[en]csv path/to/csv [-i/\[en]field network]
-127.0.0.1\f[R]
+\f[B]ripcalc -c/--csv path/to/csv [-i/--field network] 127.0.0.1\f[R]
 .PP
-\f[B]ripcalc -l/\[en]list 127.0.0.1\f[R]
+\f[B]ripcalc -l/--list 127.0.0.1\f[R]
 .PP
-\f[B]ripcalc -a/\[en]available\f[R]
+\f[B]ripcalc -a/--available\f[R]
 .PP
-\f[B]ripcalc -s/\[en]file [-] 127.0.0.1\f[R]
+\f[B]ripcalc -s/--file [-] 127.0.0.1\f[R]
 .PP
-\f[B]ripcalc -e/\[en]encapsulating -s\f[R]
+\f[B]ripcalc -e/--encapsulating -s\f[R]
 .PP
-\f[B]ripcalc -b/\[en]base [8, 10, 16 etc]\f[R]
+\f[B]ripcalc -b/--base [8, 10, 16 etc]\f[R]
 .PP
-\f[B]ripcalc -h/\[en]help\f[R]
+\f[B]ripcalc -h/--help\f[R]
 .SH DESCRIPTION
 .PP
 \f[B]ripcalc\f[R] can read IPv4/IPv6 addresses from command line or
@@ -157,6 +156,11 @@ T{
 %l
 T}@T{
 Unsigned integer string
+T}
+T{
+%L
+T}@T{
+Signed integer string
 T}
 T{
 %x

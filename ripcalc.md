@@ -4,7 +4,7 @@ section: 1
 header: User Manual
 footer: ripcalc 0.1.9
 author: Ed Neville (ed-ripcalc@s5h.net)
-date: 14 June 2023
+date: 15 June 2023
 ---
 
 # NAME
@@ -94,6 +94,7 @@ Additional characters prefixing the above placeholder can control the representa
 | %B          | Binary address string |
 | %S          | Split binary at network boundary string |
 | %l          | Unsigned integer string |
+| %L          | Signed integer string |
 | %x          | Hex address string |
 
 Other format characters:
