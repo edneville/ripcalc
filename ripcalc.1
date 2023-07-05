@@ -15,7 +15,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "ripcalc" "1" "15 June 2023" "ripcalc 0.1.9" "User Manual"
+.TH "ripcalc" "1" "05 July 2023" "ripcalc 0.1.9" "User Manual"
 .hy
 .SH NAME
 .PP
@@ -42,6 +42,8 @@ ripcalc - a tool for network addresses
 .PP
 \f[B]ripcalc -e/--encapsulating -s\f[R]
 .PP
+\f[B]ripcalc -s/--file [--inside/--outside] 127.0.0.1\f[R]
+.PP
 \f[B]ripcalc -b/--base [8, 10, 16 etc]\f[R]
 .PP
 \f[B]ripcalc -h/--help\f[R]
@@ -56,6 +58,20 @@ standard input and output different formats or associated networks from
 .PP
 \f[B]ripcalc\f[R] can convert input addresses that are in other number
 formats such as hex or octal.
+.PP
+Given a list of IP addresses, print only those that match the network.
+When \f[V]s\f[R] and \f[V]inside\f[R] are used, only addresses from
+\f[V]-s\f[R] are printed if they are that are inside of the input IP
+network from the command line.
+This can be reversed with \f[V]--outside\f[R],
+(e.g.\ \f[V]ripcalc -s - --inside 192.168.0.0/16\f[R]).
+.PP
+When \f[V]-a\f[R] is used, addresses read from \f[V]-s\f[R] will not be
+shown when listing \f[V]-l\f[R] a network, showing only available
+addresses.
+.PP
+When \f[V]--reverse\f[R] is used the \f[V]inputs\f[R], \f[V]sources\f[R]
+or both can be treated as back-to-front.
 .SH CSV
 .PP
 Network matches can be returned from a \f[B]CSV\f[R].
@@ -238,9 +254,5 @@ network matched:
 --format \[aq]%{name}\[aq]
 \f[R]
 .fi
-.PP
-When \f[V]-a\f[R] is used, addresses read from \f[V]-s\f[R] will not be
-shown when listing \f[V]-l\f[R] a network, showing only available
-addresses.
 .SH AUTHORS
 Ed Neville (ed-ripcalc\[at]s5h.net).

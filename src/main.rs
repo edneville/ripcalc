@@ -16,7 +16,7 @@ fn print_details(
     } else {
         let width = 25;
         match ip.address {
-            Addr::V4(_) => format!("{ip:>width$}/{cidr}\n{broadcast:>width$}\n{network:>width$}\n{subnet:>width$}\n{wildcard:>width$}\n{network_size:>width$}\n", ip="IP is: %a", cidr="%c", broadcast="Broadcast is: %b", network="Network is %n", subnet="Subnet is: %s", wildcard="Wildcard is: %w", network_size="Network size: %t", width=width),
+            Addr::V4(_) => format!("{ip:>width$}/{cidr}\n{broadcast:>width$}\n{network:>width$}\n{subnet:>width$}\n{wildcard:>width$}\n{network_size:>width$}\n", ip="IP is: %a", cidr="%c", broadcast="Broadcast is: %b", network="Network is: %n", subnet="Subnet is: %s", wildcard="Wildcard is: %w", network_size="Network size: %t", width=width),
             Addr::V6(_) => format!("{ip:>widthn$}/{cidr}\n{expanded:>width$}\n{network:>width$}\n{last_host_address:>width$}\n{subnet:>width$}\n{network_size:>widthn$}\n", ip="IP is: %a", cidr="%c", expanded="Expanded: %xa", network="Network is: %xn", last_host_address="Last host address: %xb", subnet="Subnet is: %xs", network_size="Network size: %t", width=width, widthn=width-1),
         }
     };
@@ -84,7 +84,7 @@ fn process_csv(
                     *rows = Some(HashMap::new());
                 }
 
-                let v6 = parse_v6(parts[0], match reverse { Reverse::Both | Reverse::Source => true, _ => false });
+                let v6 = parse_v6(parts[0], matches!(reverse, Reverse::Both | Reverse::Source));
 
                 if v6.is_none() {
                     eprintln!("{}: not in ip/cidr format", rec);
@@ -98,7 +98,11 @@ fn process_csv(
                     *rows = Some(HashMap::new());
                 }
 
-                let v4 = parse_v4(parts[0], input_base, match reverse { Reverse::Both | Reverse::Source => true, _ => false });
+                let v4 = parse_v4(
+                    parts[0],
+                    input_base,
+                    matches!(reverse, Reverse::Both | Reverse::Source),
+                );
 
                 if v4.is_none() {
                     eprintln!("{}: not in ip/cidr format", rec);
@@ -142,6 +146,7 @@ fn main() {
     let mut input_mask: Option<u32> = None;
     let mut input_base: Option<i32> = None;
     let mut reverse = Reverse::None;
+    let mut inside: Option<bool> = None;
     let args: Vec<String> = std::env::args().collect();
     opts.parsing_style(getopts::ParsingStyle::FloatingFrees);
     opts.optopt("4", "ipv4", "ipv4 address", "IPv4");
@@ -154,7 +159,14 @@ fn main() {
     opts.optflag("h", "help", "display help");
     opts.optopt("b", "base", "ipv4 base format, default to oct", "INTEGER");
     opts.optflag("a", "available", "display unused addresses");
-    opts.optopt("r", "reverse", "(none, inputs, sources or both) v4 octets, v6 hex", "");
+    opts.optflag("", "outside", "display only outside network");
+    opts.optflag("", "inside", "display only inside network");
+    opts.optopt(
+        "r",
+        "reverse",
+        "(none, inputs, sources or both) v4 octets, v6 hex",
+        "",
+    );
     opts.optopt("s", "file", "lookup addresses from, - for stdin", "PATH");
     opts.optflag(
         "e",
@@ -173,6 +185,18 @@ fn main() {
     if matches.opt_present("h") {
         println!("{}", opts.usage("ripcalc"));
         std::process::exit(0);
+    }
+
+    if matches.opt_present("inside") {
+        inside = Some(true);
+    }
+
+    if matches.opt_present("outside") {
+        if inside.is_some() {
+            println!("Cannot combine --inside and --outside");
+            std::process::exit(1);
+        }
+        inside = Some(false);
     }
 
     if matches.opt_present("r") {
@@ -222,23 +246,28 @@ fn main() {
     }
 
     if let Some(v) = matches.opt_str("4") {
-        input_ip = parse_v4(&v, input_base, match reverse { Reverse::Both | Reverse::Input => true, _ => false } );
+        input_ip = parse_v4(
+            &v,
+            input_base,
+            matches!(reverse, Reverse::Both | Reverse::Input),
+        );
     }
 
     if let Some(v) = matches.opt_str("6") {
-        input_ip = parse_v6(&v, 
-match reverse { Reverse::Both | Reverse::Input => true, _ => false } 
-            );
+        input_ip = parse_v6(&v, matches!(reverse, Reverse::Both | Reverse::Input));
     }
 
     let free_arg = matches.free.clone();
     if !free_arg.is_empty() {
         let arg = free_arg[0].to_string();
 
-        let ip = parse_address_mask(&arg, None, None, input_base, 
-match reverse { Reverse::Both | Reverse::Input => true, _ => false }
-
-            );
+        let ip = parse_address_mask(
+            &arg,
+            None,
+            None,
+            input_base,
+            matches!(reverse, Reverse::Both | Reverse::Input),
+        );
 
         if let Some(ip) = ip {
             input_ip = Some(ip.address);
@@ -274,7 +303,7 @@ match reverse { Reverse::Both | Reverse::Input => true, _ => false }
                     Some(32),
                     Some(128),
                     input_base,
-match reverse { Reverse::Both | Reverse::Input => true, _ => false }
+                    matches!(reverse, Reverse::Both | Reverse::Input),
                 ) {
                     Some(x) => x,
                     None => {
@@ -311,7 +340,7 @@ match reverse { Reverse::Both | Reverse::Input => true, _ => false }
                     Some(32),
                     Some(128),
                     input_base,
-match reverse { Reverse::Both | Reverse::Input => true, _ => false }
+                    matches!(reverse, Reverse::Both | Reverse::Input),
                 ) {
                     Some(x) => x,
                     None => {
@@ -336,11 +365,44 @@ match reverse { Reverse::Both | Reverse::Input => true, _ => false }
         }
 
         for line in reader.lines() {
-            let ip = parse_address_mask(&line.unwrap(), None, None, input_base, match reverse { Reverse::Both | Reverse::Source => true, _ => false });
+            let ip = parse_address_mask(
+                &line.unwrap(),
+                None,
+                None,
+                input_base,
+                matches!(reverse, Reverse::Both | Reverse::Source),
+            );
             if ip.is_none() {
                 continue;
             }
-            print_details(&ip.unwrap(), &matches, &rows, None);
+
+            match inside {
+                Some(true) => {
+                    if within(
+                        &Ip {
+                            address: input_ip.clone().expect("nopes"),
+                            cidr: input_mask.expect("not cidr"),
+                        },
+                        &ip.as_ref().unwrap().address,
+                    ) {
+                        print_details(&ip.unwrap(), &matches, &rows, None);
+                    }
+                }
+                Some(false) => {
+                    if !within(
+                        &Ip {
+                            address: input_ip.clone().expect("nopes"),
+                            cidr: input_mask.expect("not cidr"),
+                        },
+                        &ip.as_ref().unwrap().address,
+                    ) {
+                        print_details(&ip.unwrap(), &matches, &rows, None);
+                    }
+                }
+                None => {
+                    print_details(&ip.unwrap(), &matches, &rows, None);
+                }
+            }
         }
         std::process::exit(0);
     }

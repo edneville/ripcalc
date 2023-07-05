@@ -57,9 +57,10 @@ impl Ip {
     }
     fn signed_num_representation(&self) -> String {
         match self.address {
-            Addr::V4(x) => { let n = u32::from(x) as i32;
+            Addr::V4(x) => {
+                let n = u32::from(x) as i32;
                 n.to_string()
-            },
+            }
             Addr::V6(x) => {
                 let n = u128::from(x) as i128;
                 n.to_string()
@@ -118,14 +119,14 @@ pub fn parse_v6(address: &str, reverse: bool) -> Option<Addr> {
             if reverse {
                 let mut j = i.octets();
                 j.reverse();
-                for i in 0..j.len() {
-                    j[i] = (( j[i] & 0x0f ) << 4 )| ( j[i] & 0xf0 ) >> 4;
+                for i in &mut j {
+                    *i = ((*i & 0x0f) << 4) | (*i & 0xf0) >> 4;
                 }
 
                 i = Ipv6Addr::from(j);
             }
             Some(Addr::V6(i))
-        },
+        }
         Err(_) => None,
     }
 }
@@ -174,7 +175,7 @@ pub fn parse_v4(address: &str, input_base: Option<i32>, reverse: bool) -> Option
                     i = Ipv4Addr::from(j);
                 }
                 Some(Addr::V4(i))
-            },
+            }
             Err(_) => None,
         },
     }
@@ -464,6 +465,50 @@ pub fn subnet(ip: &Ip) -> Ip {
                 cidr: ip.cidr,
             }
         }
+    }
+}
+
+pub fn within(net: &Ip, addr: &Addr) -> bool {
+    match (&net.address, addr) {
+        (Addr::V4(x), Addr::V4(y)) => {
+            let addr_num = u32::from(*y);
+            let search_ip = x;
+            let mn = network(&Ip {
+                address: Addr::V4(*search_ip),
+                cidr: net.cidr,
+            });
+
+            if let Addr::V4(x) = mn.address {
+                let mb = broadcast(&Ip {
+                    address: Addr::V4(*search_ip),
+                    cidr: net.cidr,
+                });
+                if let Addr::V4(y) = mb.address {
+                    return addr_num >= u32::from(x) && addr_num <= u32::from(y);
+                }
+            }
+            false
+        }
+        (Addr::V6(x), Addr::V6(y)) => {
+            let addr_num = u128::from(*y);
+            let search_ip = x;
+            let mn = network(&Ip {
+                address: Addr::V6(*search_ip),
+                cidr: net.cidr,
+            });
+
+            if let Addr::V6(x) = mn.address {
+                let mb = broadcast(&Ip {
+                    address: Addr::V6(*search_ip),
+                    cidr: net.cidr,
+                });
+                if let Addr::V6(y) = mb.address {
+                    return addr_num >= u128::from(x) && addr_num <= u128::from(y);
+                }
+            }
+            false
+        }
+        (_, _) => false,
     }
 }
 
