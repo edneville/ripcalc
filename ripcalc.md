@@ -4,7 +4,7 @@ section: 1
 header: User Manual
 footer: ripcalc 0.1.9
 author: Ed Neville (ed-ripcalc@s5h.net)
-date: 15 June 2023
+date: 05 July 2023
 ---
 
 # NAME
@@ -33,6 +33,8 @@ ripcalc - a tool for network addresses
 
 **ripcalc -e/--encapsulating -s**
 
+**ripcalc -s/--file [--inside/--outside] 127.0.0.1**
+
 **ripcalc -b/--base [8, 10, 16 etc]**
 
 **ripcalc -h/--help**
@@ -44,6 +46,12 @@ ripcalc - a tool for network addresses
 **ripcalc** can format network addresses, find matches in **CSV** or process a list.
 
 **ripcalc** can convert input addresses that are in other number formats such as hex or octal.
+
+Given a list of IP addresses, print only those that match the network. When `s` and `inside` are used, only addresses from `-s` are printed if they are that are inside of the input IP network from the command line. This can be reversed with `--outside`, (e.g. `ripcalc -s - --inside 192.168.0.0/16`).
+
+When `-a` is used, addresses read from `-s` will not be shown when listing `-l` a network, showing only available addresses.
+
+When `--reverse` is used the `inputs`, `sources` or both can be treated as back-to-front.
 
 # CSV
 
@@ -119,5 +127,4 @@ When using **CSV** fields can be matched by **name** when network matched:
 --format '%{name}'
 ```
 
-When `-a` is used, addresses read from `-s` will not be shown when listing `-l` a network, showing only available addresses.
 

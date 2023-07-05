@@ -107,9 +107,19 @@ When `-a` is used, addresses read from `-s` will not be shown when listing `-l` 
 
 When `-e` is used with `-s` the smallest encapsulating network will be returned.
 
-Options:
+Given a list of IP addresses, print only those that match the network. When `s` and `inside` are used, only addresses from `-s` are printed if they are that are inside of the IP source network on the command line. This can be inverted with `--outside:
 
 ```
+$ echo -e '192.168.0.0\n192.167.255.255\n' | ripcalc -s - --inside 192.168.0.0/16 --format short
+192.168.0.0
+$ echo -e '192.168.0.0\n192.167.255.255\n' | ripcalc -s - --outside 192.168.0.0/16 --format short
+192.167.255.255
+```
+
+IP addresses can be treated as reversed, if `/proc/net/route` holds addresses in reversed format, `--reverse inputs` and `--base 16` could be used together to convert to dotted-quad.
+
+```
+Options:
     -4, --ipv4 IPv4     ipv4 address
     -6, --ipv6 IPv6     ipv6 address
     -f, --format STRING format output
@@ -123,6 +133,9 @@ Options:
     -h, --help          display help
     -b, --base INTEGER  ipv4 base format, default to oct
     -a, --available     display unused addresses
+        --outside       display only outside network
+        --inside        display only inside network
+    -r, --reverse       (none, inputs, sources or both) v4 octets, v6 hex
     -s, --file PATH     lookup addresses from, - for stdin
     -e, --encapsulating 
                         display encapsulating network from lookup list
