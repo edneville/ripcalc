@@ -139,6 +139,132 @@ fn process_csv(
     }
 }
 
+fn process_input_file(
+    path: &str,
+    matches: &getopts::Matches,
+    input_base: Option<i32>,
+    reverse: &Reverse,
+    ip_args: Vec<Ip>,
+    rows: &Option<HashMap<Ip, NetRow>>,
+    inside: Option<bool>,
+) {
+    let reader: Box<dyn BufRead> = if path == "-" {
+        Box::new(BufReader::new(std::io::stdin()))
+    } else {
+        let path = std::path::Path::new(&path);
+        if !path.exists() {
+            println!(
+                "Could not open {} as it does not exist",
+                path.to_string_lossy()
+            );
+            std::process::exit(1);
+        }
+        Box::new(BufReader::new(File::open(path).unwrap()))
+    };
+
+    let mut used: HashMap<Addr, bool> = HashMap::new();
+    if matches.opt_present("a") {
+        for line in reader.lines() {
+            let ip = match parse_address_mask(
+                line.as_ref().unwrap(),
+                Some(32),
+                Some(128),
+                input_base,
+                matches!(reverse, Reverse::Both | Reverse::Input),
+            ) {
+                Some(x) => x,
+                None => {
+                    eprintln!("Could not parse {}", &line.as_ref().unwrap());
+                    continue;
+                }
+            };
+            for ip in addresses(&ip, None) {
+                used.insert(ip.address, true);
+            }
+        }
+        for arg in ip_args {
+            print_details(&arg, matches, rows, Some(&used));
+        }
+        std::process::exit(0);
+    }
+
+    if matches.opt_present("e") {
+        let mut used: HashMap<Ip, bool> = HashMap::new();
+        for line in reader.lines() {
+            let ip = match parse_address_mask(
+                line.as_ref().unwrap(),
+                Some(32),
+                Some(128),
+                input_base,
+                matches!(reverse, Reverse::Both | Reverse::Input),
+            ) {
+                Some(x) => x,
+                None => {
+                    eprintln!("Could not parse {}", &line.as_ref().unwrap());
+                    continue;
+                }
+            };
+            used.insert(ip, true);
+        }
+
+        match smallest_group_network(&used) {
+            Some(x) => {
+                print_details(&x, matches, rows, None);
+            }
+            None => {
+                eprintln!("Could not find an encapsulating network, sorry");
+                std::process::exit(1);
+            }
+        }
+
+        std::process::exit(0);
+    }
+
+    for line in reader.lines() {
+        let ip = parse_address_mask(
+            &line.unwrap(),
+            None,
+            None,
+            input_base,
+            matches!(reverse, Reverse::Both | Reverse::Source),
+        );
+        if ip.is_none() {
+            continue;
+        }
+
+        match inside {
+            Some(true) => {
+                let mut found = true;
+                for arg in &ip_args {
+                    if !within(arg, &ip.as_ref().unwrap().address) {
+                        found = false;
+                    }
+                }
+
+                if found {
+                    print_details(&ip.unwrap(), matches, rows, None);
+                }
+            }
+            Some(false) => {
+                let mut found = false;
+
+                for arg in &ip_args {
+                    if within(arg, &ip.as_ref().unwrap().address) {
+                        found = true;
+                    }
+                }
+
+                if !found {
+                    print_details(&ip.unwrap(), matches, rows, None);
+                }
+            }
+            None => {
+                print_details(&ip.unwrap(), matches, rows, None);
+            }
+        }
+    }
+}
+
 fn main() {
     let mut opts = Options::new();
     let mut rows: Option<HashMap<Ip, NetRow>> = None;
@@ -148,6 +274,7 @@ fn main() {
     let mut reverse = Reverse::None;
     let mut inside: Option<bool> = None;
     let args: Vec<String> = std::env::args().collect();
+    let mut ip_args: Vec<Ip> = vec![];
     opts.parsing_style(getopts::ParsingStyle::FloatingFrees);
     opts.optopt("4", "ipv4", "ipv4 address", "IPv4");
     opts.optopt("6", "ipv6", "ipv6 address", "IPv6");
@@ -245,6 +372,10 @@ fn main() {
         process_csv(reader, field_name, &mut rows, input_base, &reverse);
     }
 
+    if let Some(v) = matches.opt_str("m") {
+        input_mask = parse_mask(&v);
+    }
+
     if let Some(v) = matches.opt_str("4") {
         input_ip = parse_v4(
             &v,
@@ -257,186 +388,71 @@ fn main() {
         input_ip = parse_v6(&v, matches!(reverse, Reverse::Both | Reverse::Input));
     }
 
-    let free_arg = matches.free.clone();
-    if !free_arg.is_empty() {
-        let arg = free_arg[0].to_string();
+    if input_mask.is_none() {
+        input_mask = Some(24);
 
-        let ip = parse_address_mask(
-            &arg,
-            None,
-            None,
-            input_base,
-            matches!(reverse, Reverse::Both | Reverse::Input),
-        );
-
-        if let Some(ip) = ip {
-            input_ip = Some(ip.address);
-            input_mask = Some(ip.cidr);
+        if let Some(Addr::V6(_)) = input_ip {
+            input_mask = Some(64);
         }
     }
 
-    if let Some(v) = matches.opt_str("m") {
-        input_mask = parse_mask(&v);
+    if let Some(input_ip) = input_ip {
+        ip_args.push(Ip {
+            address: input_ip,
+            cidr: input_mask.unwrap(),
+        });
+    }
+
+    let free_arg = matches.free.clone();
+    if !free_arg.is_empty() {
+        for arg in &free_arg {
+            let ip = parse_address_mask(
+                arg,
+                input_mask,
+                input_mask,
+                input_base,
+                matches!(reverse, Reverse::Both | Reverse::Input),
+            );
+
+            if let Some(ip) = ip {
+                ip_args.push(ip);
+            }
+        }
     }
 
     if matches.opt_str("s").is_some() {
         let path = matches.opt_str("s").unwrap();
-        let reader: Box<dyn BufRead> = if path == "-" {
-            Box::new(BufReader::new(std::io::stdin()))
-        } else {
-            let path = std::path::Path::new(&path);
-            if !path.exists() {
-                println!(
-                    "Could not open {} as it does not exist",
-                    path.to_string_lossy()
-                );
-                std::process::exit(1);
-            }
-            Box::new(BufReader::new(File::open(path).unwrap()))
-        };
+        process_input_file(
+            &path, &matches, input_base, &reverse, ip_args, &rows, inside,
+        );
 
-        let mut used: HashMap<Addr, bool> = HashMap::new();
-        if matches.opt_present("a") {
-            for line in reader.lines() {
-                let ip = match parse_address_mask(
-                    line.as_ref().unwrap(),
-                    Some(32),
-                    Some(128),
-                    input_base,
-                    matches!(reverse, Reverse::Both | Reverse::Input),
-                ) {
-                    Some(x) => x,
-                    None => {
-                        eprintln!("Could not parse {}", &line.as_ref().unwrap());
-                        continue;
-                    }
-                };
-                for ip in addresses(&ip, None) {
-                    used.insert(ip.address, true);
-                }
-            }
-            if input_ip.is_none() || input_mask.is_none() {
-                eprintln!("No network specified");
-                std::process::exit(1);
-            }
-
-            print_details(
-                &Ip {
-                    address: input_ip.expect("nopes"),
-                    cidr: input_mask.expect("not cidr"),
-                },
-                &matches,
-                &rows,
-                Some(&used),
-            );
-            std::process::exit(0);
-        }
-
-        if matches.opt_present("e") {
-            let mut used: HashMap<Ip, bool> = HashMap::new();
-            for line in reader.lines() {
-                let ip = match parse_address_mask(
-                    line.as_ref().unwrap(),
-                    Some(32),
-                    Some(128),
-                    input_base,
-                    matches!(reverse, Reverse::Both | Reverse::Input),
-                ) {
-                    Some(x) => x,
-                    None => {
-                        eprintln!("Could not parse {}", &line.as_ref().unwrap());
-                        continue;
-                    }
-                };
-                used.insert(ip, true);
-            }
-
-            match smallest_group_network(&used) {
-                Some(x) => {
-                    print_details(&x, &matches, &rows, None);
-                }
-                None => {
-                    eprintln!("Could not find an encapsulating network, sorry");
-                    std::process::exit(1);
-                }
-            }
-
-            std::process::exit(0);
-        }
-
-        for line in reader.lines() {
-            let ip = parse_address_mask(
-                &line.unwrap(),
-                None,
-                None,
-                input_base,
-                matches!(reverse, Reverse::Both | Reverse::Source),
-            );
-            if ip.is_none() {
-                continue;
-            }
-
-            match inside {
-                Some(true) => {
-                    if within(
-                        &Ip {
-                            address: input_ip.clone().expect("nopes"),
-                            cidr: input_mask.expect("not cidr"),
-                        },
-                        &ip.as_ref().unwrap().address,
-                    ) {
-                        print_details(&ip.unwrap(), &matches, &rows, None);
-                    }
-                }
-                Some(false) => {
-                    if !within(
-                        &Ip {
-                            address: input_ip.clone().expect("nopes"),
-                            cidr: input_mask.expect("not cidr"),
-                        },
-                        &ip.as_ref().unwrap().address,
-                    ) {
-                        print_details(&ip.unwrap(), &matches, &rows, None);
-                    }
-                }
-                None => {
-                    print_details(&ip.unwrap(), &matches, &rows, None);
-                }
-            }
-        }
         std::process::exit(0);
     }
 
-    if input_ip.is_none() {
+    if ip_args.is_empty() {
         println!("{}", opts.usage("ripcalc"));
         eprintln!("Need to provide v4 or v6 address.");
         std::process::exit(1);
     }
 
-    if input_mask.is_none() {
-        input_mask = Some(24);
-    }
-
-    let num = Ip {
-        address: input_ip.expect("nopes"),
-        cidr: input_mask.expect("not cidr"),
-    };
-
-    match num.address {
-        Addr::V4(_) => {
-            if num.cidr > 32 {
-                eprintln!("V4 mask cannot be greater than 32");
-                std::process::exit(1);
+    for arg in ip_args {
+        match arg.address {
+            Addr::V4(_) => {
+                if arg.cidr > 32 {
+                    eprintln!("V4 mask cannot be greater than 32");
+                    std::process::exit(1);
+                }
+            }
+            Addr::V6(_) => {
+                if arg.cidr > 128 {
+                    eprintln!("V6 mask cannot be greater than 128");
+                    std::process::exit(1);
+                }
             }
         }
-        Addr::V6(_) => {
-            if num.cidr > 128 {
-                eprintln!("V6 mask cannot be greater than 128");
-                std::process::exit(1);
-            }
-        }
+
+        print_details(&arg, &matches, &rows, None);
     }
 
-    print_details(&num, &matches, &rows, None);
     std::process::exit(0);
 }
