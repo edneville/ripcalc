@@ -3,6 +3,7 @@ use ripcalc::*;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
+use std::os::unix::io::AsRawFd;
 use std::str::FromStr;
 
 fn print_details(
@@ -29,7 +30,7 @@ fn print_details(
         formatted = "%a\n".to_string();
     }
 
-    if matches.opt_present("l") {
+    if matches.opt_present("list") {
         for ip_copy in addresses(ip, used) {
             if let Some(m) = format_details(&ip_copy, formatted.to_string(), rows) {
                 print!("{}", m);
@@ -144,7 +145,7 @@ fn process_input_file(
     matches: &getopts::Matches,
     input_base: Option<i32>,
     reverse: &Reverse,
-    ip_args: Vec<Ip>,
+    ip_args: &Vec<Ip>,
     rows: &Option<HashMap<Ip, NetRow>>,
     inside: Option<bool>,
 ) {
@@ -163,7 +164,7 @@ fn process_input_file(
     };
 
     let mut used: HashMap<Addr, bool> = HashMap::new();
-    if matches.opt_present("a") {
+    if matches.opt_present("available") {
         for line in reader.lines() {
             let ip = match parse_address_mask(
                 line.as_ref().unwrap(),
@@ -235,7 +236,7 @@ fn process_input_file(
         match inside {
             Some(true) => {
                 let mut found = true;
-                for arg in &ip_args {
+                for arg in ip_args {
                     if !within(arg, &ip.as_ref().unwrap().address) {
                         found = false;
                     }
@@ -248,7 +249,7 @@ fn process_input_file(
             Some(false) => {
                 let mut found = false;
 
-                for arg in &ip_args {
+                for arg in ip_args {
                     if within(arg, &ip.as_ref().unwrap().address) {
                         found = true;
                     }
@@ -420,22 +421,23 @@ fn main() {
         }
     }
 
-    if matches.opt_str("s").is_some() {
-        let path = matches.opt_str("s").unwrap();
+    let stdin_ready = fd_ready(std::io::stdin().as_raw_fd());
+    if stdin_ready || matches.opt_str("s").is_some() {
+        let path = if stdin_ready {
+            "-".to_string()
+        } else {
+            matches.opt_str("s").unwrap()
+        };
         process_input_file(
-            &path, &matches, input_base, &reverse, ip_args, &rows, inside,
+            &path, &matches, input_base, &reverse, &ip_args, &rows, inside,
         );
 
-        std::process::exit(0);
+        if ip_args.clone().is_empty() || inside.is_some() {
+            std::process::exit(0);
+        }
     }
 
-    if ip_args.is_empty() {
-        println!("{}", opts.usage("ripcalc"));
-        eprintln!("Need to provide v4 or v6 address.");
-        std::process::exit(1);
-    }
-
-    for arg in ip_args {
+    for arg in &ip_args {
         match arg.address {
             Addr::V4(_) => {
                 if arg.cidr > 32 {
@@ -452,6 +454,12 @@ fn main() {
         }
 
         print_details(&arg, &matches, &rows, None);
+    }
+
+    if ip_args.is_empty() {
+        println!("{}", opts.usage("ripcalc"));
+        eprintln!("Need to provide v4 or v6 address.");
+        std::process::exit(1);
     }
 
     std::process::exit(0);
