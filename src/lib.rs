@@ -1133,13 +1133,18 @@ pub fn format_details(
 }
 
 pub fn fd_ready(fd: RawFd) -> bool {
-    let opfds: Vec<PollFd> = vec![PollFd::new(fd, PollFlags::POLLIN)];
+    let opfds: Vec<PollFd> = vec![PollFd::new(fd, PollFlags::POLLIN | PollFlags::POLLNVAL)];
 
     let mut pfds = opfds.clone();
     let ts = TimeSpec::from(Duration::new(0, 0));
     match ppoll(&mut pfds, Some(ts), None) {
         Ok(x) => {
             if x == 0 {
+                if let Some(ev) = pfds[0].revents() {
+                    if ev| PollFlags::POLLNVAL == PollFlags::POLLNVAL {
+                        return true;
+                    }
+                }
                 return false;
             } else {
                 return true;

@@ -1,3 +1,4 @@
+# vim:set noet:
 VERSION := $(shell grep version Cargo.toml | sed -e 's/.* = "//g;s/"$$//g' )
 MDDATE := $(shell find ripcalc.md -printf "%Td %TB %TY\n" )
 
@@ -18,10 +19,13 @@ test:
 bintest:
 	printf "127.0.0.1\n" | ./target/release/ripcalc --available --list --format short -s - 127.0.0.1/30 | wc -l | grep -x 3
 	printf "127.0.0.1\n" | ./target/release/ripcalc --list --format short -s - 127.0.0.1/30 | wc -l | grep -x 260
-	printf '10.0.0.0/30\n' |./target/release/ripcalc --list --format short -s - 127.0.0.1/30 | wc -l | grep -x 8
-	printf '10.0.0.0/30\n127.0.0.1/30' |./target/release/ripcalc --list --format short -s - --outside 10.0.0.0/24 | wc -l | grep -x 4
-	printf '10.0.0.0/28\n127.0.0.1/30' |./target/release/ripcalc --list --format short -s - --inside 10.0.0.0/24 | wc -l | grep -x 16
-	printf '10.0.0.0/28\n127.0.0.1/30' |./target/release/ripcalc --list --format short --inside 10.0.0.0/24 | wc -l | grep -x 16
+	printf '10.0.0.0/30\n' | ./target/release/ripcalc --list --format short -s - 127.0.0.1/30 | wc -l | grep -x 8
+	printf '10.0.0.0/30\n127.0.0.1/30' | ./target/release/ripcalc --list --format short -s - --outside 10.0.0.0/24 | wc -l | grep -x 4
+	printf '10.0.0.0/28\n127.0.0.1/30' | ./target/release/ripcalc --list --format short -s - --inside 10.0.0.0/24 | wc -l | grep -x 16
+	printf '10.0.0.0/28\n127.0.0.1/30' | ./target/release/ripcalc --list --format short --inside 10.0.0.0/24 | wc -l | grep -x 16
+	printf '85.119.82.90\n' | ./target/release/ripcalc -s - --inside 85.119.82.99/16 192.73.234.6/24 45.77.251.199/24 --format short | grep 85.119.82.90 | wc -l | grep -x 1
+	printf '10.0.0.0/28\n127.0.0.1/30' | ./target/release/ripcalc --list --format short -s - --inside 10.0.0.0/24 192.168.1.1/16 | wc -l | grep -x 16
+	printf '127.0.0.1\n' | ./target/release/ripcalc --format short -s - --inside 10.0.0.0/24 192.168.1.1/16 127.0.0.1/28 | wc -l | grep -x 1
 
 install: test build bintest
 	command -v please && please install -m 0755 -s target/release/ripcalc /usr/local/bin || sudo install -m 0755 -s target/release/ripcalc /usr/local/bin 

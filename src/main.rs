@@ -235,10 +235,11 @@ fn process_input_file(
 
         match inside {
             Some(true) => {
-                let mut found = true;
+                let mut found = false;
                 for arg in ip_args {
-                    if !within(arg, &ip.as_ref().unwrap().address) {
-                        found = false;
+                    if within(arg, &ip.as_ref().unwrap().address) {
+                        found = true;
+                        break;
                     }
                 }
 
@@ -252,6 +253,7 @@ fn process_input_file(
                 for arg in ip_args {
                     if within(arg, &ip.as_ref().unwrap().address) {
                         found = true;
+                        break;
                     }
                 }
 

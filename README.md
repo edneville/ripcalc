@@ -25,6 +25,13 @@ Wildcard is: 0.255.255.255
 Network size: 16777216
 ```
 
+The same output is visible with stdin:
+
+```
+echo '127.0.0.1/8' | ripcalc
+...
+```
+
 The output format can be customised:
 
 ```
@@ -32,6 +39,22 @@ $ ripcalc 2001:ba8:1f1:f1cb::4/64 --format "select * from IP6 where (ip >= %ln a
 select * from IP6 where (ip >= 42540724579414763292693624807812497408 and ip <= 42540724579414763311140368881522049023) and active = 1;
 update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 and ip <= 42540724579414763311140368881522049023) and active = 1;
 ```
+
+# pipes
+
+Sometimes if you want to quickly see if an address is part of a group of networks you can set something like this in your `.bash_aliases`:
+
+```
+alias is_our_networks='ripcalc --inside 192.168.0.0/16 --format short'
+```
+
+With this alias it would then be possible to do something like this to quickly see if the domain uses your infrastructure:
+
+```
+dig +short domain.com | is_our_networks
+```
+
+# formatting
 
 *%* denotes a format control character, followed by one of the following:
 
