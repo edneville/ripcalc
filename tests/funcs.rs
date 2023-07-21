@@ -249,7 +249,7 @@ mod test {
             cidr: 30,
         };
 
-        let mut i = addresses(&net, None);
+        let mut i = addresses(&net, None, None);
 
         assert_eq!(
             i.next().as_ref().unwrap().address,
@@ -417,7 +417,7 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
         hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.0.1").unwrap()), true);
         hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.0.2").unwrap()), true);
 
-        let mut i = addresses(&net, Some(&hm));
+        let mut i = addresses(&net, Some(&hm), None);
 
         assert_eq!(
             i.next().as_ref().unwrap().address,
@@ -431,7 +431,7 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
         hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.1.1").unwrap()), true);
         hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.1.2").unwrap()), true);
 
-        let mut i = addresses(&net, Some(&hm));
+        let mut i = addresses(&net, Some(&hm), None);
 
         assert_eq!(
             i.next().as_ref().unwrap().address,
@@ -687,5 +687,75 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             within(&net, &Addr::V6(Ipv6Addr::from_str("::f:f:f:f:f").unwrap())),
             true
         );
+    }
+
+    #[test]
+    fn test_network_divide_iter() {
+        let net = Ip {
+            address: Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()),
+            cidr: 24,
+        };
+
+        let mut i = addresses(&net, None, Some(25));
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("192.168.0.128").unwrap())
+        );
+        assert_eq!(
+            i.next(),
+            None,
+        );
+
+        let mut i = addresses(&net, None, Some(26));
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("192.168.0.64").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("192.168.0.128").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("192.168.0.192").unwrap())
+        );
+        assert_eq!(
+            i.next(),
+            None,
+        );
+    }
+
+    #[test]
+    fn test_network_divide_iter_v6() {
+        let net = Ip {
+            address: Addr::V6(Ipv6Addr::from_str("::1").unwrap()),
+            cidr: 48,
+        };
+
+        let mut i = addresses(&net, None, Some(64));
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V6(Ipv6Addr::from_str("::").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V6(Ipv6Addr::from_str("0:0:0:1::").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V6(Ipv6Addr::from_str("0:0:0:2::").unwrap())
+        );
+
+        let i = addresses(&net, None, Some(64));
+        let v: Vec<Ip> = i.collect();
+        assert_eq!( v.len(), 65536);
     }
 }
