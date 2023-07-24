@@ -30,8 +30,25 @@ fn print_details(
         formatted = "%a\n".to_string();
     }
 
+    if matches.opt_present("divide") {
+        let divide: u32 = match matches.opt_str("divide").unwrap().trim().parse() {
+            Ok(x) => x,
+            Err(x) => {
+                eprintln!("Cannot convert {} to number", x);
+                std::process::exit(1);
+            }
+        };
+
+        for ip_copy in addresses(ip, used, Some(divide)) {
+            if let Some(m) = format_details(&ip_copy, formatted.to_string(), rows) {
+                print!("{}", m);
+            }
+        }
+        return;
+    }
+
     if matches.opt_present("list") {
-        for ip_copy in addresses(ip, used) {
+        for ip_copy in addresses(ip, used, None) {
             if let Some(m) = format_details(&ip_copy, formatted.to_string(), rows) {
                 print!("{}", m);
             }
@@ -42,6 +59,18 @@ fn print_details(
     if let Some(m) = format_details(ip, formatted, rows) {
         print!("{}", m);
     }
+}
+
+fn banner() -> String {
+    format!(
+        "{} version {}",
+        env!("CARGO_PKG_NAME"),
+        env!("CARGO_PKG_VERSION")
+    )
+}
+
+fn print_version() {
+    println!("{}", &banner());
 }
 
 fn process_csv(
@@ -145,7 +174,7 @@ fn process_input_file(
     matches: &getopts::Matches,
     input_base: Option<i32>,
     reverse: &Reverse,
-    ip_args: &Vec<Ip>,
+    ip_args: &[Ip],
     rows: &Option<HashMap<Ip, NetRow>>,
     inside: Option<bool>,
 ) {
@@ -179,12 +208,12 @@ fn process_input_file(
                     continue;
                 }
             };
-            for ip in addresses(&ip, None) {
+            for ip in addresses(&ip, None, None) {
                 used.insert(ip.address, true);
             }
         }
         for arg in ip_args {
-            print_details(&arg, matches, rows, Some(&used));
+            print_details(arg, matches, rows, Some(&used));
         }
         std::process::exit(0);
     }
@@ -268,6 +297,18 @@ fn process_input_file(
     }
 }
 
+fn wait_stdin(matches: &getopts::Matches) -> bool {
+    if matches.opt_present("available") {
+        return true;
+    }
+    if matches.opt_present("list")
+        && (matches.opt_present("inside") || matches.opt_present("outside"))
+    {
+        return true;
+    }
+    false
+}
+
 fn main() {
     let mut opts = Options::new();
     let mut rows: Option<HashMap<Ip, NetRow>> = None;
@@ -285,12 +326,18 @@ fn main() {
     opts.optopt("m", "mask", "cidr mask", "CIDR");
     opts.optopt("c", "csv", "csv reference file", "PATH");
     opts.optopt("i", "field", "csv field", "FIELD");
-    opts.optflag("l", "list", "list all addresses in network");
+    opts.optflag(
+        "l",
+        "list",
+        "list all addresses in network, combine with -m to list networks",
+    );
     opts.optflag("h", "help", "display help");
     opts.optopt("b", "base", "ipv4 base format, default to oct", "INTEGER");
     opts.optflag("a", "available", "display unused addresses");
     opts.optflag("", "outside", "display only outside network");
     opts.optflag("", "inside", "display only inside network");
+    opts.optopt("d", "divide", "divide network into chunks", "CIDR");
+
     opts.optopt(
         "r",
         "reverse",
@@ -303,6 +350,7 @@ fn main() {
         "encapsulating",
         "display encapsulating network from lookup list",
     );
+    opts.optflag("v", "version", "print version");
 
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
@@ -313,7 +361,13 @@ fn main() {
     };
 
     if matches.opt_present("h") {
-        println!("{}", opts.usage("ripcalc"));
+        println!("{}", opts.usage(&banner()));
+
+        std::process::exit(0);
+    }
+
+    if matches.opt_present("version") {
+        print_version();
         std::process::exit(0);
     }
 
@@ -329,8 +383,8 @@ fn main() {
         inside = Some(false);
     }
 
-    if matches.opt_present("r") {
-        match matches.opt_str("r").unwrap().as_str() {
+    if matches.opt_present("reverse") {
+        match matches.opt_str("reverse").unwrap().as_str() {
             "inputs" => {
                 reverse = Reverse::Input;
             }
@@ -347,7 +401,7 @@ fn main() {
         }
     }
 
-    if matches.opt_present("b") {
+    if matches.opt_present("base") {
         input_base = match i32::from_str(&matches.opt_str("b").unwrap()) {
             Ok(x) => Some(x),
             Err(x) => {
@@ -357,8 +411,8 @@ fn main() {
         };
     }
 
-    if matches.opt_present("c") {
-        let path = matches.opt_str("c").unwrap();
+    if matches.opt_present("csv") {
+        let path = matches.opt_str("csv").unwrap();
         let reader = match csv::Reader::from_path(&path) {
             Ok(r) => r,
             Err(x) => {
@@ -366,8 +420,8 @@ fn main() {
                 std::process::exit(1);
             }
         };
-        let field_name = if matches.opt_present("i") {
-            matches.opt_str("i").unwrap()
+        let field_name = if matches.opt_present("field") {
+            matches.opt_str("field").unwrap()
         } else {
             "network".to_string()
         };
@@ -375,11 +429,11 @@ fn main() {
         process_csv(reader, field_name, &mut rows, input_base, &reverse);
     }
 
-    if let Some(v) = matches.opt_str("m") {
+    if let Some(v) = matches.opt_str("mask") {
         input_mask = parse_mask(&v);
     }
 
-    if let Some(v) = matches.opt_str("4") {
+    if let Some(v) = matches.opt_str("ipv4") {
         input_ip = parse_v4(
             &v,
             input_base,
@@ -387,11 +441,11 @@ fn main() {
         );
     }
 
-    if let Some(v) = matches.opt_str("6") {
+    if let Some(v) = matches.opt_str("ipv6") {
         input_ip = parse_v6(&v, matches!(reverse, Reverse::Both | Reverse::Input));
     }
 
-    if input_mask.is_none() {
+    if input_mask.is_none() && matches.free.is_empty() {
         input_mask = Some(24);
 
         if let Some(Addr::V6(_)) = input_ip {
@@ -423,12 +477,13 @@ fn main() {
         }
     }
 
+
     let stdin_ready = fd_ready(std::io::stdin().as_raw_fd());
-    if stdin_ready || matches.opt_str("s").is_some() {
+    if (stdin_ready && wait_stdin(&matches)) || matches.opt_str("file").is_some() {
         let path = if stdin_ready {
             "-".to_string()
         } else {
-            matches.opt_str("s").unwrap()
+            matches.opt_str("file").unwrap()
         };
         process_input_file(
             &path, &matches, input_base, &reverse, &ip_args, &rows, inside,
@@ -455,7 +510,7 @@ fn main() {
             }
         }
 
-        print_details(&arg, &matches, &rows, None);
+        print_details(arg, &matches, &rows, None);
     }
 
     if ip_args.is_empty() {

@@ -37,7 +37,10 @@ ripcalc - a tool for network addresses
 
 **ripcalc -b/--base [8, 10, 16 etc]**
 
+**ripcalc -d/--divide [CIDR] 127.0.0.1/24**
+
 **ripcalc -h/--help**
+
 
 # DESCRIPTION
 
@@ -52,6 +55,8 @@ Given a list of IP addresses, print only those that match the network. When `s` 
 When `-a` is used, addresses read from `-s` will not be shown when listing `-l` a network, showing only available addresses.
 
 When `--reverse` is used the `inputs`, `sources` or both can be treated as back-to-front.
+
+**ripcalc** can return a list of subnets when a network is provided along with the **divide** argument and a subnet CIDR mask.
 
 # CSV
 

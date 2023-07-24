@@ -141,6 +141,20 @@ $ echo -e '192.168.0.0\n192.167.255.255\n' | ripcalc -s - --outside 192.168.0.0/
 
 IP addresses can be treated as reversed, if `/proc/net/route` holds addresses in reversed format, `--reverse inputs` and `--base 16` could be used together to convert to dotted-quad.
 
+# divide
+
+Networks can be divided into subnets:
+
+```
+$ ripcalc 192.168.1.10/24 --divide 26 --format cidr
+192.168.1.0/26
+192.168.1.64/26
+192.168.1.128/26
+192.168.1.192/26
+```
+
+# help
+
 ```
 Options:
     -4, --ipv4 IPv4     ipv4 address
@@ -152,16 +166,19 @@ Options:
     -m, --mask CIDR     cidr mask
     -c, --csv PATH      csv reference file
     -i, --field FIELD   csv field
-    -l, --list          list all addresses in network
+    -l, --list          list all addresses in network, combine with -m to list
+                        networks
     -h, --help          display help
     -b, --base INTEGER  ipv4 base format, default to oct
     -a, --available     display unused addresses
         --outside       display only outside network
         --inside        display only inside network
+    -d, --divide CIDR   divide network into chunks
     -r, --reverse       (none, inputs, sources or both) v4 octets, v6 hex
     -s, --file PATH     lookup addresses from, - for stdin
-    -e, --encapsulating 
+    -e, --encapsulating
                         display encapsulating network from lookup list
+    -v, --version       print version
 ```
 
 

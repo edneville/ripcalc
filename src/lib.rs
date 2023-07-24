@@ -251,6 +251,7 @@ pub fn parse_address_mask(
 pub fn addresses<'a>(
     ip: &'a Ip,
     used: Option<&'a HashMap<Addr, bool>>,
+    mask: Option<u32>,
 ) -> impl std::iter::Iterator<Item = Ip> + 'a {
     let b = broadcast(ip);
     let mut net = network(ip);
@@ -258,9 +259,17 @@ pub fn addresses<'a>(
     std::iter::from_fn(move || {
         if let Addr::V4(mut x) = net.address {
             if let Addr::V4(y) = b.address {
+                let adder = match mask {
+                    Some(x) => {
+                        net.cidr = x;
+                        let base: u32 = 2;
+                        base.pow(32 - x)
+                    }
+                    None => 1,
+                };
                 while u32::from(x) <= u32::from(y) {
                     net = Ip {
-                        address: Addr::V4(Ipv4Addr::from(u32::from(x) + 1)),
+                        address: Addr::V4(Ipv4Addr::from(u32::from(x) + adder)),
                         cidr: net.cidr,
                     };
 
@@ -280,9 +289,16 @@ pub fn addresses<'a>(
                         None => {}
                     }
 
-                    return Some(Ip {
-                        address: Addr::V4(Ipv4Addr::from(u32::from(x) - 1)),
-                        cidr: net.cidr,
+                    return Some(if mask.is_none() {
+                        Ip {
+                            address: Addr::V4(Ipv4Addr::from(u32::from(x) - 1)),
+                            cidr: net.cidr,
+                        }
+                    } else {
+                        network(&Ip {
+                            address: Addr::V4(Ipv4Addr::from(u32::from(x) - 1)),
+                            cidr: net.cidr,
+                        })
                     });
                 }
             }
@@ -290,9 +306,18 @@ pub fn addresses<'a>(
 
         if let Addr::V6(mut x) = net.address {
             if let Addr::V6(y) = b.address {
+                let adder = match mask {
+                    Some(x) => {
+                        net.cidr = x;
+                        let base: u128 = 2;
+                        base.pow(128 - x)
+                    }
+                    None => 1,
+                };
+
                 while u128::from(x) < u128::from(y) {
                     net = Ip {
-                        address: Addr::V6(Ipv6Addr::from(u128::from(x) + 1)),
+                        address: Addr::V6(Ipv6Addr::from(u128::from(x) + adder)),
                         cidr: net.cidr,
                     };
 
@@ -312,10 +337,18 @@ pub fn addresses<'a>(
                         None => {}
                     }
 
-                    return Some(Ip {
-                        address: Addr::V6(Ipv6Addr::from(u128::from(x) - 1)),
-                        cidr: net.cidr,
+                    return Some(if mask.is_none() {
+                        Ip {
+                            address: Addr::V6(Ipv6Addr::from(u128::from(x) - 1)),
+                            cidr: net.cidr,
+                        }
+                    } else {
+                        network(&Ip {
+                            address: Addr::V6(Ipv6Addr::from(u128::from(x) - 1)),
+                            cidr: net.cidr,
+                        })
                     });
+ 
                 }
             }
         }
@@ -1135,19 +1168,19 @@ pub fn format_details(
 pub fn fd_ready(fd: RawFd) -> bool {
     let opfds: Vec<PollFd> = vec![PollFd::new(fd, PollFlags::POLLIN | PollFlags::POLLNVAL)];
 
-    let mut pfds = opfds.clone();
+    let mut pfds = opfds;
     let ts = TimeSpec::from(Duration::new(0, 0));
     match ppoll(&mut pfds, Some(ts), None) {
         Ok(x) => {
             if x == 0 {
                 if let Some(ev) = pfds[0].revents() {
-                    if ev| PollFlags::POLLNVAL == PollFlags::POLLNVAL {
+                    if ev | PollFlags::POLLNVAL == PollFlags::POLLNVAL {
                         return true;
                     }
                 }
-                return false;
+                false
             } else {
-                return true;
+                true
             }
         }
         Err(_x) => false,
