@@ -348,7 +348,6 @@ pub fn addresses<'a>(
                             cidr: net.cidr,
                         })
                     });
- 
                 }
             }
         }

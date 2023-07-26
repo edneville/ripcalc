@@ -705,10 +705,7 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             i.next().as_ref().unwrap().address,
             Addr::V4(Ipv4Addr::from_str("192.168.0.128").unwrap())
         );
-        assert_eq!(
-            i.next(),
-            None,
-        );
+        assert_eq!(i.next(), None,);
 
         let mut i = addresses(&net, None, Some(26));
         assert_eq!(
@@ -727,10 +724,7 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             i.next().as_ref().unwrap().address,
             Addr::V4(Ipv4Addr::from_str("192.168.0.192").unwrap())
         );
-        assert_eq!(
-            i.next(),
-            None,
-        );
+        assert_eq!(i.next(), None,);
     }
 
     #[test]
@@ -756,6 +750,6 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
 
         let i = addresses(&net, None, Some(64));
         let v: Vec<Ip> = i.collect();
-        assert_eq!( v.len(), 65536);
+        assert_eq!(v.len(), 65536);
     }
 }

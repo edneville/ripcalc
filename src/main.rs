@@ -253,8 +253,8 @@ fn process_input_file(
     for line in reader.lines() {
         let ip = parse_address_mask(
             &line.unwrap(),
-            None,
-            None,
+            Some(32),
+            Some(128),
             input_base,
             matches!(reverse, Reverse::Both | Reverse::Source),
         );
@@ -306,6 +306,9 @@ fn wait_stdin(matches: &getopts::Matches) -> bool {
     {
         return true;
     }
+    if matches.free.is_empty() && matches.opt_present("divide") {
+        return true;
+    }
     false
 }
 
@@ -322,21 +325,26 @@ fn main() {
     opts.parsing_style(getopts::ParsingStyle::FloatingFrees);
     opts.optopt("4", "ipv4", "ipv4 address", "IPv4");
     opts.optopt("6", "ipv6", "ipv6 address", "IPv6");
-    opts.optopt("f", "format", "format output\n'cidr' expands to %a/%c\\n\n'short' expands to %a\\n\nSee manual for more options", "STRING");
-    opts.optopt("m", "mask", "cidr mask", "CIDR");
-    opts.optopt("c", "csv", "csv reference file", "PATH");
-    opts.optopt("i", "field", "csv field", "FIELD");
-    opts.optflag(
-        "l",
-        "list",
-        "list all addresses in network, combine with -m to list networks",
-    );
-    opts.optflag("h", "help", "display help");
-    opts.optopt("b", "base", "ipv4 base format, default to oct", "INTEGER");
+
     opts.optflag("a", "available", "display unused addresses");
+    opts.optopt("b", "base", "ipv4 base format, default to oct", "INTEGER");
+    opts.optopt("c", "csv", "csv reference file", "PATH");
+    opts.optopt("d", "divide", "divide network into chunks", "CIDR");
+
+    opts.optflag(
+        "e",
+        "encapsulating",
+        "display encapsulating network from lookup list",
+    );
+
+    opts.optopt("f", "format", "format output\n'cidr' expands to %a/%c\\n\n'short' expands to %a\\n\nSee manual for more options", "STRING");
+    opts.optflag("h", "help", "display help");
+
+    opts.optopt("i", "field", "csv field", "FIELD");
+    opts.optflag("l", "list", "list all addresses in network");
     opts.optflag("", "outside", "display only outside network");
     opts.optflag("", "inside", "display only inside network");
-    opts.optopt("d", "divide", "divide network into chunks", "CIDR");
+    opts.optopt("m", "mask", "cidr mask", "CIDR");
 
     opts.optopt(
         "r",
@@ -345,11 +353,7 @@ fn main() {
         "",
     );
     opts.optopt("s", "file", "lookup addresses from, - for stdin", "PATH");
-    opts.optflag(
-        "e",
-        "encapsulating",
-        "display encapsulating network from lookup list",
-    );
+
     opts.optflag("v", "version", "print version");
 
     let matches = match opts.parse(&args[1..]) {
@@ -476,7 +480,6 @@ fn main() {
             }
         }
     }
-
 
     let stdin_ready = fd_ready(std::io::stdin().as_raw_fd());
     if (stdin_ready && wait_stdin(&matches)) || matches.opt_str("file").is_some() {
