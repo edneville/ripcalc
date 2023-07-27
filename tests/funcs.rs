@@ -647,45 +647,99 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
 
     #[test]
     fn test_within_ipv4() {
-        let net = Ip {
-            address: Addr::V4(Ipv4Addr::from_str("127.0.0.1").unwrap()),
-            cidr: 8,
-        };
-
         assert_eq!(
-            within(&net, &Addr::V4(Ipv4Addr::from_str("10.0.0.0").unwrap())),
+            within(
+                &Ip {
+                    address: Addr::V4(Ipv4Addr::from_str("127.0.0.1").unwrap()),
+                    cidr: 8
+                },
+                &Ip {
+                    address: Addr::V4(Ipv4Addr::from_str("10.0.0.0").unwrap()),
+                    cidr: 8
+                },
+            ),
             false
         );
         assert_eq!(
-            within(&net, &Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap())),
+            within(
+                &Ip {
+                    address: Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()),
+                    cidr: 24
+                },
+                &Ip {
+                    address: Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()),
+                    cidr: 16
+                },
+            ),
             false
         );
         assert_eq!(
-            within(&net, &Addr::V4(Ipv4Addr::from_str("127.1.1.1").unwrap())),
+            within(
+                &Ip {
+                    address: Addr::V4(Ipv4Addr::from_str("127.0.0.1").unwrap()),
+                    cidr: 8
+                },
+                &Ip {
+                    address: Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()),
+                    cidr: 16
+                },
+            ),
+            false
+        );
+        assert_eq!(
+            within(
+                &Ip {
+                    address: Addr::V4(Ipv4Addr::from_str("127.0.0.1").unwrap()),
+                    cidr: 8
+                },
+                &Ip {
+                    address: Addr::V4(Ipv4Addr::from_str("127.1.1.1").unwrap()),
+                    cidr: 16
+                },
+            ),
             true
         );
     }
     #[test]
     fn test_within_ipv6() {
-        let net = Ip {
-            address: Addr::V6(Ipv6Addr::from_str("::1").unwrap()),
-            cidr: 48,
-        };
-
-        assert_eq!(
-            within(&net, &Addr::V6(Ipv6Addr::from_str("f::1").unwrap())),
-            false
-        );
         assert_eq!(
             within(
-                &net,
-                &Addr::V6(Ipv6Addr::from_str("dead:beef::cafe").unwrap())
+                &Ip {
+                    address: Addr::V6(Ipv6Addr::from_str("::1").unwrap()),
+                    cidr: 48
+                },
+                &Ip {
+                    address: Addr::V6(Ipv6Addr::from_str("f::1").unwrap()),
+                    cidr: 48
+                },
             ),
             false
         );
         assert_eq!(
-            within(&net, &Addr::V6(Ipv6Addr::from_str("::f:f:f:f:f").unwrap())),
-            true
+            within(
+                &Ip {
+                    address: Addr::V6(Ipv6Addr::from_str("::1").unwrap()),
+                    cidr: 48
+                },
+                &Ip {
+                    address: Addr::V6(Ipv6Addr::from_str("dead:beef::cafe").unwrap()),
+                    cidr: 48
+                },
+            ),
+            false
+        );
+        assert_eq!(
+            within(
+                &Ip {
+                    address: Addr::V6(Ipv6Addr::from_str("1::1").unwrap()),
+                    cidr: 48
+                },
+                &Ip {
+                    address: Addr::V6(Ipv6Addr::from_str("::f:f:f:f:f").unwrap()),
+                    cidr: 48
+                },
+            ),
+            false
         );
     }
 

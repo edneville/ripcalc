@@ -1,3 +1,7 @@
+0.1.11
+
+ * new option --noexpand to not expand input networks in list context
+
 0.1.10
 
  * When reading from file/stdin, --inside and --outside control printing of

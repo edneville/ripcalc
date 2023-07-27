@@ -48,6 +48,13 @@ fn print_details(
     }
 
     if matches.opt_present("list") {
+        if matches.opt_present("noexpand") {
+            if let Some(m) = format_details(&ip, formatted.to_string(), rows) {
+                print!("{}", m);
+            }
+            return;
+        }
+
         for ip_copy in addresses(ip, used, None) {
             if let Some(m) = format_details(&ip_copy, formatted.to_string(), rows) {
                 print!("{}", m);
@@ -114,7 +121,11 @@ fn process_csv(
                     *rows = Some(HashMap::new());
                 }
 
-                let v6 = parse_v6(parts[0], matches!(reverse, Reverse::Both | Reverse::Source));
+                let v6 = parse_v6(
+                    parts[0],
+                    input_base,
+                    matches!(reverse, Reverse::Both | Reverse::Source),
+                );
 
                 if v6.is_none() {
                     eprintln!("{}: not in ip/cidr format", rec);
@@ -212,13 +223,14 @@ fn process_input_file(
                 used.insert(ip.address, true);
             }
         }
+
         for arg in ip_args {
             print_details(arg, matches, rows, Some(&used));
         }
         std::process::exit(0);
     }
 
-    if matches.opt_present("e") {
+    if matches.opt_present("encapsulating") {
         let mut used: HashMap<Ip, bool> = HashMap::new();
         for line in reader.lines() {
             let ip = match parse_address_mask(
@@ -266,7 +278,7 @@ fn process_input_file(
             Some(true) => {
                 let mut found = false;
                 for arg in ip_args {
-                    if within(arg, &ip.as_ref().unwrap().address) {
+                    if within(arg, &ip.as_ref().unwrap()) {
                         found = true;
                         break;
                     }
@@ -280,7 +292,7 @@ fn process_input_file(
                 let mut found = false;
 
                 for arg in ip_args {
-                    if within(arg, &ip.as_ref().unwrap().address) {
+                    if within(arg, &ip.as_ref().unwrap()) {
                         found = true;
                         break;
                     }
@@ -330,6 +342,7 @@ fn main() {
     opts.optopt("b", "base", "ipv4 base format, default to oct", "INTEGER");
     opts.optopt("c", "csv", "csv reference file", "PATH");
     opts.optopt("d", "divide", "divide network into chunks", "CIDR");
+    opts.optflag("", "noexpand", "do not expand networks in list");
 
     opts.optflag(
         "e",
@@ -342,8 +355,12 @@ fn main() {
 
     opts.optopt("i", "field", "csv field", "FIELD");
     opts.optflag("l", "list", "list all addresses in network");
-    opts.optflag("", "outside", "display only outside network");
-    opts.optflag("", "inside", "display only inside network");
+    opts.optflag(
+        "",
+        "outside",
+        "display when extremities are outside network",
+    );
+    opts.optflag("", "inside", "display when extremities are inside network");
     opts.optopt("m", "mask", "cidr mask", "CIDR");
 
     opts.optopt(
@@ -446,7 +463,11 @@ fn main() {
     }
 
     if let Some(v) = matches.opt_str("ipv6") {
-        input_ip = parse_v6(&v, matches!(reverse, Reverse::Both | Reverse::Input));
+        input_ip = parse_v6(
+            &v,
+            input_base,
+            matches!(reverse, Reverse::Both | Reverse::Input),
+        );
     }
 
     if input_mask.is_none() && matches.free.is_empty() {
