@@ -30,6 +30,11 @@ bintest:
 	printf '127.0.0.1\n' | ./target/release/ripcalc --format short -s - --inside 10.0.0.0/24 192.168.1.1/16 127.0.0.1/28 | wc -l | grep -x 1
 	./target/release/ripcalc --format '%k.all.s5h.net' 127.0.0.2 # if there's no list/available option AND has an IP as an argument, it should not wait
 	echo 192.168.1.2 | ./target/release/ripcalc -l --inside 192.168.1.1/28 --format 'short' | wc -l | grep -x 1
+	echo 192.168.0.0/16 | ./target/release/ripcalc -l --inside 192.168.0.0/24 --format 'short' | wc -l | grep -x 0
+	echo 192.168.0.0/28 | ./target/release/ripcalc --list --noexpand --inside 192.168.0.0/24 --format 'short' | wc -l | grep -x 1
+	echo 192.168.0.0/28 | ./target/release/ripcalc --list -a --noexpand --inside 192.168.0.0/24 --format 'short' | wc -l | grep -x 1
+	echo 338288524927261089655243473518709748348 | ./target/release/ripcalc --base 10 -s - --format 'short' | grep -x fe80::10fe:91ff:fe64:b27c
+	echo 3558236161 | ./target/release/ripcalc --base 10 -s - --format 'short' | grep -x 212.22.96.1
 
 install: test build bintest
 	command -v please && please install -m 0755 -s target/release/ripcalc /usr/local/bin || sudo install -m 0755 -s target/release/ripcalc /usr/local/bin 
