@@ -132,7 +132,7 @@ pub fn parse_v6(address: &str, input_base: Option<i32>, reverse: bool) -> Option
                 )));
             }
 
-            return None;
+            None
         }
         None => match Ipv6Addr::from_str(address) {
             Ok(mut i) => {
@@ -158,16 +158,18 @@ pub fn parse_v4(address: &str, input_base: Option<i32>, reverse: bool) -> Option
             let mut address = address;
             let mut arr: Vec<&str>;
             let a;
-            if reverse {
-                if address.find(".").is_some() {
-                    arr = address.split('.').collect();
-                    arr.reverse();
-                    a = arr.join(".");
-                    address = &a;
-                }
+            if reverse && address.find('.').is_some() {
+                arr = address.split('.').collect();
+                arr.reverse();
+                a = arr.join(".");
+                address = &a;
             }
 
-            if address.find('.').is_none() && !reverse && input_base.is_some() && input_base.unwrap() != 16 {
+            if address.find('.').is_none()
+                && !reverse
+                && input_base.is_some()
+                && input_base.unwrap() != 16
+            {
                 return Some(Addr::V4(Ipv4Addr::from(
                     match u32::from_str_radix(address, base as u32) {
                         Ok(y) => y,
@@ -210,7 +212,7 @@ pub fn parse_v4(address: &str, input_base: Option<i32>, reverse: bool) -> Option
                 arr.reverse();
             }
 
-            return Some(Addr::V4(Ipv4Addr::from(arr)));
+            Some(Addr::V4(Ipv4Addr::from(arr)))
         }
         None => match Ipv4Addr::from_str(address) {
             Ok(mut i) => {
@@ -555,7 +557,7 @@ pub fn within(net: &Ip, addr: &Ip) -> bool {
             let tn = network(addr);
             let tb = broadcast(addr);
 
-            return tn.address >= n.address && tb.address <= b.address && net.cidr <= addr.cidr;
+            tn.address >= n.address && tb.address <= b.address && net.cidr <= addr.cidr
         }
         (Addr::V6(_x), Addr::V6(_y)) => {
             let n = network(net);
@@ -564,7 +566,7 @@ pub fn within(net: &Ip, addr: &Ip) -> bool {
             let tn = network(addr);
             let tb = broadcast(addr);
 
-            return tn.address >= n.address && tb.address <= b.address && net.cidr <= addr.cidr;
+            tn.address >= n.address && tb.address <= b.address && net.cidr <= addr.cidr
         }
         (_, _) => false,
     }
@@ -580,7 +582,7 @@ pub fn without(net: &Ip, addr: &Ip) -> bool {
             let tn = network(addr);
             let tb = broadcast(addr);
 
-            return !(tn.address >= n.address && tb.address <= b.address);
+            !(tn.address >= n.address && tb.address <= b.address)
         }
         (Addr::V6(_x), Addr::V6(_y)) => {
             let n = network(net);
@@ -589,7 +591,7 @@ pub fn without(net: &Ip, addr: &Ip) -> bool {
             let tn = network(addr);
             let tb = broadcast(addr);
 
-            return !(tn.address >= n.address && tb.address <= b.address);
+            !(tn.address >= n.address && tb.address <= b.address)
         }
         (_, _) => false,
     }

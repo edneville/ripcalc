@@ -49,7 +49,7 @@ fn print_details(
 
     if matches.opt_present("list") {
         if matches.opt_present("noexpand") {
-            if let Some(m) = format_details(&ip, formatted.to_string(), rows) {
+            if let Some(m) = format_details(ip, formatted, rows) {
                 print!("{}", m);
             }
             return;
@@ -278,7 +278,7 @@ fn process_input_file(
             Some(true) => {
                 let mut found = false;
                 for arg in ip_args {
-                    if within(arg, &ip.as_ref().unwrap()) {
+                    if within(arg, ip.as_ref().unwrap()) {
                         found = true;
                         break;
                     }
@@ -292,7 +292,7 @@ fn process_input_file(
                 let mut found = false;
 
                 for arg in ip_args {
-                    if within(arg, &ip.as_ref().unwrap()) {
+                    if within(arg, ip.as_ref().unwrap()) {
                         found = true;
                         break;
                     }
