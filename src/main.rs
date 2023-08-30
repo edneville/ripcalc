@@ -314,7 +314,7 @@ fn wait_stdin(matches: &getopts::Matches) -> bool {
         return true;
     }
     if matches.opt_present("list")
-        && (matches.opt_present("inside") || matches.opt_present("outside"))
+        || matches.opt_present("inside") || matches.opt_present("outside")
     {
         return true;
     }

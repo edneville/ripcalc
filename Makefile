@@ -35,6 +35,7 @@ bintest:
 	echo 192.168.0.0/28 | ./target/release/ripcalc --list -a --noexpand --inside 192.168.0.0/24 --format 'short' | wc -l | grep -x 1
 	echo 338288524927261089655243473518709748348 | ./target/release/ripcalc --base 10 -s - --format 'short' | grep -x fe80::10fe:91ff:fe64:b27c
 	echo 3558236161 | ./target/release/ripcalc --base 10 -s - --format 'short' | grep -x 212.22.96.1
+	echo '185.27.20.54' | ./target/release/ripcalc --outside 185.27.20.54/23 --format short | wc -l | grep -Fx 0
 
 install: test build bintest
 	command -v please && please install -m 0755 -s target/release/ripcalc /usr/local/bin || sudo install -m 0755 -s target/release/ripcalc /usr/local/bin 
