@@ -266,6 +266,14 @@ pub fn parse_address_mask(
         });
     }
 
+    for p in ["https://", "http://", "ftp://", "sftp://", "ftps://"] {
+        if a.starts_with(p) {
+            let v: Vec<&str> = a.split( '/' ).collect();
+            arg = v[2];
+            break;
+        }
+    }
+
     let addrs_iter = format!("{}:443", arg).to_socket_addrs();
     let mut buffer: String;
 
