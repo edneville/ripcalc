@@ -2,10 +2,11 @@ image: "rust:latest"
 
 before_script:
     - apt-get update -yqq
-    - apt-get install -yqq --no-install-recommends build-essential
+    - apt-get install -yqq --no-install-recommends build-essential pandoc
 
 # Use cargo to test the project
 test:cargo:
   script: |
     rustc --version && cargo --version # Print version info for debugging
     cargo test --workspace --verbose
+    make all # run bintests
