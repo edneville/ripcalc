@@ -41,7 +41,7 @@ bintest:
 	printf '192.168.1.1\n' | $(RELEASE) --format short --inside 80.87.128.0/20 185.27.20.0/22 216.116.64.0/20 67.214.98.0/24 2606:1F00::/32 2a04:1300::/29 | wc -l | grep -Fx 0
 	printf '192.168.1.1\n' | $(RELEASE) --format short --outside 80.87.128.0/20 185.27.20.0/22 216.116.64.0/20 67.214.98.0/24 2606:1F00::/32 2a04:1300::/29 | wc -l | grep -Fx 1
 	printf 'https://www.usenix.org.uk/content/\n' | $(RELEASE) --format short -s - | wc -l | grep -Fx 1
-
+	printf '2001067c26600425001d0000000003d2' | $(RELEASE) --base 16 --format short -s - | wc -l | grep -Fx 1
 
 install: all
 	command -v please && please install -m 0755 -s $(RELEASE) /usr/local/bin || sudo install -m 0755 -s $(RELEASE) /usr/local/bin 
