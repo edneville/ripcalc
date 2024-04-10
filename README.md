@@ -159,25 +159,26 @@ $ ripcalc 192.168.1.10/24 --divide 26 --format cidr
 Options:
     -4, --ipv4 IPv4     ipv4 address
     -6, --ipv6 IPv6     ipv6 address
+    -a, --available     display unused addresses
+    -b, --base INTEGER  ipv4 base format, default to oct
+    -c, --csv PATH      csv reference file
+    -d, --divide CIDR   divide network into chunks
+        --noexpand      do not expand networks in list
+    -e, --encapsulating
+                        display encapsulating network from arguments or lookup
+                        list
     -f, --format STRING format output
                         'cidr' expands to %a/%c\n
                         'short' expands to %a\n
                         See manual for more options
-    -m, --mask CIDR     cidr mask
-    -c, --csv PATH      csv reference file
-    -i, --field FIELD   csv field
-    -l, --list          list all addresses in network, combine with -m to list
-                        networks
     -h, --help          display help
-    -b, --base INTEGER  ipv4 base format, default to oct
-    -a, --available     display unused addresses
-        --outside       display only outside network
-        --inside        display only inside network
-    -d, --divide CIDR   divide network into chunks
+    -i, --field FIELD   csv field
+    -l, --list          list all addresses in network
+        --outside       display when extremities are outside network
+        --inside        display when extremities are inside network
+    -m, --mask CIDR     cidr mask
     -r, --reverse       (none, inputs, sources or both) v4 octets, v6 hex
     -s, --file PATH     lookup addresses from, - for stdin
-    -e, --encapsulating
-                        display encapsulating network from lookup list
     -v, --version       print version
 ```
 
