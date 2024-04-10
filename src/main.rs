@@ -348,7 +348,7 @@ fn main() {
     opts.optflag(
         "e",
         "encapsulating",
-        "display encapsulating network from lookup list",
+        "display encapsulating network from arguments or lookup list",
     );
 
     opts.optopt("f", "format", "format output\n'cidr' expands to %a/%c\\n\n'short' expands to %a\\n\nSee manual for more options", "STRING");
@@ -519,6 +519,8 @@ fn main() {
         }
     }
 
+    let mut used: HashMap<Ip, bool> = HashMap::new();
+
     for arg in &ip_args {
         match arg.address {
             Addr::V4(_) => {
@@ -535,7 +537,25 @@ fn main() {
             }
         }
 
+        if matches.opt_present("encapsulating") {
+            used.insert(arg.clone(), true);
+            continue;
+        }
         print_details(arg, &matches, &rows, None);
+    }
+
+    if matches.opt_present("encapsulating") {
+        match smallest_group_network(&used) {
+            Some(x) => {
+                print_details(&x, &matches, &rows, None);
+            }
+            None => {
+                eprintln!("Could not find an encapsulating network, sorry");
+                std::process::exit(1);
+            }
+        }
+
+        std::process::exit(0);
     }
 
     if ip_args.is_empty() {

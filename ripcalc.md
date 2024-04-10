@@ -2,9 +2,9 @@
 title: ripcalc
 section: 1
 header: User Manual
-footer: ripcalc 0.1.11
+footer: ripcalc 0.1.12
 author: Ed Neville (ed-ripcalc@s5h.net)
-date: 21 November 2023
+date: 10 April 2024
 ---
 
 # NAME
@@ -31,9 +31,9 @@ ripcalc - a tool for network addresses
 
 **ripcalc -s/--file [-] 127.0.0.1**
 
-**ripcalc -e/--encapsulating -s**
+**ripcalc -e/--encapsulating [-s/--file name]**
 
-**ripcalc -s/--file [--inside/--outside] 127.0.0.1**
+**ripcalc -s/--file name [--inside/--outside] 127.0.0.1**
 
 **ripcalc -b/--base [8, 10, 16 etc]**
 
@@ -131,5 +131,4 @@ When using **CSV** fields can be matched by **name** when network matched:
 ```
 --format '%{name}'
 ```
-
 
