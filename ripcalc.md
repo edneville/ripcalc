@@ -4,7 +4,7 @@ section: 1
 header: User Manual
 footer: ripcalc 0.1.12
 author: Ed Neville (ed-ripcalc@s5h.net)
-date: 10 April 2024
+date: 07 May 2024
 ---
 
 # NAME
@@ -62,31 +62,27 @@ When `--reverse` is used the `inputs`, `sources` or both can be treated as back-
 
 Network matches can be returned from a **CSV**.
 
-```
-$ cat nets.csv
-network,range,owner
-rfc1918,192.168.0.0/16,bob
-rfc1918,172.16.0.0/12,cliff
-rfc1918,10.0.0.0/8,mr nobody
-$ ripcalc --csv nets.csv -i range --format '%{owner}\n' 192.168.0.0
-bob
-```
+    $ cat nets.csv
+    network,range,owner
+    rfc1918,192.168.0.0/16,bob
+    rfc1918,172.16.0.0/12,cliff
+    rfc1918,10.0.0.0/8,mr nobody
+    $ ripcalc --csv nets.csv -i range --format '%{owner}\n' 192.168.0.0
+    bob
 
 Addresses can be read via file or from stdin (-):
 
-```
-$ cat list
-127.0.0.1/28
-10.0.0.1/28
-192.168.1.1/30
-172.18.1.1/30
-10.0.0.0/30
-$ ripcalc --csv nets.csv -i range --format '%{range} %{owner}\n' -s list
-10.0.0.0/8 mr nobody
-192.168.0.0/16 bob
-172.16.0.0/12 cliff
-10.0.0.0/8 mr nobody
-```
+    $ cat list
+    127.0.0.1/28
+    10.0.0.1/28
+    192.168.1.1/30
+    172.18.1.1/30
+    10.0.0.0/30
+    $ ripcalc --csv nets.csv -i range --format '%{range} %{owner}\n' -s list
+    10.0.0.0/8 mr nobody
+    192.168.0.0/16 bob
+    172.16.0.0/12 cliff
+    10.0.0.0/8 mr nobody
 
 # FORMAT
 
@@ -128,7 +124,5 @@ Other format characters:
 
 When using **CSV** fields can be matched by **name** when network matched:
 
-```
---format '%{name}'
-```
+    --format '%{name}'
 

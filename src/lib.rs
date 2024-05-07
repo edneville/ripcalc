@@ -947,7 +947,7 @@ pub fn matching_network_interface(
 
                     if ip_only {
                         if let Addr::V4(x) = ip.address {
-                            if if_addr_bin == u32::from(x) {
+                            if u32::from(if_addr_bin) == u32::from(x) {
                                 return ifaddr.interface_name.to_string();
                             }
                         }
@@ -959,7 +959,7 @@ pub fn matching_network_interface(
                             let bin = u32::from(x);
                             let a = netmask.as_sockaddr_in().unwrap().ip();
 
-                            if (bin & a) == (if_addr_bin & a) {
+                            if (bin & u32::from(a)) == (u32::from(if_addr_bin) & u32::from(a)) {
                                 //println!("{:#?} in {} {}", ip, bin, a);
                                 return ifaddr.interface_name.to_string();
                             }
@@ -1257,7 +1257,10 @@ pub fn format_details(
 }
 
 pub fn fd_ready(fd: RawFd) -> bool {
-    let opfds: Vec<PollFd> = vec![PollFd::new(fd, PollFlags::POLLIN | PollFlags::POLLNVAL)];
+    let opfds: Vec<PollFd> = vec![PollFd::new(
+        unsafe { std::os::fd::BorrowedFd::borrow_raw(fd) },
+        PollFlags::POLLIN | PollFlags::POLLNVAL,
+    )];
 
     let mut pfds = opfds;
     let ts = TimeSpec::from(Duration::new(0, 0));
