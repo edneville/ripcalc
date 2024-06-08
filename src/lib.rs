@@ -1,9 +1,9 @@
 use nix::ifaddrs::*;
-use nix::poll::*;
 use nix::sys::socket::AddressFamily;
 use nix::sys::socket::SockaddrLike;
 use nix::sys::socket::SockaddrStorage;
-use nix::sys::time::TimeSpec;
+use nix::sys::stat::fstat;
+use nix::sys::stat::SFlag;
 use std::collections::HashMap;
 use std::fmt;
 use std::net::Ipv4Addr;
@@ -11,7 +11,6 @@ use std::net::Ipv6Addr;
 use std::net::ToSocketAddrs;
 use std::os::unix::io::RawFd;
 use std::str::FromStr;
-use std::time::Duration;
 
 #[derive(Debug, PartialEq, PartialOrd, Hash, Eq, Clone)]
 pub enum Addr {
@@ -1008,7 +1007,7 @@ pub fn rbl_format(ip: &Ip) -> String {
         Addr::V6(x) => {
             let mut v = vec![];
             let octet = x.octets();
-            for (_, o) in octet.iter().rev().enumerate() {
+            for o in octet.iter().rev() {
                 let r = format!("{:02x}", o);
 
                 v.push(r.get(1..2).unwrap().to_string());
@@ -1257,26 +1256,12 @@ pub fn format_details(
 }
 
 pub fn fd_ready(fd: RawFd) -> bool {
-    let opfds: Vec<PollFd> = vec![PollFd::new(
-        unsafe { std::os::fd::BorrowedFd::borrow_raw(fd) },
-        PollFlags::POLLIN | PollFlags::POLLNVAL,
-    )];
-
-    let mut pfds = opfds;
-    let ts = TimeSpec::from(Duration::new(0, 0));
-    match ppoll(&mut pfds, Some(ts), None) {
-        Ok(x) => {
-            if x == 0 {
-                if let Some(ev) = pfds[0].revents() {
-                    if ev | PollFlags::POLLNVAL == PollFlags::POLLNVAL {
-                        return true;
-                    }
-                }
-                false
-            } else {
-                true
-            }
+    let s = fstat(fd);
+    if let Ok(x) = s {
+        if SFlag::S_IFIFO.bits() & x.st_mode == SFlag::S_IFIFO.bits() {
+            return true;
         }
-        Err(_x) => false,
     }
+
+    false
 }
