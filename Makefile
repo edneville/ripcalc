@@ -43,6 +43,9 @@ bintest:
 	printf 'https://www.usenix.org.uk/content/\n' | $(RELEASE) --format short -s - | wc -l | tr -d '[:blank:]' | grep -Fx 1
 	printf '2001067c26600425001d0000000003d2' | $(RELEASE) --base 16 --format short -s - | wc -l | tr -d '[:blank:]' | grep -Fx 1
 	$(RELEASE) -e 10.0.0.0 10.10.0.0 --format cidr | grep 10.0.0.0/12
+	printf '10.0.0.0/24\n10.0.0.1/24\n' | $(RELEASE) -e -s - --format cidr | grep 10.0.0.0/24 | wc -l | tr -d '[:blank:]' | grep -Fx 1
+	printf '192.168.0.0/16' | $(RELEASE) --format cidr | grep 192.168.0.0/16 | wc -l | tr -d '[:blank:]' | grep -Fx 1
+	$(RELEASE) 192.168.0.0/16 --format cidr | grep 192.168.0.0/16 | wc -l | tr -d '[:blank:]' | grep -Fx 1
 
 install: all
 	command -v please && please install -m 0755 -s $(RELEASE) /usr/local/bin || sudo install -m 0755 -s $(RELEASE) /usr/local/bin 

@@ -1,3 +1,7 @@
+0.1.12
+
+ * now builds on macos #1, thanks @sander_maijers
+
 0.1.11
 
  * new option --noexpand to not expand input networks in list context
