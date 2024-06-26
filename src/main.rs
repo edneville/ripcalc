@@ -319,7 +319,7 @@ fn wait_stdin(matches: &getopts::Matches) -> bool {
     {
         return true;
     }
-    if matches.free.is_empty() && matches.opt_present("divide") {
+    if matches.free.is_empty() {
         return true;
     }
     false
