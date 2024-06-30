@@ -46,6 +46,8 @@ bintest:
 	printf '10.0.0.0/24\n10.0.0.1/24\n' | $(RELEASE) -e -s - --format cidr | grep 10.0.0.0/24 | wc -l | tr -d '[:blank:]' | grep -Fx 1
 	printf '192.168.0.0/16' | $(RELEASE) --format cidr | grep 192.168.0.0/16 | wc -l | tr -d '[:blank:]' | grep -Fx 1
 	$(RELEASE) 192.168.0.0/16 --format cidr | grep 192.168.0.0/16 | wc -l | tr -d '[:blank:]' | grep -Fx 1
+	printf "127.0.0.1/8\n" | $(RELEASE) | grep "IP is: 127.0.0.1/8" | wc -l | tr -d '[:blank:]' | grep -Fx 1 
+	printf " 127.0.0.1/8 \n " | $(RELEASE) | grep "IP is: 127.0.0.1/8" | wc -l | tr -d '[:blank:]' | grep -Fx 1 
 
 install: all
 	command -v please && please install -m 0755 -s $(RELEASE) /usr/local/bin || sudo install -m 0755 -s $(RELEASE) /usr/local/bin 
