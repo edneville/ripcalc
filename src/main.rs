@@ -206,8 +206,9 @@ fn process_input_file(
     let mut used: HashMap<Addr, bool> = HashMap::new();
     if matches.opt_present("available") {
         for line in reader.lines() {
+            let line: String = line.as_ref().unwrap().trim().to_string();
             let ip = match parse_address_mask(
-                line.as_ref().unwrap(),
+                line.as_ref(),
                 Some(32),
                 Some(128),
                 input_base,
@@ -215,7 +216,7 @@ fn process_input_file(
             ) {
                 Some(x) => x,
                 None => {
-                    eprintln!("Could not parse {}", &line.as_ref().unwrap());
+                    eprintln!("Could not parse {}", line);
                     continue;
                 }
             };
@@ -233,8 +234,9 @@ fn process_input_file(
     if matches.opt_present("encapsulating") {
         let mut used: HashMap<Ip, bool> = HashMap::new();
         for line in reader.lines() {
+            let line: String = line.as_ref().unwrap().trim().to_string();
             let ip = match parse_address_mask(
-                line.as_ref().unwrap(),
+                line.as_ref(),
                 Some(32),
                 Some(128),
                 input_base,
@@ -242,7 +244,7 @@ fn process_input_file(
             ) {
                 Some(x) => x,
                 None => {
-                    eprintln!("Could not parse {}", &line.as_ref().unwrap());
+                    eprintln!("Could not parse {}", line);
                     continue;
                 }
             };
@@ -263,8 +265,9 @@ fn process_input_file(
     }
 
     for line in reader.lines() {
+        let line: String = line.as_ref().unwrap().trim().to_string();
         let ip = parse_address_mask(
-            &line.unwrap(),
+            &line,
             Some(32),
             Some(128),
             input_base,

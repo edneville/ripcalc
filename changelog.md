@@ -1,6 +1,7 @@
 0.1.12
 
  * now builds on macos #1, thanks @sander_maijers
+ * trim space around input
 
 0.1.11
 
