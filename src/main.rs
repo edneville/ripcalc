@@ -264,6 +264,8 @@ fn process_input_file(
         std::process::exit(0);
     }
 
+    let mut found_match = false;
+
     for line in reader.lines() {
         let line: String = line.as_ref().unwrap().trim().to_string();
         let ip = parse_address_mask(
@@ -288,6 +290,7 @@ fn process_input_file(
                 }
 
                 if found {
+                    found_match = true;
                     print_details(&ip.unwrap(), matches, rows, None);
                 }
             }
@@ -302,6 +305,7 @@ fn process_input_file(
                 }
 
                 if !found {
+                    found_match = true;
                     print_details(&ip.unwrap(), matches, rows, None);
                 }
             }
@@ -309,6 +313,10 @@ fn process_input_file(
                 print_details(&ip.unwrap(), matches, rows, None);
             }
         }
+    }
+
+    if !found_match && inside.is_some() {
+        std::process::exit(1);
     }
 }
 
