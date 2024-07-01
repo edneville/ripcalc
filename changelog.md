@@ -2,6 +2,7 @@
 
  * now builds on macos #1, thanks @sander_maijers
  * trim space around input
+ * when using --inside or --outside if no input networks match, then exit 1
 
 0.1.11
 

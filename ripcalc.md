@@ -4,7 +4,7 @@ section: 1
 header: User Manual
 footer: ripcalc 0.1.12 >= 0.27", features = ["signal", "net", "poll"] }
 author: Ed Neville (ed-ripcalc@s5h.net)
-date: 30 June 2024
+date: 01 July 2024
 ---
 
 # NAME

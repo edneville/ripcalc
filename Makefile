@@ -23,7 +23,7 @@ bintest:
 	printf "127.0.0.1\n" | $(RELEASE) --available --list --format short -s - 127.0.0.1/30 | wc -l | tr -d '[:blank:]' | grep -x 3
 	printf "127.0.0.1\n" | $(RELEASE) --list --format short -s - 127.0.0.1/30 | wc -l | tr -d '[:blank:]' | grep -x 5
 	printf '10.0.0.0/30\n' | $(RELEASE) --list --format short -s - 127.0.0.1/30 | wc -l | tr -d '[:blank:]' | grep -x 8
-	printf '10.0.0.0/30\n127.0.0.1/30' | $(RELEASE) --list --format short -s - --outside 10.0.0.0/24 | wc -l | tr -d '[:blank:]' | grep -x 4
+	( printf '10.0.0.0/30\n127.0.0.1/30' | $(RELEASE) --list --format short -s - --outside 10.0.0.0/24; if test $$? -ne 1; then exit 1; fi; exit 0 ) | wc -l | tr -d '[:blank:]' | grep -x 4
 	printf '10.0.0.0/28\n127.0.0.1/30' | $(RELEASE) --list --format short -s - --inside 10.0.0.0/24 | wc -l | tr -d '[:blank:]' | grep -x 16
 	printf '10.0.0.0/28\n127.0.0.1/30' | $(RELEASE) --list --format short --inside 10.0.0.0/24 | wc -l | tr -d '[:blank:]' | grep -x 16
 	printf '85.119.82.90\n' | $(RELEASE) -s - --inside 85.119.82.99/16 192.73.234.6/24 45.77.251.199/24 --format short | grep 85.119.82.90 | wc -l | tr -d '[:blank:]' | grep -x 1
