@@ -1,7 +1,7 @@
 # vim:set noet:
 NAME := ripcalc
 DOC := $(NAME)
-VERSION := $(shell grep version Cargo.toml | sed -e 's/.* = "//g;s/"$$//g' )
+VERSION := $(shell grep ^version Cargo.toml | sed -e 's/.* = "//g;s/"$$//g' )
 MDDATE := $(shell find ripcalc.md -printf "%Td %TB %TY\n" )
 RELEASE := ./target/release/ripcalc
 
@@ -11,10 +11,10 @@ build:
 	cargo build --release
 
 doc:
-	( cat $(DOC).md | sed -e 's/^footer: \(\S\+\) \S\+$$/footer: \1 $(VERSION)/g' -e 's/^date:.*/date: $(MDDATE)/g' ) > $(DOC).md.tmp && mv $(DOC).md.tmp $(DOC).md
+	( cat $(DOC).md | sed -e 's/^footer: .*$$/footer: $(NAME) $(VERSION)/g' -e 's/^date:.*/date: $(MDDATE)/g' ) > $(DOC).md.tmp && mv $(DOC).md.tmp $(DOC).md
 	cat $(DOC).md | sed -e 's,\([^ `-]\)--\([a-zA-Z]\),\1\\--\2,g' -e '/^|/s/\\n/\\\\n/g' -e '/^|/s/\\t/\\\\t/g' > $(DOC).man.md
 	pandoc --standalone --ascii --to man $(DOC).man.md -o $(DOC).1
-	rm $(DOC).man.md
+	#rm $(DOC).man.md
 
 test:
 	cargo test
