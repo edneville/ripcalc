@@ -2,9 +2,9 @@
 title: ripcalc
 section: 1
 header: User Manual
-footer: ripcalc 0.1.12 >= 0.27", features = ["signal", "net", "poll"] }
+footer: ripcalc 0.1.12
 author: Ed Neville (ed-ripcalc@s5h.net)
-date: 01 July 2024
+date: 02 July 2024
 ---
 
 # NAME
@@ -125,4 +125,9 @@ Other format characters:
 When using **CSV** fields can be matched by **name** when network matched:
 
     --format '%{name}'
+
+## inside/outside
+
+When `--inside` or `--outside` are given addresses that match `--file` are printed. If no matches are found `ripcalc` will exit non-zero.
+
 
