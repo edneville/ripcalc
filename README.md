@@ -141,6 +141,33 @@ $ echo -e '192.168.0.0\n192.167.255.255\n' | ripcalc -s - --outside 192.168.0.0/
 
 IP addresses can be treated as reversed, if `/proc/net/route` holds addresses in reversed format, `--reverse inputs` and `--base 16` could be used together to convert to dotted-quad.
 
+# within networks
+
+Is a domain wihtin a list of subnets? For example, in this part of the globe cloudflare.com was being served from their published list of networks:
+
+```
+echo http://cloudflare.com | ripcalc --inside 173.245.48.0/20 103.21.244.0/22 \
+    103.22.200.0/22 103.31.4.0/22 141.101.64.0/18 108.162.192.0/18 \
+    190.93.240.0/20 188.114.96.0/20 197.234.240.0/22 198.41.128.0/17 \
+    162.158.0.0/15 104.16.0.0/13 104.24.0.0/14 172.64.0.0/13 \
+    131.0.72.0/22 --format short
+104.16.133.229
+```
+
+How many addresses is all that in total?
+
+```
+ripcalc 173.245.48.0/20 103.21.244.0/22 103.22.200.0/22 103.31.4.0/22 \
+    141.101.64.0/18 108.162.192.0/18 190.93.240.0/20 188.114.96.0/20 \
+    197.234.240.0/22 198.41.128.0/17 162.158.0.0/15 104.16.0.0/13 \
+    104.24.0.0/14 172.64.0.0/13 131.0.72.0/22 --format '%t\n' \
+    | paste -sd+ \
+    | bc -l
+1524736
+```
+
+If you need to manage a lot of IP addresses this could be helpful to you.
+
 # divide
 
 Networks can be divided into subnets:
