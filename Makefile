@@ -14,7 +14,7 @@ doc:
 	( cat $(DOC).md | sed -e 's/^footer: .*$$/footer: $(NAME) $(VERSION)/g' -e 's/^date:.*/date: $(MDDATE)/g' ) > $(DOC).md.tmp && mv $(DOC).md.tmp $(DOC).md
 	cat $(DOC).md | sed -e 's,\([^ `-]\)--\([a-zA-Z]\),\1\\--\2,g' -e '/^|/s/\\n/\\\\n/g' -e '/^|/s/\\t/\\\\t/g' > $(DOC).man.md
 	pandoc --standalone --ascii --to man $(DOC).man.md -o $(DOC).1
-	#rm $(DOC).man.md
+	rm $(DOC).man.md
 
 test:
 	cargo test

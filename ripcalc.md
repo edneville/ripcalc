@@ -4,7 +4,7 @@ section: 1
 header: User Manual
 footer: ripcalc 0.1.12
 author: Ed Neville (ed-ripcalc@s5h.net)
-date: 02 July 2024
+date: 11 July 2024
 ---
 
 # NAME
@@ -57,6 +57,8 @@ When `-a` is used, addresses read from `-s` will not be shown when listing `-l` 
 When `--reverse` is used the `inputs`, `sources` or both can be treated as back-to-front.
 
 **ripcalc** can return a list of subnets when a network is provided along with the **divide** argument and a subnet CIDR mask.
+
+When `--encapsulating` is used the containing network will be returned.
 
 # CSV
 
