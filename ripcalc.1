@@ -15,7 +15,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "ripcalc" "1" "02 July 2024" "ripcalc 0.1.12" "User Manual"
+.TH "ripcalc" "1" "11 July 2024" "ripcalc 0.1.12" "User Manual"
 .hy
 .SH NAME
 .PP
@@ -78,6 +78,9 @@ or both can be treated as back-to-front.
 \f[B]ripcalc\f[R] can return a list of subnets when a network is
 provided along with the \f[B]divide\f[R] argument and a subnet CIDR
 mask.
+.PP
+When \f[V]--encapsulating\f[R] is used the containing network will be
+returned.
 .SH CSV
 .PP
 Network matches can be returned from a \f[B]CSV\f[R].
