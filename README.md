@@ -180,6 +180,14 @@ $ ripcalc 192.168.1.10/24 --divide 26 --format cidr
 192.168.1.192/26
 ```
 
+# quickly block the encapsulating network
+
+Suppose a large flood of requests are from a network pattern, to preserve service you may want to block the whole network that encapsulates a list:
+
+```
+please ip route add blackhole `ripcalc -e 192.168.56.10 192.168.57.1 192.168.44.47`
+```
+
 # help
 
 ```
