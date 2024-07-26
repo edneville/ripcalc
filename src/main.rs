@@ -189,7 +189,7 @@ fn process_input_file(
     rows: &Option<HashMap<Ip, NetRow>>,
     inside: Option<bool>,
 ) {
-    let reader: Box<dyn BufRead> = if path == "-" {
+    let mut reader: Box<dyn BufRead> = if path == "-" {
         Box::new(BufReader::new(std::io::stdin()))
     } else {
         let path = std::path::Path::new(&path);
@@ -205,8 +205,10 @@ fn process_input_file(
 
     if matches.opt_present("available") {
         let mut used: HashMap<Addr, bool> = HashMap::new();
-        for i in find_ips( reader, input_base, reverse ) {
-            used.insert(i.address, true);
+        for a in find_ips(&mut reader, input_base, reverse) {
+            for ip in a {
+                used.insert(ip.address, true);
+            }
         }
 
         for arg in ip_args {
@@ -217,8 +219,10 @@ fn process_input_file(
 
     if matches.opt_present("encapsulating") {
         let mut used: HashMap<Ip, bool> = HashMap::new();
-        for i in find_ips( reader, input_base, reverse ) {
-            used.insert(i, true);
+        for a in find_ips(&mut reader, input_base, reverse) {
+            for i in a {
+                used.insert(i, true);
+            }
         }
 
         match smallest_group_network(&used) {
@@ -236,40 +240,41 @@ fn process_input_file(
 
     let mut found_match = false;
 
-    for ip in find_ips( reader, input_base, reverse ) {
+    for a in find_ips(&mut reader, input_base, reverse) {
+        for ip in a {
+            match inside {
+                Some(true) => {
+                    let mut found = false;
+                    for arg in ip_args {
+                        if within(arg, &ip) {
+                            found = true;
+                            break;
+                        }
+                    }
 
-        match inside {
-            Some(true) => {
-                let mut found = false;
-                for arg in ip_args {
-                    if within(arg, &ip) {
-                        found = true;
-                        break;
+                    if found {
+                        found_match = true;
+                        print_details(&ip, matches, rows, None);
                     }
                 }
+                Some(false) => {
+                    let mut found = false;
 
-                if found {
-                    found_match = true;
-                    print_details(&ip, matches, rows, None);
-                }
-            }
-            Some(false) => {
-                let mut found = false;
+                    for arg in ip_args {
+                        if within(arg, &ip) {
+                            found = true;
+                            break;
+                        }
+                    }
 
-                for arg in ip_args {
-                    if within(arg, &ip) {
-                        found = true;
-                        break;
+                    if !found {
+                        found_match = true;
+                        print_details(&ip, matches, rows, None);
                     }
                 }
-
-                if !found {
-                    found_match = true;
+                None => {
                     print_details(&ip, matches, rows, None);
                 }
-            }
-            None => {
-                print_details(&ip, matches, rows, None);
             }
         }
     }
