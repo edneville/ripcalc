@@ -11,6 +11,7 @@ use std::net::Ipv6Addr;
 use std::net::ToSocketAddrs;
 use std::os::unix::io::RawFd;
 use std::str::FromStr;
+use std::io::BufRead;
 
 #[derive(Debug, PartialEq, PartialOrd, Hash, Eq, Clone)]
 pub enum Addr {
@@ -1264,4 +1265,36 @@ pub fn fd_ready(fd: RawFd) -> bool {
     }
 
     false
+}
+
+pub fn find_ips(reader: Box<dyn BufRead>, input_base: Option<i32>, reverse: &Reverse) -> Vec<Ip> {
+
+    let mut ips = vec![];
+
+    for line in reader.lines() {
+        let line: String = line.as_ref().unwrap().trim().to_string();
+
+        for part in line.split(" ") {
+            let p = part.trim();
+            if p == "" {
+                continue;
+            }
+
+            let ip = match parse_address_mask(
+                p,
+                Some(32),
+                Some(128),
+                input_base,
+                matches!(reverse, Reverse::Both | Reverse::Input),
+            ) {
+                Some(x) => x,
+                None => {
+                    eprintln!("Could not parse {}", p);
+                    continue;
+                }
+            };
+            ips.push(ip);
+        }
+    }
+    ips
 }

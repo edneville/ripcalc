@@ -1,3 +1,7 @@
+0.1.13
+
+ * don't require input to be one IP per line
+
 0.1.12
 
  * now builds on macos #1, thanks @sander_maijers
