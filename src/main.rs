@@ -203,26 +203,10 @@ fn process_input_file(
         Box::new(BufReader::new(File::open(path).unwrap()))
     };
 
-    let mut used: HashMap<Addr, bool> = HashMap::new();
     if matches.opt_present("available") {
-        for line in reader.lines() {
-            let line: String = line.as_ref().unwrap().trim().to_string();
-            let ip = match parse_address_mask(
-                line.as_ref(),
-                Some(32),
-                Some(128),
-                input_base,
-                matches!(reverse, Reverse::Both | Reverse::Input),
-            ) {
-                Some(x) => x,
-                None => {
-                    eprintln!("Could not parse {}", line);
-                    continue;
-                }
-            };
-            for ip in addresses(&ip, None, None) {
-                used.insert(ip.address, true);
-            }
+        let mut used: HashMap<Addr, bool> = HashMap::new();
+        for i in find_ips( reader, input_base, reverse ) {
+            used.insert(i.address, true);
         }
 
         for arg in ip_args {
@@ -233,22 +217,8 @@ fn process_input_file(
 
     if matches.opt_present("encapsulating") {
         let mut used: HashMap<Ip, bool> = HashMap::new();
-        for line in reader.lines() {
-            let line: String = line.as_ref().unwrap().trim().to_string();
-            let ip = match parse_address_mask(
-                line.as_ref(),
-                Some(32),
-                Some(128),
-                input_base,
-                matches!(reverse, Reverse::Both | Reverse::Input),
-            ) {
-                Some(x) => x,
-                None => {
-                    eprintln!("Could not parse {}", line);
-                    continue;
-                }
-            };
-            used.insert(ip, true);
+        for i in find_ips( reader, input_base, reverse ) {
+            used.insert(i, true);
         }
 
         match smallest_group_network(&used) {
@@ -266,24 +236,13 @@ fn process_input_file(
 
     let mut found_match = false;
 
-    for line in reader.lines() {
-        let line: String = line.as_ref().unwrap().trim().to_string();
-        let ip = parse_address_mask(
-            &line,
-            Some(32),
-            Some(128),
-            input_base,
-            matches!(reverse, Reverse::Both | Reverse::Source),
-        );
-        if ip.is_none() {
-            continue;
-        }
+    for ip in find_ips( reader, input_base, reverse ) {
 
         match inside {
             Some(true) => {
                 let mut found = false;
                 for arg in ip_args {
-                    if within(arg, ip.as_ref().unwrap()) {
+                    if within(arg, &ip) {
                         found = true;
                         break;
                     }
@@ -291,14 +250,14 @@ fn process_input_file(
 
                 if found {
                     found_match = true;
-                    print_details(&ip.unwrap(), matches, rows, None);
+                    print_details(&ip, matches, rows, None);
                 }
             }
             Some(false) => {
                 let mut found = false;
 
                 for arg in ip_args {
-                    if within(arg, ip.as_ref().unwrap()) {
+                    if within(arg, &ip) {
                         found = true;
                         break;
                     }
@@ -306,11 +265,11 @@ fn process_input_file(
 
                 if !found {
                     found_match = true;
-                    print_details(&ip.unwrap(), matches, rows, None);
+                    print_details(&ip, matches, rows, None);
                 }
             }
             None => {
-                print_details(&ip.unwrap(), matches, rows, None);
+                print_details(&ip, matches, rows, None);
             }
         }
     }
