@@ -12,13 +12,45 @@ fn print_details(
     rows: &Option<HashMap<Ip, NetRow>>,
     used: Option<&HashMap<Addr, bool>>,
 ) {
+    let mut networks: Option<u32> = None;
+
+    if matches.opt_present("networks") {
+        let nets = matches.opt_str("networks").unwrap().trim().parse().unwrap();
+
+        if nets < ip.cidr {
+            eprintln!("{} is bigger than the network mask {}", nets, ip.cidr);
+            std::process::exit(1);
+        }
+
+        match ip.address {
+            Addr::V4(_) => {
+                if nets > 32 {
+                    eprintln!("{} is too big", nets);
+                    std::process::exit(1);
+                }
+            }
+            Addr::V6(_) => {
+                if nets > 128 {
+                    eprintln!("{} is too big", nets);
+                    std::process::exit(1);
+                }
+            }
+        }
+        networks = Some(nets);
+    }
+
     let mut formatted = if matches.opt_present("f") {
         matches.opt_str("f").unwrap()
     } else {
+        let mut network_size = "Network size: %t".to_string();
         let width = 25;
+        if matches.opt_present("networks") {
+            network_size = format!("Networks ({}): %N", networks.as_ref().unwrap()).to_string();
+        }
         match ip.address {
-            Addr::V4(_) => format!("{ip:>width$}/{cidr}\n{broadcast:>width$}\n{network:>width$}\n{subnet:>width$}\n{wildcard:>width$}\n{network_size:>width$}\n", ip="IP is: %a", cidr="%c", broadcast="Broadcast is: %b", network="Network is: %n", subnet="Subnet is: %s", wildcard="Wildcard is: %w", network_size="Network size: %t", width=width),
-            Addr::V6(_) => format!("{ip:>widthn$}/{cidr}\n{expanded:>width$}\n{network:>width$}\n{last_host_address:>width$}\n{subnet:>width$}\n{network_size:>widthn$}\n", ip="IP is: %a", cidr="%c", expanded="Expanded: %xa", network="Network is: %xn", last_host_address="Last host address: %xb", subnet="Subnet is: %xs", network_size="Network size: %t", width=width, widthn=width-1),
+
+            Addr::V4(_) => format!("{ip:>width$}/{cidr}\n{broadcast:>width$}\n{network:>width$}\n{subnet:>width$}\n{wildcard:>width$}\n{network_size:>width$}\n", ip="IP is: %a", cidr="%c", broadcast="Broadcast is: %b", network="Network is: %n", subnet="Subnet is: %s", wildcard="Wildcard is: %w", network_size=network_size, width=width),
+            Addr::V6(_) => format!("{ip:>widthn$}/{cidr}\n{expanded:>width$}\n{network:>width$}\n{last_host_address:>width$}\n{subnet:>width$}\n{network_size:>widthn$}\n", ip="IP is: %a", cidr="%c", expanded="Expanded: %xa", network="Network is: %xn", last_host_address="Last host address: %xb", subnet="Subnet is: %xs", network_size=network_size, width=width, widthn=width-1),
         }
     };
 
@@ -40,7 +72,7 @@ fn print_details(
         };
 
         for ip_copy in addresses(ip, used, Some(divide)) {
-            if let Some(m) = format_details(&ip_copy, formatted.to_string(), rows) {
+            if let Some(m) = format_details(&ip_copy, formatted.to_string(), rows, networks) {
                 print!("{}", m);
             }
         }
@@ -49,21 +81,21 @@ fn print_details(
 
     if matches.opt_present("list") {
         if matches.opt_present("noexpand") {
-            if let Some(m) = format_details(ip, formatted, rows) {
+            if let Some(m) = format_details(ip, formatted, rows, networks) {
                 print!("{}", m);
             }
             return;
         }
 
         for ip_copy in addresses(ip, used, None) {
-            if let Some(m) = format_details(&ip_copy, formatted.to_string(), rows) {
+            if let Some(m) = format_details(&ip_copy, formatted.to_string(), rows, networks) {
                 print!("{}", m);
             }
         }
         return;
     }
 
-    if let Some(m) = format_details(ip, formatted, rows) {
+    if let Some(m) = format_details(ip, formatted, rows, networks) {
         print!("{}", m);
     }
 }
@@ -338,6 +370,12 @@ fn main() {
     );
     opts.optflag("", "inside", "display when extremities are inside network");
     opts.optopt("m", "mask", "cidr mask", "CIDR");
+    opts.optopt(
+        "n",
+        "networks",
+        "instead of hosts, display number of subnets of this size",
+        "CIDR",
+    );
 
     opts.optopt(
         "r",
@@ -378,6 +416,16 @@ fn main() {
             std::process::exit(1);
         }
         inside = Some(false);
+    }
+
+    if matches.opt_present("networks") {
+        let _: u32 = match matches.opt_str("networks").unwrap().trim().parse() {
+            Ok(x) => x,
+            Err(x) => {
+                eprintln!("Cannot convert {} to number", x);
+                std::process::exit(1);
+            }
+        };
     }
 
     if matches.opt_present("reverse") {

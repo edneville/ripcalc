@@ -11,6 +11,12 @@ $ cd ripcalc \
   && please install -m 0755 -s target/release/ripcalc /usr/local/bin
 ```
 
+or
+
+```
+please snap install ripcalc
+```
+
 # usage
 
 Ripcalc allows networks to be provided by argument
@@ -85,7 +91,9 @@ Other format characters:
 | %r          | Network reservation information (if available) |
 | %d          | Matching device interface by IP |
 | %m          | Matching media link interface by network |
-| %k          | RBL-style format |
+| %k          | RBL/reverse DNS-style format |
+| %D          | Network size (--networks) |
+| %N          | Number of subnets (--networks) |
 | %%          | % |
 | \n          | Line break |
 | \t          | Tab character |
