@@ -277,7 +277,7 @@ mod test {
             cidr: 30,
         };
 
-        let f = format_details(&net, "%a".to_string(), &None);
+        let f = format_details(&net, "%a".to_string(), &None, None);
 
         assert_eq!(f, Some("192.168.0.0".to_string()));
     }
@@ -291,6 +291,7 @@ mod test {
             },
             "%".to_string(),
             &None,
+            None,
         );
 
         assert_eq!(f, Some("%".to_string()));
@@ -302,6 +303,7 @@ mod test {
             },
             "%%".to_string(),
             &None,
+            None,
         );
 
         assert_eq!(f, Some("%".to_string()));
@@ -313,6 +315,7 @@ mod test {
             },
             "%%%".to_string(),
             &None,
+            None,
         );
 
         assert_eq!(f, Some("%%".to_string()));
@@ -324,6 +327,7 @@ mod test {
             },
             "%%%%".to_string(),
             &None,
+            None,
         );
 
         assert_eq!(f, Some("%%".to_string()));
@@ -336,7 +340,7 @@ mod test {
             cidr: 64,
         };
 
-        let f = format_details(&net, "select * from IP6 where (ip >= %ln and ip <= %lb) and active = 1;\nupdate IP6 set active = 0 where (ip >= %ln and ip <= %lb) and active = 1;".to_string(), &None);
+        let f = format_details(&net, "select * from IP6 where (ip >= %ln and ip <= %lb) and active = 1;\nupdate IP6 set active = 0 where (ip >= %ln and ip <= %lb) and active = 1;".to_string(), &None, None);
 
         assert_eq!(f, Some("select * from IP6 where (ip >= 42540724579414763292693624807812497408 and ip <= 42540724579414763311140368881522049023) and active = 1;
 update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 and ip <= 42540724579414763311140368881522049023) and active = 1;".to_string()));
@@ -349,7 +353,7 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             cidr: 64,
         };
 
-        let f = format_details(&net, "%%b".to_string(), &None);
+        let f = format_details(&net, "%%b".to_string(), &None, None);
 
         assert_eq!(f, Some("%b".to_string()));
     }
@@ -361,7 +365,7 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             cidr: 64,
         };
 
-        let f = format_details(&net, "%lb".to_string(), &None);
+        let f = format_details(&net, "%lb".to_string(), &None, None);
 
         assert_eq!(
             f,
@@ -376,7 +380,7 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             cidr: 64,
         };
 
-        let f = format_details(&net, "%lb\n\n\n%%".to_string(), &None);
+        let f = format_details(&net, "%lb\n\n\n%%".to_string(), &None, None);
 
         assert_eq!(
             f,
@@ -391,16 +395,16 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             cidr: 64,
         };
 
-        let f = format_details(&net, "\n".to_string(), &None);
+        let f = format_details(&net, "\n".to_string(), &None, None);
         assert_eq!(f, Some("\n".to_string()));
 
-        let f = format_details(&net, "\\".to_string(), &None);
+        let f = format_details(&net, "\\".to_string(), &None, None);
         assert_eq!(f, Some('\\'.to_string()));
 
-        let f = format_details(&net, "\\i".to_string(), &None);
+        let f = format_details(&net, "\\i".to_string(), &None, None);
         assert_eq!(f, Some("i".to_string()));
 
-        let f = format_details(&net, "\\t".to_string(), &None);
+        let f = format_details(&net, "\\t".to_string(), &None, None);
         assert_eq!(f, Some("\t".to_string()));
     }
 
@@ -626,9 +630,9 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             cidr: 30,
         };
 
-        let f = format_details(&net, "%La".to_string(), &None);
+        let f = format_details(&net, "%La".to_string(), &None, None);
         assert_eq!(f, Some("-1819047474".to_string()));
-        let f = format_details(&net, "%la".to_string(), &None);
+        let f = format_details(&net, "%la".to_string(), &None, None);
         assert_eq!(f, Some("2475919822".to_string()));
 
         let net = Ip {
@@ -636,9 +640,9 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             cidr: 30,
         };
 
-        let f = format_details(&net, "%La".to_string(), &None);
+        let f = format_details(&net, "%La".to_string(), &None, None);
         assert_eq!(f, Some("-5192296858534827628530496329154561".to_string()));
-        let f = format_details(&net, "%la".to_string(), &None);
+        let f = format_details(&net, "%la".to_string(), &None, None);
         assert_eq!(
             f,
             Some("340277174624079928635746076935439056895".to_string())
@@ -805,5 +809,31 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
         let i = addresses(&net, None, Some(64));
         let v: Vec<Ip> = i.collect();
         assert_eq!(v.len(), 65536);
+    }
+
+    #[test]
+    fn test_networks_sizing_v6() {
+        let net = Ip {
+            address: Addr::V6(Ipv6Addr::from_str("::1").unwrap()),
+            cidr: 48,
+        };
+
+        assert_eq!(subnets_in_network(64, &net), 65536);
+        assert_eq!(subnets_in_network(48, &net), 1);
+        assert_eq!(subnets_in_network(49, &net), 2);
+    }
+
+    #[test]
+    fn test_networks_sizing_v4() {
+        let net = Ip {
+            address: Addr::V4(Ipv4Addr::from_str("127.0.0.1").unwrap()),
+            cidr: 16,
+        };
+
+        assert_eq!(subnets_in_network(24, &net), 256);
+        assert_eq!(subnets_in_network(25, &net), 512);
+        assert_eq!(subnets_in_network(26, &net), 1024);
+        assert_eq!(subnets_in_network(27, &net), 2048);
+        assert_eq!(subnets_in_network(28, &net), 4096);
     }
 }

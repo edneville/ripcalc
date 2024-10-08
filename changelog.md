@@ -1,6 +1,7 @@
 0.1.13
 
  * don't require input to be one IP per line
+ * show subnets within network in format, suggested by Andy Smith of BitFolk
 
 0.1.12
 

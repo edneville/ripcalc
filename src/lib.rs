@@ -1047,6 +1047,7 @@ pub fn format_details(
     ip: &Ip,
     formatted: String,
     rows: &Option<HashMap<Ip, NetRow>>,
+    subnet_size: Option<u32>,
 ) -> Option<String> {
     let ip = &mut ip.clone();
     let mut reformatted = formatted;
@@ -1201,6 +1202,22 @@ pub fn format_details(
                     '%' => {
                         out_str.push('%');
                     }
+                    'D' => {
+                        if let Some(s) = subnet_size {
+                            out_str.push_str( &s.to_string() );
+                        } else {
+                            out_str.push('D');
+                        };
+                    }
+                    'N' => {
+                        if let Some(s) = subnet_size {
+                            out_str.push_str(
+                                &subnets_in_network(s, ip).to_string(),
+                            );
+                        } else {
+                            out_str.push('N');
+                        };
+                    }
                     _ => {
                         out_str.push(k);
                     }
@@ -1303,4 +1320,9 @@ pub fn find_ips<'a>(
         }
         None
     })
+}
+
+pub fn subnets_in_network(networks: u32, ip: &Ip) -> u128 {
+    let base: u128 = 2;
+    base.pow(networks - ip.cidr)
 }
