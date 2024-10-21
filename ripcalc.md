@@ -4,7 +4,7 @@ section: 1
 header: User Manual
 footer: ripcalc 0.1.12
 author: Ed Neville (ed-ripcalc@s5h.net)
-date: 08 October 2024
+date: 21 October 2024
 ---
 
 # NAME
@@ -39,6 +39,8 @@ ripcalc - a tool for network addresses
 
 **ripcalc -d/--divide [CIDR] 127.0.0.1/24**
 
+**ripcalc --networks [CIDR] 127.0.0.1/24**
+
 **ripcalc -h/--help**
 
 
@@ -56,9 +58,11 @@ When `-a` is used, addresses read from `-s` will not be shown when listing `-l` 
 
 When `--reverse` is used the `inputs`, `sources` or both can be treated as back-to-front.
 
-**ripcalc** can return a list of subnets when a network is provided along with the **divide** argument and a subnet CIDR mask.
+**ripcalc** can return a list of subnets when a network is provided along with the `--divide` argument and a subnet CIDR mask.
 
 When `--encapsulating` is used the containing network will be returned.
+
+The number (**%D**) of subnets can be printed when using the `--networks` argument with the **%N** formatters. The argument should be the CIDR mask, see below for example.
 
 # CSV
 
@@ -130,8 +134,31 @@ When using **CSV** fields can be matched by **name** when network matched:
 
     --format '%{name}'
 
-## inside/outside
+# inside/outside
 
 When `--inside` or `--outside` are given addresses that match `--file` are printed. If no matches are found `ripcalc` will exit non-zero.
+
+# subnets
+
+For large networks it can be useful to see the number of subnets, to see the number of /29 subnets within a /24 network, the command would look like this:
+
+    ripcalc --networks 29 192.168.230.0/24
+                IP is: 192.168.230.0/24
+         Broadcast is: 192.168.230.255
+           Network is: 192.168.230.0
+            Subnet is: 255.255.255.0
+          Wildcard is: 0.0.0.255
+        Networks (29): 32
+
+Or for a IPv6 /48 network that you want to subnet into /64, you can see there are 65536 subnets:
+
+    ripcalc --networks 64 2001:db8:1::/48
+                   IP is: 2001:db8:1::/48
+            Expanded: 2001:0db8:0001:0000:0000:0000:0000:0000
+          Network is: 2001:0db8:0001:0000:0000:0000:0000:0000
+   Last host address: 2001:0db8:0001:ffff:ffff:ffff:ffff:ffff
+           Subnet is: ffff:ffff:ffff:0000:0000:0000:0000:0000
+       Networks (64): 65536
+
 
 
