@@ -15,7 +15,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "ripcalc" "1" "08 October 2024" "ripcalc 0.1.12" "User Manual"
+.TH "ripcalc" "1" "21 October 2024" "ripcalc 0.1.12" "User Manual"
 .hy
 .SH NAME
 .PP
@@ -48,6 +48,8 @@ ripcalc - a tool for network addresses
 .PP
 \f[B]ripcalc -d/--divide [CIDR] 127.0.0.1/24\f[R]
 .PP
+\f[B]ripcalc \[en]networks [CIDR] 127.0.0.1/24\f[R]
+.PP
 \f[B]ripcalc -h/--help\f[R]
 .SH DESCRIPTION
 .PP
@@ -76,11 +78,15 @@ When \f[V]--reverse\f[R] is used the \f[V]inputs\f[R], \f[V]sources\f[R]
 or both can be treated as back-to-front.
 .PP
 \f[B]ripcalc\f[R] can return a list of subnets when a network is
-provided along with the \f[B]divide\f[R] argument and a subnet CIDR
+provided along with the \f[V]--divide\f[R] argument and a subnet CIDR
 mask.
 .PP
 When \f[V]--encapsulating\f[R] is used the containing network will be
 returned.
+.PP
+The number (\f[B]%D\f[R]) of subnets can be printed when using the
+\f[V]--networks\f[R] argument with the \f[B]%N\f[R] formatters.
+The argument should be the CIDR mask, see below for example.
 .SH CSV
 .PP
 Network matches can be returned from a \f[B]CSV\f[R].
@@ -273,10 +279,42 @@ network matched:
 --format \[aq]%{name}\[aq]
 \f[R]
 .fi
-.SS inside/outside
+.SH inside/outside
 .PP
 When \f[V]--inside\f[R] or \f[V]--outside\f[R] are given addresses that
 match \f[V]--file\f[R] are printed.
 If no matches are found \f[V]ripcalc\f[R] will exit non-zero.
+.SH subnets
+.PP
+For large networks it can be useful to see the number of subnets, to see
+the number of /29 subnets within a /24 network, the command would look
+like this:
+.IP
+.nf
+\f[C]
+ripcalc --networks 29 192.168.230.0/24
+            IP is: 192.168.230.0/24
+     Broadcast is: 192.168.230.255
+       Network is: 192.168.230.0
+        Subnet is: 255.255.255.0
+      Wildcard is: 0.0.0.255
+    Networks (29): 32
+\f[R]
+.fi
+.PP
+Or for a IPv6 /48 network that you want to subnet into /64, you can see
+there are 65536 subnets:
+.IP
+.nf
+\f[C]
+ripcalc --networks 64 2001:db8:1::/48
+               IP is: 2001:db8:1::/48
+        Expanded: 2001:0db8:0001:0000:0000:0000:0000:0000
+      Network is: 2001:0db8:0001:0000:0000:0000:0000:0000
+\f[R]
+.fi
+.PP
+Last host address: 2001:0db8:0001:ffff:ffff:ffff:ffff:ffff Subnet is:
+ffff:ffff:ffff:0000:0000:0000:0000:0000 Networks (64): 65536
 .SH AUTHORS
 Ed Neville (ed-ripcalc\[at]s5h.net).

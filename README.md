@@ -220,6 +220,8 @@ Options:
         --outside       display when extremities are outside network
         --inside        display when extremities are inside network
     -m, --mask CIDR     cidr mask
+    -n, --networks CIDR instead of hosts, display number of subnets of this
+                        size
     -r, --reverse       (none, inputs, sources or both) v4 octets, v6 hex
     -s, --file PATH     lookup addresses from, - for stdin
     -v, --version       print version
