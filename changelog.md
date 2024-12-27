@@ -1,7 +1,8 @@
 0.1.13
 
  * don't require input to be one IP per line
- * show subnets within network in format, suggested by Andy Smith of BitFolk
+ * show subnets within network in format, suggested by andy@bitfolk.com
+ * limit how much an encapsulating network can grow with --networks
 
 0.1.12
 

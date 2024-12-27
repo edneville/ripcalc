@@ -17,7 +17,9 @@ fn print_details(
     if matches.opt_present("networks") {
         let nets = matches.opt_str("networks").unwrap().trim().parse().unwrap();
 
-        if nets < ip.cidr {
+        if nets < ip.cidr
+            && !(matches.opt_present("encapsulating") && matches.opt_present("networks"))
+        {
             eprintln!("{} is bigger than the network mask {}", nets, ip.cidr);
             std::process::exit(1);
         }
@@ -257,13 +259,29 @@ fn process_input_file(
             }
         }
 
-        match smallest_group_network(&used) {
-            Some(x) => {
-                print_details(&x, matches, rows, None);
+        if matches.opt_present("networks") {
+            let network_size: u32 = matches.opt_str("networks").unwrap().trim().parse().unwrap();
+
+            match smallest_group_network_limited(&used, network_size) {
+                Some(x) => {
+                    for y in x {
+                        print_details(&y, matches, rows, None);
+                    }
+                }
+                None => {
+                    eprintln!("Could not find an encapsulating network, sorry");
+                    std::process::exit(1);
+                }
             }
-            None => {
-                eprintln!("Could not find an encapsulating network, sorry");
-                std::process::exit(1);
+        } else {
+            match smallest_group_network(&used) {
+                Some(x) => {
+                    print_details(&x, matches, rows, None);
+                }
+                None => {
+                    eprintln!("Could not find an encapsulating network, sorry");
+                    std::process::exit(1);
+                }
             }
         }
 
@@ -568,13 +586,29 @@ fn main() {
     }
 
     if matches.opt_present("encapsulating") {
-        match smallest_group_network(&used) {
-            Some(x) => {
-                print_details(&x, &matches, &rows, None);
+        if matches.opt_present("networks") {
+            let network_size: u32 = matches.opt_str("networks").unwrap().trim().parse().unwrap();
+
+            match smallest_group_network_limited(&used, network_size) {
+                Some(x) => {
+                    for y in x {
+                        print_details(&y, &matches, &rows, None);
+                    }
+                }
+                None => {
+                    eprintln!("Could not find an encapsulating network, sorry");
+                    std::process::exit(1);
+                }
             }
-            None => {
-                eprintln!("Could not find an encapsulating network, sorry");
-                std::process::exit(1);
+        } else {
+            match smallest_group_network(&used) {
+                Some(x) => {
+                    print_details(&x, &matches, &rows, None);
+                }
+                None => {
+                    eprintln!("Could not find an encapsulating network, sorry");
+                    std::process::exit(1);
+                }
             }
         }
 

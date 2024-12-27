@@ -836,4 +836,81 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
         assert_eq!(subnets_in_network(27, &net), 2048);
         assert_eq!(subnets_in_network(28, &net), 4096);
     }
+
+    #[test]
+    fn test_smallest_network_limited() {
+        let empty: HashMap<Ip, bool> = HashMap::new();
+        assert_eq!(smallest_group_network_limited(&empty, 32), None);
+    }
+
+    #[test]
+    fn test_smallest_network_limited_22_24() {
+        let mut net_list: HashMap<Ip, bool> = HashMap::new();
+        for i in 0..4 {
+            for j in 0..4 {
+                net_list.insert(
+                    Ip {
+                        address: Addr::V4(
+                            Ipv4Addr::from_str(&format!("192.168.{i}.{j}")).expect("bad ipv4"),
+                        ),
+                        cidr: 24,
+                    },
+                    true,
+                );
+            }
+        }
+
+        let mut resp = smallest_group_network_limited(&net_list, 22).unwrap();
+        resp.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        assert_eq!(
+            resp,
+            [Ip {
+                address: Addr::V4(Ipv4Addr::from_str(&format!("192.168.0.0")).expect("bad ipv4")),
+                cidr: 22
+            }]
+        );
+    }
+
+    #[test]
+    fn test_smallest_network_limited_22_8() {
+        let mut net_list: HashMap<Ip, bool> = HashMap::new();
+        for i in 0..4 {
+            for j in 0..4 {
+                net_list.insert(
+                    Ip {
+                        address: Addr::V4(
+                            Ipv4Addr::from_str(&format!("192.{i}.{j}.0")).expect("bad ipv4"),
+                        ),
+                        cidr: 8,
+                    },
+                    true,
+                );
+            }
+        }
+
+        let mut resp = smallest_group_network_limited(&net_list, 22).unwrap();
+        resp.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        dbg!(&resp);
+        assert_eq!(
+            resp,
+            [
+                Ip {
+                    address: Addr::V4(Ipv4Addr::from_str(&format!("192.0.0.0")).expect("bad ipv4")),
+                    cidr: 22
+                },
+                Ip {
+                    address: Addr::V4(Ipv4Addr::from_str(&format!("192.1.0.0")).expect("bad ipv4")),
+                    cidr: 22
+                },
+                Ip {
+                    address: Addr::V4(Ipv4Addr::from_str(&format!("192.2.0.0")).expect("bad ipv4")),
+                    cidr: 22
+                },
+                Ip {
+                    address: Addr::V4(Ipv4Addr::from_str(&format!("192.3.0.0")).expect("bad ipv4")),
+                    cidr: 22
+                },
+            ]
+        );
+    }
 }

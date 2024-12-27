@@ -418,21 +418,7 @@ pub fn smallest_group_network(networks: &HashMap<Ip, bool>) -> Option<Ip> {
     for key in networks.keys().skip(1) {
         let mut key = key.clone();
         match (&ip.address, &key.address) {
-            (Addr::V4(_), Addr::V4(_)) => {
-                if key.cidr < ip.cidr {
-                    ip.cidr = key.cidr;
-                }
-                key.cidr = ip.cidr;
-                while network(&key) != network(&ip) {
-                    if ip.cidr == 0 {
-                        return None;
-                    }
-                    ip.cidr -= 1;
-                    key.cidr = ip.cidr;
-                }
-                ip = network(&ip);
-            }
-            (Addr::V6(_), Addr::V6(_)) => {
+            (Addr::V4(_), Addr::V4(_)) | (Addr::V6(_), Addr::V6(_)) => {
                 if key.cidr < ip.cidr {
                     ip.cidr = key.cidr;
                 }
@@ -453,6 +439,58 @@ pub fn smallest_group_network(networks: &HashMap<Ip, bool>) -> Option<Ip> {
     }
 
     Some(ip)
+}
+
+pub fn smallest_group_network_limited(networks: &HashMap<Ip, bool>, cidr: u32) -> Option<Vec<Ip>> {
+    if networks.is_empty() {
+        return None;
+    }
+
+    let mut net_list: HashMap<Ip, Ip> = HashMap::new();
+
+    for key in networks.keys() {
+        let mut bucket_ip = key.clone();
+        bucket_ip.cidr = cidr;
+
+        let mut key_copy = key.clone();
+
+        // don't add a entry with a bigger network than cidr
+        if key_copy.cidr < cidr {
+            key_copy.cidr = cidr;
+        }
+
+        let bucket = network(&bucket_ip);
+
+        if net_list.get(&bucket).is_none() {
+            net_list.insert(bucket.clone(), key_copy.clone());
+        }
+
+        let ip = net_list.get_mut(&bucket).unwrap();
+
+        match (&ip.address, &key.address) {
+            (Addr::V4(_), Addr::V4(_)) | (Addr::V6(_), Addr::V6(_)) => {
+                // println!("ip.cidr {}, key_copy.cidr {}", ip.cidr, key_copy.cidr);
+                if key_copy.cidr < ip.cidr {
+                    // println!("key less than ip: ip.cidr {}, key_copy.cidr {}", ip.cidr, key_copy.cidr);
+                    ip.cidr = key_copy.cidr;
+                }
+                key_copy.cidr = ip.cidr;
+                while network(&key_copy) != network(&ip) && ip.cidr > cidr {
+                    if ip.cidr == 0 {
+                        return None;
+                    }
+                    ip.cidr -= 1;
+                    key_copy.cidr = ip.cidr;
+                }
+                *ip = network(ip);
+            }
+            (_, _) => {
+                return None;
+            }
+        }
+    }
+
+    Some(net_list.values().cloned().collect())
 }
 
 impl fmt::Display for Ip {
@@ -1204,16 +1242,14 @@ pub fn format_details(
                     }
                     'D' => {
                         if let Some(s) = subnet_size {
-                            out_str.push_str( &s.to_string() );
+                            out_str.push_str(&s.to_string());
                         } else {
                             out_str.push('D');
                         };
                     }
                     'N' => {
                         if let Some(s) = subnet_size {
-                            out_str.push_str(
-                                &subnets_in_network(s, ip).to_string(),
-                            );
+                            out_str.push_str(&subnets_in_network(s, ip).to_string());
                         } else {
                             out_str.push('N');
                         };
