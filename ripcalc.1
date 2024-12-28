@@ -15,7 +15,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "ripcalc" "1" "21 October 2024" "ripcalc 0.1.12" "User Manual"
+.TH "ripcalc" "1" "28 December 2024" "ripcalc 0.1.12" "User Manual"
 .hy
 .SH NAME
 .PP
@@ -40,7 +40,7 @@ ripcalc - a tool for network addresses
 .PP
 \f[B]ripcalc -s/--file [-] 127.0.0.1\f[R]
 .PP
-\f[B]ripcalc -e/--encapsulating [-s/--file name]\f[R]
+\f[B]ripcalc -e/--encapsulating [-s/--file name] [--networks CIDR]\f[R]
 .PP
 \f[B]ripcalc -s/--file name [--inside/--outside] 127.0.0.1\f[R]
 .PP
@@ -82,7 +82,8 @@ provided along with the \f[V]--divide\f[R] argument and a subnet CIDR
 mask.
 .PP
 When \f[V]--encapsulating\f[R] is used the containing network will be
-returned.
+returned, use with \f[V]--networks\f[R] to limit the range that an
+encapsulating network can grow.
 .PP
 The number (\f[B]%D\f[R]) of subnets can be printed when using the
 \f[V]--networks\f[R] argument with the \f[B]%N\f[R] formatters.
