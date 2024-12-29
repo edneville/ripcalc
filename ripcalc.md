@@ -152,13 +152,13 @@ For large networks it can be useful to see the number of subnets, to see the num
 
 Or for a IPv6 /48 network that you want to subnet into /64, you can see there are 65536 subnets:
 
-    ripcalc --networks 64 2001:db8:1::/48
-                   IP is: 2001:db8:1::/48
-            Expanded: 2001:0db8:0001:0000:0000:0000:0000:0000
-          Network is: 2001:0db8:0001:0000:0000:0000:0000:0000
-   Last host address: 2001:0db8:0001:ffff:ffff:ffff:ffff:ffff
-           Subnet is: ffff:ffff:ffff:0000:0000:0000:0000:0000
-       Networks (64): 65536
+     ripcalc --networks 64 2001:db8:1::/48
+                    IP is: 2001:db8:1::/48
+             Expanded: 2001:0db8:0001:0000:0000:0000:0000:0000
+           Network is: 2001:0db8:0001:0000:0000:0000:0000:0000
+    Last host address: 2001:0db8:0001:ffff:ffff:ffff:ffff:ffff
+            Subnet is: ffff:ffff:ffff:0000:0000:0000:0000:0000
+        Networks (64): 65536
 
 # encapsulating
 
@@ -168,5 +168,5 @@ Suppose a large flood of requests are from a network pattern, to preserve servic
 
 Networks can be grouped, in a scenario where you have a list of unwanted traffic, you can turn this into a list of small networks to block, supposing you don't want to block anything that covers more than a /19:
 
-    cat bad_traffic | ripcalc --encapsulating --group 16 --format cidr
+    cat bad_traffic | ripcalc --encapsulating --group 19 --format cidr
 

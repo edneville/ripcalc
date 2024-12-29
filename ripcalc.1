@@ -82,7 +82,7 @@ provided along with the \f[V]--divide\f[R] argument and a subnet CIDR
 mask.
 .PP
 When \f[V]--encapsulating\f[R] is used the containing network will be
-returned, use with \f[V]--networks\f[R] to limit the range that an
+returned, use with \f[V]--group\f[R] to limit the range that an
 encapsulating network can grow.
 .PP
 The number (\f[B]%D\f[R]) of subnets can be printed when using the
@@ -308,14 +308,36 @@ there are 65536 subnets:
 .IP
 .nf
 \f[C]
-ripcalc --networks 64 2001:db8:1::/48
-               IP is: 2001:db8:1::/48
-        Expanded: 2001:0db8:0001:0000:0000:0000:0000:0000
-      Network is: 2001:0db8:0001:0000:0000:0000:0000:0000
+ ripcalc --networks 64 2001:db8:1::/48
+                IP is: 2001:db8:1::/48
+         Expanded: 2001:0db8:0001:0000:0000:0000:0000:0000
+       Network is: 2001:0db8:0001:0000:0000:0000:0000:0000
+Last host address: 2001:0db8:0001:ffff:ffff:ffff:ffff:ffff
+        Subnet is: ffff:ffff:ffff:0000:0000:0000:0000:0000
+    Networks (64): 65536
+\f[R]
+.fi
+.SH encapsulating
+.PP
+Suppose a large flood of requests are from a network pattern, to
+preserve service you may want to block the whole network that
+encapsulates a list:
+.IP
+.nf
+\f[C]
+please ip route add blackhole \[ga]ripcalc -e 192.168.56.10 192.168.57.1 192.168.44.47\[ga]
 \f[R]
 .fi
 .PP
-Last host address: 2001:0db8:0001:ffff:ffff:ffff:ffff:ffff Subnet is:
-ffff:ffff:ffff:0000:0000:0000:0000:0000 Networks (64): 65536
+Networks can be grouped, in a scenario where you have a list of unwanted
+traffic, you can turn this into a list of small networks to block,
+supposing you don\[cq]t want to block anything that covers more than a
+/19:
+.IP
+.nf
+\f[C]
+cat bad_traffic | ripcalc --encapsulating --group 16 --format cidr
+\f[R]
+.fi
 .SH AUTHORS
 Ed Neville (ed-ripcalc\[at]s5h.net).

@@ -196,6 +196,12 @@ Suppose a large flood of requests are from a network pattern, to preserve servic
 please ip route add blackhole `ripcalc -e 192.168.56.10 192.168.57.1 192.168.44.47`
 ```
 
+Networks can be grouped, in a scenario where you have a list of unwanted traffic, you can turn this into a list of small networks to block, supposing you don't want to block anything that covers more than a /19:
+
+```
+cat bad_traffic | ripcalc --encapsulating --group 19 --format cidr
+```
+
 # help
 
 ```
