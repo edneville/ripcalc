@@ -890,7 +890,6 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
 
         let mut resp = smallest_group_network_limited(&net_list, 22).unwrap();
         resp.sort_by(|a, b| a.partial_cmp(b).unwrap());
-        dbg!(&resp);
         assert_eq!(
             resp,
             [
@@ -909,6 +908,48 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
                 Ip {
                     address: Addr::V4(Ipv4Addr::from_str(&format!("192.3.0.0")).expect("bad ipv4")),
                     cidr: 22
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn test_smallest_network_limited_24_8() {
+        let mut net_list: HashMap<Ip, bool> = HashMap::new();
+        for i in 0..4 {
+            for j in 0..4 {
+                net_list.insert(
+                    Ip {
+                        address: Addr::V4(
+                            Ipv4Addr::from_str(&format!("192.0.{i}.{j}")).expect("bad ipv4"),
+                        ),
+                        cidr: 8,
+                    },
+                    true,
+                );
+            }
+        }
+
+        let mut resp = smallest_group_network_limited(&net_list, 24).unwrap();
+        resp.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        assert_eq!(
+            resp,
+            [
+                Ip {
+                    address: Addr::V4(Ipv4Addr::from_str(&format!("192.0.0.0")).expect("bad ipv4")),
+                    cidr: 24
+                },
+                Ip {
+                    address: Addr::V4(Ipv4Addr::from_str(&format!("192.0.1.0")).expect("bad ipv4")),
+                    cidr: 24
+                },
+                Ip {
+                    address: Addr::V4(Ipv4Addr::from_str(&format!("192.0.2.0")).expect("bad ipv4")),
+                    cidr: 24
+                },
+                Ip {
+                    address: Addr::V4(Ipv4Addr::from_str(&format!("192.0.3.0")).expect("bad ipv4")),
+                    cidr: 24
                 },
             ]
         );

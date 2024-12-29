@@ -461,7 +461,7 @@ pub fn smallest_group_network_limited(networks: &HashMap<Ip, bool>, cidr: u32) -
 
         let bucket = network(&bucket_ip);
 
-        if net_list.get(&bucket).is_none() {
+        if !net_list.contains_key(&bucket) {
             net_list.insert(bucket.clone(), key_copy.clone());
         }
 
@@ -475,7 +475,7 @@ pub fn smallest_group_network_limited(networks: &HashMap<Ip, bool>, cidr: u32) -
                     ip.cidr = key_copy.cidr;
                 }
                 key_copy.cidr = ip.cidr;
-                while network(&key_copy) != network(&ip) && ip.cidr > cidr {
+                while network(&key_copy) != network(ip) && ip.cidr > cidr {
                     if ip.cidr == 0 {
                         return None;
                     }

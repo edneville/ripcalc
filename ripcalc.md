@@ -4,7 +4,7 @@ section: 1
 header: User Manual
 footer: ripcalc 0.1.12
 author: Ed Neville (ed-ripcalc@s5h.net)
-date: 28 December 2024
+date: 29 December 2024
 ---
 
 # NAME
@@ -31,7 +31,7 @@ ripcalc - a tool for network addresses
 
 **ripcalc -s/--file [-] 127.0.0.1**
 
-**ripcalc -e/--encapsulating [-s/--file name] [--networks CIDR]**
+**ripcalc -e/--encapsulating [-s/--file name] [--group CIDR]**
 
 **ripcalc -s/--file name [--inside/--outside] 127.0.0.1**
 
@@ -60,9 +60,9 @@ When `--reverse` is used the `inputs`, `sources` or both can be treated as back-
 
 **ripcalc** can return a list of subnets when a network is provided along with the `--divide` argument and a subnet CIDR mask.
 
-When `--encapsulating` is used the containing network will be returned, use with `--networks` to limit the range that an encapsulating network can grow.
+When `--encapsulating` is used the containing network will be returned, use with `--group` to limit the range that an encapsulating network can grow.
 
-The number (**%D**) of subnets can be printed when using the `--networks` argument with the **%N** formatters. The argument should be the CIDR mask, see below for example.
+The number (**%D**) of subnets can be printed when using the `--group` argument with the **%N** formatters. The argument should be the CIDR mask, see below for example.
 
 # CSV
 
@@ -160,5 +160,13 @@ Or for a IPv6 /48 network that you want to subnet into /64, you can see there ar
            Subnet is: ffff:ffff:ffff:0000:0000:0000:0000:0000
        Networks (64): 65536
 
+# encapsulating
 
+Suppose a large flood of requests are from a network pattern, to preserve service you may want to block the whole network that encapsulates a list:
+
+    please ip route add blackhole `ripcalc -e 192.168.56.10 192.168.57.1 192.168.44.47`
+
+Networks can be grouped, in a scenario where you have a list of unwanted traffic, you can turn this into a list of small networks to block, supposing you don't want to block anything that covers more than a /19:
+
+    cat bad_traffic | ripcalc --encapsulating --group 16 --format cidr
 

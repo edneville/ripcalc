@@ -2,7 +2,7 @@
 
  * don't require input to be one IP per line
  * show subnets within network in format, suggested by andy@bitfolk.com
- * limit how much an encapsulating network can grow with --networks
+ * limit how much an encapsulating network can grow with --group
 
 0.1.12
 
