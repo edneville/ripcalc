@@ -207,13 +207,14 @@ Options:
     -c, --csv PATH      csv reference file
     -d, --divide CIDR   divide network into chunks
         --noexpand      do not expand networks in list
-    -e, --encapsulating
+    -e, --encapsulating 
                         display encapsulating network from arguments or lookup
                         list
     -f, --format STRING format output
                         'cidr' expands to %a/%c\n
                         'short' expands to %a\n
                         See manual for more options
+        --group CIDR    maximum network group size for encapsulation
     -h, --help          display help
     -i, --field FIELD   csv field
     -l, --list          list all addresses in network

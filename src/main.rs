@@ -17,8 +17,7 @@ fn print_details(
     if matches.opt_present("networks") {
         let nets = matches.opt_str("networks").unwrap().trim().parse().unwrap();
 
-        if nets < ip.cidr
-            && !(matches.opt_present("encapsulating") && matches.opt_present("networks"))
+        if nets < ip.cidr && !(matches.opt_present("encapsulating") && matches.opt_present("group"))
         {
             eprintln!("{} is bigger than the network mask {}", nets, ip.cidr);
             std::process::exit(1);
@@ -259,11 +258,12 @@ fn process_input_file(
             }
         }
 
-        if matches.opt_present("networks") {
-            let network_size: u32 = matches.opt_str("networks").unwrap().trim().parse().unwrap();
+        if matches.opt_present("group") {
+            let network_size: u32 = matches.opt_str("group").unwrap().trim().parse().unwrap();
 
             match smallest_group_network_limited(&used, network_size) {
-                Some(x) => {
+                Some(mut x) => {
+                    x.sort_by(|a, b| a.partial_cmp(b).unwrap());
                     for y in x {
                         print_details(&y, matches, rows, None);
                     }
@@ -377,6 +377,12 @@ fn main() {
     );
 
     opts.optopt("f", "format", "format output\n'cidr' expands to %a/%c\\n\n'short' expands to %a\\n\nSee manual for more options", "STRING");
+    opts.optopt(
+        "",
+        "group",
+        "maximum network group size for encapsulation",
+        "CIDR",
+    );
     opts.optflag("h", "help", "display help");
 
     opts.optopt("i", "field", "csv field", "FIELD");
@@ -434,6 +440,16 @@ fn main() {
             std::process::exit(1);
         }
         inside = Some(false);
+    }
+
+    if matches.opt_present("group") {
+        let _: u32 = match matches.opt_str("group").unwrap().trim().parse() {
+            Ok(x) => x,
+            Err(x) => {
+                eprintln!("Cannot convert {} to number", x);
+                std::process::exit(1);
+            }
+        };
     }
 
     if matches.opt_present("networks") {
