@@ -73,7 +73,13 @@ fn print_details(
         };
 
         for ip_copy in addresses(ip, used, Some(divide)) {
-            if let Some(m) = format_details(&ip_copy, formatted.to_string(), rows, networks) {
+            if let Some(m) = format_details(
+                &ip_copy,
+                formatted.to_string(),
+                rows,
+                networks,
+                Some(matches),
+            ) {
                 print!("{}", m);
             }
         }
@@ -82,21 +88,27 @@ fn print_details(
 
     if matches.opt_present("list") {
         if matches.opt_present("noexpand") {
-            if let Some(m) = format_details(ip, formatted, rows, networks) {
+            if let Some(m) = format_details(ip, formatted, rows, networks, Some(matches)) {
                 print!("{}", m);
             }
             return;
         }
 
         for ip_copy in addresses(ip, used, None) {
-            if let Some(m) = format_details(&ip_copy, formatted.to_string(), rows, networks) {
+            if let Some(m) = format_details(
+                &ip_copy,
+                formatted.to_string(),
+                rows,
+                networks,
+                Some(matches),
+            ) {
                 print!("{}", m);
             }
         }
         return;
     }
 
-    if let Some(m) = format_details(ip, formatted, rows, networks) {
+    if let Some(m) = format_details(ip, formatted, rows, networks, Some(matches)) {
         print!("{}", m);
     }
 }
@@ -365,6 +377,11 @@ fn main() {
     opts.optopt("6", "ipv6", "ipv6 address", "IPv6");
 
     opts.optflag("a", "available", "display unused addresses");
+    opts.optflag(
+        "",
+        "allowemptyrow",
+        "when no matching csv network, use empty fields",
+    );
     opts.optopt("b", "base", "ipv4 base format, default to oct", "INTEGER");
     opts.optopt("c", "csv", "csv reference file", "PATH");
     opts.optopt("d", "divide", "divide network into chunks", "CIDR");

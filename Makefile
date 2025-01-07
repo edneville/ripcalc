@@ -54,6 +54,7 @@ bintest:
 	printf '2a0a:1100:1002::/48' | $(RELEASE) --networks 64 | tr -d '[:blank:]' | grep -Fx "Networks(64):65536"
 	printf '2a0a:1100:1002::/48' | $(RELEASE) --networks 64 --format '%D:%N' | grep -Fx '64:65536'
 	for i in 1 2 3 4; do for j in 1 2 3 4; do echo 192.$$i.$$j.1; done; done | $(RELEASE) --group 16 --format short --encapsulating | wc -l | tr -d '[:blank:]' | grep -Fx 4
+	printf 'name,network\na,192.168.0.0/16\n' >ips.csv; $(RELEASE) --csv ips.csv 127.0.0.1 --allowemptyrow --format '%{name} %a/%c\n' | grep -Fx '{name} 127.0.0.1/24' && rm ips.csv
 
 install: all
 	command -v please && please install -m 0755 -s $(RELEASE) /usr/local/bin || sudo install -m 0755 -s $(RELEASE) /usr/local/bin 
