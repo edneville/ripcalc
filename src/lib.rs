@@ -1086,12 +1086,14 @@ pub fn format_details(
     formatted: String,
     rows: &Option<HashMap<Ip, NetRow>>,
     subnet_size: Option<u32>,
+    matches: Option<&getopts::Matches>,
 ) -> Option<String> {
     let ip = &mut ip.clone();
     let mut reformatted = formatted;
 
     if rows.is_some() {
         let mut found_match = false;
+
         let rows = rows.as_ref().unwrap();
 
         match ip.address {
@@ -1160,7 +1162,11 @@ pub fn format_details(
             }
         }
         if !found_match {
-            return None;
+            if let Some(m) = matches {
+                if !m.opt_present("allowemptyrow") {
+                    return None;
+                }
+            };
         }
     }
     let b = broadcast(ip);
