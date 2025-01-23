@@ -18,3 +18,4 @@ keywords = ["ip","network","csv"]
 getopts = "0.2"
 csv = "1"
 nix = { version = ">= 0.27", features = ["signal", "net", "fs" ] }
+dns-lookup = "1"

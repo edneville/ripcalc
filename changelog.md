@@ -1,3 +1,8 @@
+0.2.0
+
+ * do ptr lookups as %p in format
+ * use a cache for lookups
+
 0.1.13
 
  * don't require input to be one IP per line
