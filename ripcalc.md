@@ -4,7 +4,7 @@ section: 1
 header: User Manual
 footer: ripcalc 0.1.13
 author: Ed Neville (ed-ripcalc@s5h.net)
-date: 13 January 2025
+date: 24 January 2025
 ---
 
 # NAME
@@ -121,6 +121,7 @@ Other format characters:
 | %r          | Network reservation information (if available) |
 | %d          | Matching device interface by IP |
 | %m          | Matching media link interface by network |
+| %p          | PTR record |
 | %k          | RBL/reverse DNS-style format |
 | %D          | Network size (--networks) |
 | %N          | Number of subnets (--networks) |

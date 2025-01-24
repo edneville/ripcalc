@@ -91,6 +91,7 @@ Other format characters:
 | %r          | Network reservation information (if available) |
 | %d          | Matching device interface by IP |
 | %m          | Matching media link interface by network |
+| %p          | PTR record |
 | %k          | RBL/reverse DNS-style format |
 | %D          | Network size (--networks) |
 | %N          | Number of subnets (--networks) |

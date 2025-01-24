@@ -1,3 +1,4 @@
+use dns_lookup::{lookup_addr, lookup_host};
 use nix::ifaddrs::*;
 use nix::sys::socket::AddressFamily;
 use nix::sys::socket::SockaddrLike;
@@ -9,7 +10,6 @@ use std::fmt;
 use std::io::BufRead;
 use std::net::Ipv4Addr;
 use std::net::Ipv6Addr;
-use std::net::ToSocketAddrs;
 use std::os::unix::io::RawFd;
 use std::str::FromStr;
 
@@ -236,6 +236,7 @@ pub fn parse_address_mask(
     default_v6_mask: Option<u32>,
     input_base: Option<i32>,
     reverse: bool,
+    hm: &mut HashMap<String, String>,
 ) -> Option<Ip> {
     let parts: Vec<&str> = a.split('/').collect();
 
@@ -268,17 +269,9 @@ pub fn parse_address_mask(
         }
     }
 
-    let addrs_iter = format!("{}:443", arg).to_socket_addrs();
-    let mut buffer: String;
+    let arg = ip_lookup(arg, &mut Some(hm));
 
-    if let Ok(mut address) = addrs_iter {
-        buffer = format!("{}", address.next().unwrap());
-        let v: Vec<&str> = buffer.split(':').collect();
-        buffer = v[0].to_string();
-        arg = buffer.as_str();
-    }
-
-    let input_ip = parse_v4_v6(arg, input_base, reverse);
+    let input_ip = parse_v4_v6(&arg, input_base, reverse);
 
     if let Some(input_ip) = input_ip {
         return Some(Ip {
@@ -1057,6 +1050,60 @@ pub fn rbl_format(ip: &Ip) -> String {
     }
 }
 
+pub fn ip_lookup(address: &str, hm: &mut Option<&mut HashMap<String, String>>) -> String {
+    let mut k: String = "".to_string();
+    if hm.is_some() {
+        k = format!("n/{}", address);
+
+        if let Some(v) = hm.as_ref().unwrap().get(&k) {
+            return v.clone();
+        }
+    }
+
+    if let Ok(buffer) = lookup_host(address) {
+        let arg = buffer[0].to_string();
+
+        if hm.is_some() {
+            hm.as_mut().unwrap().insert(k, arg.clone());
+        }
+        arg
+    } else {
+        "".to_string()
+    }
+}
+
+pub fn ptr_format(ip: &Ip, hm: &mut Option<&mut HashMap<String, String>>) -> String {
+    let mut k: String = "".to_string();
+
+    if hm.is_some() {
+        k = format!("ptr/{}", ip);
+        if let Some(v) = hm.as_ref().unwrap().get(&k) {
+            return v.clone();
+        }
+    }
+
+    let j = match ip.address {
+        Addr::V4(x) => {
+            let ip: std::net::IpAddr = std::net::IpAddr::V4(x);
+            lookup_addr(&ip)
+        }
+        Addr::V6(x) => {
+            let ip: std::net::IpAddr = std::net::IpAddr::V6(x);
+            lookup_addr(&ip)
+        }
+    };
+
+    if let Ok(j) = j {
+        if hm.is_some() {
+            hm.as_mut().unwrap().insert(k, j.clone());
+        }
+
+        return j;
+    }
+
+    "".to_string()
+}
+
 pub fn network_size(ip: &Ip) -> u128 {
     let start = network(ip);
     let end = broadcast(ip);
@@ -1087,6 +1134,7 @@ pub fn format_details(
     rows: &Option<HashMap<Ip, NetRow>>,
     subnet_size: Option<u32>,
     matches: Option<&getopts::Matches>,
+    hm: &mut Option<&mut HashMap<String, String>>,
 ) -> Option<String> {
     let ip = &mut ip.clone();
     let mut reformatted = formatted;
@@ -1243,6 +1291,9 @@ pub fn format_details(
                     'k' => {
                         out_str.push_str(&rbl_format(ip));
                     }
+                    'p' => {
+                        out_str.push_str(&ptr_format(ip, hm));
+                    }
                     '%' => {
                         out_str.push('%');
                     }
@@ -1330,6 +1381,7 @@ pub fn find_ips<'a>(
     reader: &'a mut Box<dyn BufRead>,
     input_base: Option<i32>,
     reverse: &'a Reverse,
+    hm: &'a mut HashMap<String, String>,
 ) -> impl 'a + std::iter::Iterator<Item = Vec<Ip>> {
     std::iter::from_fn(move || {
         if let Some(line) = reader.lines().next().into_iter().by_ref().next() {
@@ -1348,6 +1400,7 @@ pub fn find_ips<'a>(
                     Some(128),
                     input_base,
                     matches!(reverse, Reverse::Both | Reverse::Input),
+                    hm,
                 ) {
                     Some(x) => x,
                     None => {
