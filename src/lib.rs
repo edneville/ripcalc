@@ -29,6 +29,12 @@ pub struct NetRow {
     pub row: HashMap<String, String>,
 }
 
+#[derive(Debug, Clone)]
+pub struct Config {
+    pub interface_names: Vec<InterfaceAddress>,
+    pub hm: HashMap<String, String>,
+}
+
 pub enum FormatMode {
     Text,
     Binary,
@@ -236,7 +242,7 @@ pub fn parse_address_mask(
     default_v6_mask: Option<u32>,
     input_base: Option<i32>,
     reverse: bool,
-    hm: &mut HashMap<String, String>,
+    config: &mut Config,
 ) -> Option<Ip> {
     let parts: Vec<&str> = a.split('/').collect();
 
@@ -269,7 +275,7 @@ pub fn parse_address_mask(
         }
     }
 
-    let arg = ip_lookup(arg, &mut Some(hm));
+    let arg = ip_lookup(arg, &mut config.hm);
 
     let input_ip = parse_v4_v6(&arg, input_base, reverse);
 
@@ -1050,36 +1056,28 @@ pub fn rbl_format(ip: &Ip) -> String {
     }
 }
 
-pub fn ip_lookup(address: &str, hm: &mut Option<&mut HashMap<String, String>>) -> String {
-    let mut k: String = "".to_string();
-    if hm.is_some() {
-        k = format!("n/{}", address);
+pub fn ip_lookup(address: &str, hm: &mut HashMap<String, String>) -> String {
+    let k = format!("n/{}", address);
 
-        if let Some(v) = hm.as_ref().unwrap().get(&k) {
-            return v.clone();
-        }
+    if let Some(v) = hm.get(&k) {
+        return v.clone();
     }
 
     if let Ok(buffer) = lookup_host(address) {
         let arg = buffer[0].to_string();
 
-        if hm.is_some() {
-            hm.as_mut().unwrap().insert(k, arg.clone());
-        }
+        hm.insert(k, arg.clone());
         arg
     } else {
         "".to_string()
     }
 }
 
-pub fn ptr_format(ip: &Ip, hm: &mut Option<&mut HashMap<String, String>>) -> String {
-    let mut k: String = "".to_string();
+pub fn ptr_format(ip: &Ip, hm: &mut HashMap<String, String>) -> String {
+    let k: String = "".to_string();
 
-    if hm.is_some() {
-        k = format!("ptr/{}", ip);
-        if let Some(v) = hm.as_ref().unwrap().get(&k) {
-            return v.clone();
-        }
+    if let Some(v) = hm.get(&k) {
+        return v.clone();
     }
 
     let j = match ip.address {
@@ -1094,9 +1092,7 @@ pub fn ptr_format(ip: &Ip, hm: &mut Option<&mut HashMap<String, String>>) -> Str
     };
 
     if let Ok(j) = j {
-        if hm.is_some() {
-            hm.as_mut().unwrap().insert(k, j.clone());
-        }
+        hm.insert(k, j.clone());
 
         return j;
     }
@@ -1134,7 +1130,7 @@ pub fn format_details(
     rows: &Option<HashMap<Ip, NetRow>>,
     subnet_size: Option<u32>,
     matches: Option<&getopts::Matches>,
-    hm: &mut Option<&mut HashMap<String, String>>,
+    config: &mut Config,
 ) -> Option<String> {
     let ip = &mut ip.clone();
     let mut reformatted = formatted;
@@ -1226,10 +1222,7 @@ pub fn format_details(
         reformatted = reformatted.replace("%r", &r);
     }
 
-    let interfaces: Vec<InterfaceAddress> = match nix::ifaddrs::getifaddrs() {
-        Ok(x) => x.collect(),
-        Err(_) => vec![],
-    };
+    let interfaces = &config.interface_names;
 
     let mut mode = FormatMode::Text;
     let mut out_str = "".to_string();
@@ -1283,16 +1276,16 @@ pub fn format_details(
                         out_str.push_str(&network_size(ip).to_string());
                     }
                     'm' => {
-                        out_str.push_str(&matching_network_interface(ip, &interfaces, false));
+                        out_str.push_str(&matching_network_interface(ip, interfaces, false));
                     }
                     'd' => {
-                        out_str.push_str(&matching_network_interface(ip, &interfaces, true));
+                        out_str.push_str(&matching_network_interface(ip, interfaces, true));
                     }
                     'k' => {
                         out_str.push_str(&rbl_format(ip));
                     }
                     'p' => {
-                        out_str.push_str(&ptr_format(ip, hm));
+                        out_str.push_str(&ptr_format(ip, &mut config.hm));
                     }
                     '%' => {
                         out_str.push('%');
@@ -1381,7 +1374,7 @@ pub fn find_ips<'a>(
     reader: &'a mut Box<dyn BufRead>,
     input_base: Option<i32>,
     reverse: &'a Reverse,
-    hm: &'a mut HashMap<String, String>,
+    config: &'a mut Config,
 ) -> impl 'a + std::iter::Iterator<Item = Vec<Ip>> {
     std::iter::from_fn(move || {
         if let Some(line) = reader.lines().next().into_iter().by_ref().next() {
@@ -1400,7 +1393,7 @@ pub fn find_ips<'a>(
                     Some(128),
                     input_base,
                     matches!(reverse, Reverse::Both | Reverse::Input),
-                    hm,
+                    config,
                 ) {
                     Some(x) => x,
                     None => {
