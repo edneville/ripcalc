@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::net::Ipv4Addr;
 use std::net::Ipv6Addr;
@@ -276,22 +277,22 @@ mod test {
             address: Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()),
             cidr: 30,
         };
-
-        let mut config = Config {
+        let config = RefCell::new(Config {
             interface_names: vec![],
             hm: HashMap::new(),
-        };
-        let f = format_details(&net, "%a".to_string(), &None, None, None, &mut config);
+        });
+
+        let f = format_details(&net, "%a".to_string(), &None, None, None, &config);
 
         assert_eq!(f, Some("192.168.0.0".to_string()));
     }
 
     #[test]
     fn test_format_ng_percent() {
-        let mut config = Config {
+        let config = RefCell::new(Config {
             interface_names: vec![],
             hm: HashMap::new(),
-        };
+        });
         let f = format_details(
             &Ip {
                 address: Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()),
@@ -301,7 +302,7 @@ mod test {
             &None,
             None,
             None,
-            &mut config,
+            &config,
         );
 
         assert_eq!(f, Some("%".to_string()));
@@ -315,7 +316,7 @@ mod test {
             &None,
             None,
             None,
-            &mut config,
+            &config,
         );
 
         assert_eq!(f, Some("%".to_string()));
@@ -329,7 +330,7 @@ mod test {
             &None,
             None,
             None,
-            &mut config,
+            &config,
         );
 
         assert_eq!(f, Some("%%".to_string()));
@@ -343,7 +344,7 @@ mod test {
             &None,
             None,
             None,
-            &mut config,
+            &config,
         );
 
         assert_eq!(f, Some("%%".to_string()));
@@ -356,11 +357,11 @@ mod test {
             cidr: 64,
         };
 
-        let mut config = Config {
+        let config = RefCell::new(Config {
             interface_names: vec![],
             hm: HashMap::new(),
-        };
-        let f = format_details(&net, "select * from IP6 where (ip >= %ln and ip <= %lb) and active = 1;\nupdate IP6 set active = 0 where (ip >= %ln and ip <= %lb) and active = 1;".to_string(), &None, None, None, &mut config);
+        });
+        let f = format_details(&net, "select * from IP6 where (ip >= %ln and ip <= %lb) and active = 1;\nupdate IP6 set active = 0 where (ip >= %ln and ip <= %lb) and active = 1;".to_string(), &None, None, None, &config);
 
         assert_eq!(f, Some("select * from IP6 where (ip >= 42540724579414763292693624807812497408 and ip <= 42540724579414763311140368881522049023) and active = 1;
 update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 and ip <= 42540724579414763311140368881522049023) and active = 1;".to_string()));
@@ -373,11 +374,11 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             cidr: 64,
         };
 
-        let mut config = Config {
+        let config = RefCell::new(Config {
             interface_names: vec![],
             hm: HashMap::new(),
-        };
-        let f = format_details(&net, "%%b".to_string(), &None, None, None, &mut config);
+        });
+        let f = format_details(&net, "%%b".to_string(), &None, None, None, &config);
 
         assert_eq!(f, Some("%b".to_string()));
     }
@@ -389,11 +390,11 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             cidr: 64,
         };
 
-        let mut config = Config {
+        let config = RefCell::new(Config {
             interface_names: vec![],
             hm: HashMap::new(),
-        };
-        let f = format_details(&net, "%lb".to_string(), &None, None, None, &mut config);
+        });
+        let f = format_details(&net, "%lb".to_string(), &None, None, None, &config);
 
         assert_eq!(
             f,
@@ -408,18 +409,11 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             cidr: 64,
         };
 
-        let mut config = Config {
+        let config = RefCell::new(Config {
             interface_names: vec![],
             hm: HashMap::new(),
-        };
-        let f = format_details(
-            &net,
-            "%lb\n\n\n%%".to_string(),
-            &None,
-            None,
-            None,
-            &mut config,
-        );
+        });
+        let f = format_details(&net, "%lb\n\n\n%%".to_string(), &None, None, None, &config);
 
         assert_eq!(
             f,
@@ -433,21 +427,21 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             address: Addr::V6(Ipv6Addr::from_str("2001:ba8:1f1:f1cb::4").unwrap()),
             cidr: 64,
         };
-        let mut config = Config {
+        let config = RefCell::new(Config {
             interface_names: vec![],
             hm: HashMap::new(),
-        };
+        });
 
-        let f = format_details(&net, "\n".to_string(), &None, None, None, &mut config);
+        let f = format_details(&net, "\n".to_string(), &None, None, None, &config);
         assert_eq!(f, Some("\n".to_string()));
 
-        let f = format_details(&net, "\\".to_string(), &None, None, None, &mut config);
+        let f = format_details(&net, "\\".to_string(), &None, None, None, &config);
         assert_eq!(f, Some('\\'.to_string()));
 
-        let f = format_details(&net, "\\i".to_string(), &None, None, None, &mut config);
+        let f = format_details(&net, "\\i".to_string(), &None, None, None, &config);
         assert_eq!(f, Some("i".to_string()));
 
-        let f = format_details(&net, "\\t".to_string(), &None, None, None, &mut config);
+        let f = format_details(&net, "\\t".to_string(), &None, None, None, &config);
         assert_eq!(f, Some("\t".to_string()));
     }
 
@@ -624,12 +618,12 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
 
     #[test]
     fn test_base_hex() {
-        let mut config = Config {
+        let config = RefCell::new(Config {
             interface_names: vec![],
             hm: HashMap::new(),
-        };
+        });
         assert_eq!(
-            parse_address_mask("192.168.1.1", None, None, Some(10), false, &mut config),
+            parse_address_mask("192.168.1.1", None, None, Some(10), false, &config),
             Some(Ip {
                 address: Addr::V4(Ipv4Addr::from_str("192.168.1.1").unwrap()),
                 cidr: 24,
@@ -637,21 +631,21 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
         );
 
         assert_eq!(
-            parse_address_mask("192.168.1.1", None, None, None, false, &mut config),
+            parse_address_mask("192.168.1.1", None, None, None, false, &config),
             Some(Ip {
                 address: Addr::V4(Ipv4Addr::from_str("192.168.1.1").unwrap()),
                 cidr: 24,
             })
         );
         assert_eq!(
-            parse_address_mask("D4166001", None, None, Some(16), false, &mut config),
+            parse_address_mask("D4166001", None, None, Some(16), false, &config),
             Some(Ip {
                 address: Addr::V4(Ipv4Addr::from_str("212.22.96.1").unwrap()),
                 cidr: 24,
             })
         );
         assert_eq!(
-            parse_address_mask("177.0.0.1", None, None, Some(8), false, &mut config),
+            parse_address_mask("177.0.0.1", None, None, Some(8), false, &config),
             Some(Ip {
                 address: Addr::V4(Ipv4Addr::from_str("127.0.0.1").unwrap()),
                 cidr: 24,
@@ -661,12 +655,13 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
 
     #[test]
     fn test_reverse() {
-        let mut config = Config {
+        let config = RefCell::new(Config {
             interface_names: vec![],
             hm: HashMap::new(),
-        };
+        });
+
         assert_eq!(
-            parse_address_mask("0101A8C0", None, None, Some(16), true, &mut config),
+            parse_address_mask("0101A8C0", None, None, Some(16), true, &config),
             Some(Ip {
                 address: Addr::V4(Ipv4Addr::from_str("192.168.1.1").unwrap()),
                 cidr: 24,
@@ -681,10 +676,10 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             cidr: 30,
         };
 
-        let mut config = Config {
+        let mut config = RefCell::new(Config {
             interface_names: vec![],
             hm: HashMap::new(),
-        };
+        });
 
         let f = format_details(&net, "%La".to_string(), &None, None, None, &mut config);
         assert_eq!(f, Some("-1819047474".to_string()));

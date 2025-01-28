@@ -5,6 +5,7 @@ use nix::sys::socket::SockaddrLike;
 use nix::sys::socket::SockaddrStorage;
 use nix::sys::stat::fstat;
 use nix::sys::stat::SFlag;
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt;
 use std::io::BufRead;
@@ -242,7 +243,7 @@ pub fn parse_address_mask(
     default_v6_mask: Option<u32>,
     input_base: Option<i32>,
     reverse: bool,
-    config: &mut Config,
+    config: &RefCell<Config>,
 ) -> Option<Ip> {
     let parts: Vec<&str> = a.split('/').collect();
 
@@ -275,7 +276,7 @@ pub fn parse_address_mask(
         }
     }
 
-    let arg = ip_lookup(arg, &mut config.hm);
+    let arg = ip_lookup(arg, &mut config.borrow_mut().hm);
 
     let input_ip = parse_v4_v6(&arg, input_base, reverse);
 
@@ -1130,7 +1131,7 @@ pub fn format_details(
     rows: &Option<HashMap<Ip, NetRow>>,
     subnet_size: Option<u32>,
     matches: Option<&getopts::Matches>,
-    config: &mut Config,
+    config: &RefCell<Config>,
 ) -> Option<String> {
     let ip = &mut ip.clone();
     let mut reformatted = formatted;
@@ -1222,8 +1223,6 @@ pub fn format_details(
         reformatted = reformatted.replace("%r", &r);
     }
 
-    let interfaces = &config.interface_names;
-
     let mut mode = FormatMode::Text;
     let mut out_str = "".to_string();
     let chars: Vec<_> = reformatted.chars().collect();
@@ -1276,16 +1275,24 @@ pub fn format_details(
                         out_str.push_str(&network_size(ip).to_string());
                     }
                     'm' => {
-                        out_str.push_str(&matching_network_interface(ip, interfaces, false));
+                        out_str.push_str(&matching_network_interface(
+                            ip,
+                            &config.borrow().interface_names,
+                            false,
+                        ));
                     }
                     'd' => {
-                        out_str.push_str(&matching_network_interface(ip, interfaces, true));
+                        out_str.push_str(&matching_network_interface(
+                            ip,
+                            &config.borrow().interface_names,
+                            true,
+                        ));
                     }
                     'k' => {
                         out_str.push_str(&rbl_format(ip));
                     }
                     'p' => {
-                        out_str.push_str(&ptr_format(ip, &mut config.hm));
+                        out_str.push_str(&ptr_format(ip, &mut config.borrow_mut().hm));
                     }
                     '%' => {
                         out_str.push('%');
@@ -1374,7 +1381,7 @@ pub fn find_ips<'a>(
     reader: &'a mut Box<dyn BufRead>,
     input_base: Option<i32>,
     reverse: &'a Reverse,
-    config: &'a mut Config,
+    config: &'a RefCell<Config>,
 ) -> impl 'a + std::iter::Iterator<Item = Vec<Ip>> {
     std::iter::from_fn(move || {
         if let Some(line) = reader.lines().next().into_iter().by_ref().next() {
