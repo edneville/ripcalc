@@ -1,5 +1,6 @@
 use getopts::Options;
 use ripcalc::*;
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -11,7 +12,7 @@ fn print_details(
     matches: &getopts::Matches,
     rows: &Option<HashMap<Ip, NetRow>>,
     used: Option<&HashMap<Addr, bool>>,
-    config: &mut Config,
+    config: &RefCell<Config>,
 ) {
     let mut networks: Option<u32> = None;
 
@@ -237,8 +238,7 @@ fn process_input_file(
     ip_args: &[Ip],
     rows: &Option<HashMap<Ip, NetRow>>,
     inside: Option<bool>,
-    config: &mut Config,
-    config2: &mut Config,
+    config: &RefCell<Config>,
 ) {
     let mut reader: Box<dyn BufRead> = if path == "-" {
         Box::new(BufReader::new(std::io::stdin()))
@@ -308,7 +308,7 @@ fn process_input_file(
 
     let mut found_match = false;
 
-    for a in find_ips(&mut reader, input_base, reverse, config2) {
+    for a in find_ips(&mut reader, input_base, reverse, config) {
         for ip in a {
             match inside {
                 Some(true) => {
@@ -378,10 +378,10 @@ fn main() {
     let mut inside: Option<bool> = None;
     let args: Vec<String> = std::env::args().collect();
     let mut ip_args: Vec<Ip> = vec![];
-    let mut config = Config {
+    let config = RefCell::new(Config {
         interface_names: vec![],
         hm: HashMap::new(),
-    };
+    });
 
     opts.parsing_style(getopts::ParsingStyle::FloatingFrees);
     opts.optopt("4", "ipv4", "ipv4 address", "IPv4");
@@ -580,7 +580,7 @@ fn main() {
                 input_mask,
                 input_base,
                 matches!(reverse, Reverse::Both | Reverse::Input),
-                &mut config,
+                &config,
             );
 
             if let Some(ip) = ip {
@@ -590,7 +590,6 @@ fn main() {
     }
 
     let stdin_ready = fd_ready(std::io::stdin().as_raw_fd());
-    let mut config2 = config.clone();
     if (stdin_ready && wait_stdin(&matches)) || matches.opt_str("file").is_some() {
         let path = if stdin_ready {
             "-".to_string()
@@ -598,15 +597,7 @@ fn main() {
             matches.opt_str("file").unwrap()
         };
         process_input_file(
-            &path,
-            &matches,
-            input_base,
-            &reverse,
-            &ip_args,
-            &rows,
-            inside,
-            &mut config,
-            &mut config2,
+            &path, &matches, input_base, &reverse, &ip_args, &rows, inside, &config,
         );
 
         if ip_args.clone().is_empty() || inside.is_some() {
@@ -636,7 +627,7 @@ fn main() {
             used.insert(arg.clone(), true);
             continue;
         }
-        print_details(arg, &matches, &rows, None, &mut config);
+        print_details(arg, &matches, &rows, None, &config);
     }
 
     if matches.opt_present("encapsulating") {
@@ -646,7 +637,7 @@ fn main() {
             match smallest_group_network_limited(&used, network_size) {
                 Some(x) => {
                     for y in x {
-                        print_details(&y, &matches, &rows, None, &mut config);
+                        print_details(&y, &matches, &rows, None, &config);
                     }
                 }
                 None => {
@@ -657,7 +648,7 @@ fn main() {
         } else {
             match smallest_group_network(&used) {
                 Some(x) => {
-                    print_details(&x, &matches, &rows, None, &mut config);
+                    print_details(&x, &matches, &rows, None, &config);
                 }
                 None => {
                     eprintln!("Could not find an encapsulating network, sorry");
