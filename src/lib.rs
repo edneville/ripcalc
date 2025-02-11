@@ -5,6 +5,7 @@ use nix::sys::socket::SockaddrLike;
 use nix::sys::socket::SockaddrStorage;
 use nix::sys::stat::fstat;
 use nix::sys::stat::SFlag;
+use regex::*;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt;
@@ -274,6 +275,10 @@ pub fn parse_address_mask(
             arg = v[2];
             break;
         }
+    }
+
+    if !is_like_hostname(arg) {
+        return None;
     }
 
     let arg = ip_lookup(arg, &mut config.borrow_mut().hm);
@@ -1420,4 +1425,10 @@ pub fn find_ips<'a>(
 pub fn subnets_in_network(networks: u32, ip: &Ip) -> u128 {
     let base: u128 = 2;
     base.pow(networks - ip.cidr)
+}
+
+pub fn is_like_hostname(word: &str) -> bool {
+    let r = Regex::new(r#"^(\S+\.)?(xn--)?[a-z0-9][a-z0-9-_]{0,61}[a-z0-9]{0,1}\.(xn--)?([a-z0-9\-]{1,61}|[a-z0-9-]{1,30}\.[a-z]{2,})$"#).unwrap();
+
+    r.is_match(word)
 }
