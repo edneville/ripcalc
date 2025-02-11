@@ -1005,4 +1005,16 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             ]
         );
     }
+
+    #[test]
+    fn test_is_like_hostname() {
+        assert_eq!(is_like_hostname("www.usenix.org.uk"), true);
+        assert_eq!(is_like_hostname("www.usenix.org.uk:80"), false);
+        assert_eq!(is_like_hostname("org.uk"), true);
+        assert_eq!(is_like_hostname("bbc.co.uk"), true);
+        assert_eq!(is_like_hostname("org"), false);
+        assert_eq!(is_like_hostname("n"), false);
+        assert_eq!(is_like_hostname("n!"), false);
+        assert_eq!(is_like_hostname("http://www.bbc.co.uk/"), false);
+    }
 }

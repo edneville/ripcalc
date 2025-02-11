@@ -2,6 +2,7 @@
 
  * do ptr lookups as %p in format
  * use a cache for lookups
+ * rudimentary name check
 
 0.1.13
 
