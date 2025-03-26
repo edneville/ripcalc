@@ -1080,7 +1080,7 @@ pub fn ip_lookup(address: &str, hm: &mut HashMap<String, String>) -> String {
 }
 
 pub fn ptr_format(ip: &Ip, hm: &mut HashMap<String, String>) -> String {
-    let k: String = "".to_string();
+    let k: String = ip.to_string();
 
     if let Some(v) = hm.get(&k) {
         return v.clone();
