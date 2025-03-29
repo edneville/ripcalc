@@ -35,6 +35,7 @@ pub struct NetRow {
 pub struct Config {
     pub interface_names: Vec<InterfaceAddress>,
     pub hm: HashMap<String, String>,
+    pub used: Option<HashMap<Ip, bool>>,
 }
 
 pub enum FormatMode {
@@ -115,6 +116,19 @@ impl Ip {
                 s.to_string()
             }
         }
+    }
+}
+
+pub fn host_address(ip: Addr) -> Ip {
+    match ip {
+        Addr::V4(_) => Ip {
+            address: ip,
+            cidr: 32,
+        },
+        Addr::V6(_) => Ip {
+            address: ip,
+            cidr: 128,
+        },
     }
 }
 
@@ -327,16 +341,13 @@ pub fn addresses<'a>(
                         x = a
                     };
 
-                    match &used {
-                        Some(map) => {
-                            if map
-                                .get(&Addr::V4(Ipv4Addr::from(u32::from(x) - 1)))
-                                .is_some()
-                            {
-                                continue;
-                            }
+                    if let Some(map) = &used {
+                        if map
+                            .get(&Addr::V4(Ipv4Addr::from(u32::from(x) - 1)))
+                            .is_some()
+                        {
+                            continue;
                         }
-                        None => {}
                     }
 
                     return Some(if mask.is_none() {
@@ -375,16 +386,13 @@ pub fn addresses<'a>(
                         x = a
                     };
 
-                    match &used {
-                        Some(map) => {
-                            if map
-                                .get(&Addr::V6(Ipv6Addr::from(u128::from(x) - 1)))
-                                .is_some()
-                            {
-                                continue;
-                            }
+                    if let Some(map) = &used {
+                        if map
+                            .get(&Addr::V6(Ipv6Addr::from(u128::from(x) - 1)))
+                            .is_some()
+                        {
+                            continue;
                         }
-                        None => {}
                     }
 
                     return Some(if mask.is_none() {
@@ -1315,6 +1323,19 @@ pub fn format_details(
                         } else {
                             out_str.push('N');
                         };
+                    }
+                    'C' => {
+                        if let Some(used) = &config.borrow().used {
+                            let mut count = 0;
+                            for i in used.keys() {
+                                if within(ip, i) {
+                                    count += 1;
+                                }
+                            }
+                            out_str.push_str(&count.to_string());
+                        } else {
+                            out_str.push('C');
+                        }
                     }
                     _ => {
                         out_str.push(k);

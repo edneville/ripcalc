@@ -4,7 +4,7 @@ section: 1
 header: User Manual
 footer: ripcalc 0.2.0
 author: Ed Neville (ed-ripcalc@s5h.net)
-date: 26 March 2025
+date: 29 March 2025
 ---
 
 # NAME
@@ -117,6 +117,7 @@ Other format characters:
 | placeholder | effect |
 |-------------|--------|
 | %c          | CIDR mask |
+| %C          | In encapsulated context, used address count |
 | %t          | Network size |
 | %r          | Network reservation information (if available) |
 | %d          | Matching device interface by IP |

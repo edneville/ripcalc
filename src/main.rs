@@ -276,6 +276,7 @@ fn process_input_file(
             }
         }
 
+        config.borrow_mut().used = Some(used.clone());
         if matches.opt_present("group") {
             let network_size: u32 = matches.opt_str("group").unwrap().trim().parse().unwrap();
 
@@ -381,6 +382,7 @@ fn main() {
     let config = RefCell::new(Config {
         interface_names: vec![],
         hm: HashMap::new(),
+        used: None,
     });
 
     opts.parsing_style(getopts::ParsingStyle::FloatingFrees);
@@ -630,9 +632,11 @@ fn main() {
         print_details(arg, &matches, &rows, None, &config);
     }
 
+    config.borrow_mut().used = Some(used.clone());
+
     if matches.opt_present("encapsulating") {
-        if matches.opt_present("networks") {
-            let network_size: u32 = matches.opt_str("networks").unwrap().trim().parse().unwrap();
+        if matches.opt_present("group") {
+            let network_size: u32 = matches.opt_str("group").unwrap().trim().parse().unwrap();
 
             match smallest_group_network_limited(&used, network_size) {
                 Some(x) => {

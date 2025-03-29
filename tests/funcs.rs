@@ -280,6 +280,7 @@ mod test {
         let config = RefCell::new(Config {
             interface_names: vec![],
             hm: HashMap::new(),
+            used: None,
         });
 
         let f = format_details(&net, "%a".to_string(), &None, None, None, &config);
@@ -292,6 +293,7 @@ mod test {
         let config = RefCell::new(Config {
             interface_names: vec![],
             hm: HashMap::new(),
+            used: None,
         });
         let f = format_details(
             &Ip {
@@ -360,6 +362,7 @@ mod test {
         let config = RefCell::new(Config {
             interface_names: vec![],
             hm: HashMap::new(),
+            used: None,
         });
         let f = format_details(&net, "select * from IP6 where (ip >= %ln and ip <= %lb) and active = 1;\nupdate IP6 set active = 0 where (ip >= %ln and ip <= %lb) and active = 1;".to_string(), &None, None, None, &config);
 
@@ -377,6 +380,7 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
         let config = RefCell::new(Config {
             interface_names: vec![],
             hm: HashMap::new(),
+            used: None,
         });
         let f = format_details(&net, "%%b".to_string(), &None, None, None, &config);
 
@@ -393,6 +397,7 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
         let config = RefCell::new(Config {
             interface_names: vec![],
             hm: HashMap::new(),
+            used: None,
         });
         let f = format_details(&net, "%lb".to_string(), &None, None, None, &config);
 
@@ -412,6 +417,7 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
         let config = RefCell::new(Config {
             interface_names: vec![],
             hm: HashMap::new(),
+            used: None,
         });
         let f = format_details(&net, "%lb\n\n\n%%".to_string(), &None, None, None, &config);
 
@@ -430,6 +436,7 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
         let config = RefCell::new(Config {
             interface_names: vec![],
             hm: HashMap::new(),
+            used: None,
         });
 
         let f = format_details(&net, "\n".to_string(), &None, None, None, &config);
@@ -621,6 +628,7 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
         let config = RefCell::new(Config {
             interface_names: vec![],
             hm: HashMap::new(),
+            used: None,
         });
         assert_eq!(
             parse_address_mask("192.168.1.1", None, None, Some(10), false, &config),
@@ -658,6 +666,7 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
         let config = RefCell::new(Config {
             interface_names: vec![],
             hm: HashMap::new(),
+            used: None,
         });
 
         assert_eq!(
@@ -679,6 +688,7 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
         let mut config = RefCell::new(Config {
             interface_names: vec![],
             hm: HashMap::new(),
+            used: None,
         });
 
         let f = format_details(&net, "%La".to_string(), &None, None, None, &mut config);
