@@ -1,3 +1,5 @@
+ * to show how populated a network is, print number of used hosts as %C
+
 0.2.0
 
  * do ptr lookups as %p in format

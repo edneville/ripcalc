@@ -87,6 +87,7 @@ Other format characters:
 | placeholder | effect |
 |-------------|--------|
 | %c          | CIDR mask |
+| %C          | In encapsulated context, used address count |
 | %t          | Network size |
 | %r          | Network reservation information (if available) |
 | %d          | Matching device interface by IP |

@@ -56,6 +56,8 @@ bintest:
 	for i in 1 2 3 4; do for j in 1 2 3 4; do echo 192.$$i.$$j.1; done; done | $(RELEASE) --group 16 --format short --encapsulating | wc -l | tr -d '[:blank:]' | grep -Fx 4
 	printf 'name,network\na,192.168.0.0/16\n' >ips.csv; $(RELEASE) --csv ips.csv 127.0.0.1 --allowemptyrow --format '%{name} %a/%c\n' | grep -Fx '{name} 127.0.0.1/24' && rm ips.csv
 	$(RELEASE) 8.8.4.4 --format '%p\n' | grep -Fx dns.google
+	$(RELEASE) -e 10.10.10.10 10.20.10.10 10.20.10.20 --group 24 --format '%a %c %C\n' | wc -l | grep -Fx 2
+	for i in `seq 1 20`; do for j in `seq 1 50`; do printf '192.168.%d.%d\n' $$i $$j; done; done | $(RELEASE) --group 24 --encapsulating --format '%a/%c %C\n' | grep '/26 50$$' | wc -l | grep -Fx 20
 
 install: all
 	command -v please && please install -m 0755 -s $(RELEASE) /usr/local/bin || sudo install -m 0755 -s $(RELEASE) /usr/local/bin 
