@@ -1,4 +1,7 @@
- * to show how populated a network is, print number of used hosts as %C
+0.2.1
+
+ * to show how populated a network is, print number of used hosts as %C in
+   encapsulating mode
 
 0.2.0
 
