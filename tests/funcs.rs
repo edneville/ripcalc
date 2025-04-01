@@ -271,17 +271,22 @@ mod test {
         assert_eq!(i.next(), None);
     }
 
+    fn default_config() -> Config {
+        Config {
+            interface_names: vec![],
+            hm: HashMap::new(),
+            used: None,
+        }
+    }
+
+
     #[test]
     fn test_format_ng_ip() {
         let net = Ip {
             address: Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()),
             cidr: 30,
         };
-        let config = RefCell::new(Config {
-            interface_names: vec![],
-            hm: HashMap::new(),
-            used: None,
-        });
+        let config = RefCell::new(default_config());
 
         let f = format_details(&net, "%a".to_string(), &None, None, None, &config);
 
@@ -290,11 +295,7 @@ mod test {
 
     #[test]
     fn test_format_ng_percent() {
-        let config = RefCell::new(Config {
-            interface_names: vec![],
-            hm: HashMap::new(),
-            used: None,
-        });
+        let config = RefCell::new(default_config());
         let f = format_details(
             &Ip {
                 address: Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()),
@@ -359,11 +360,7 @@ mod test {
             cidr: 64,
         };
 
-        let config = RefCell::new(Config {
-            interface_names: vec![],
-            hm: HashMap::new(),
-            used: None,
-        });
+        let config = RefCell::new(default_config());
         let f = format_details(&net, "select * from IP6 where (ip >= %ln and ip <= %lb) and active = 1;\nupdate IP6 set active = 0 where (ip >= %ln and ip <= %lb) and active = 1;".to_string(), &None, None, None, &config);
 
         assert_eq!(f, Some("select * from IP6 where (ip >= 42540724579414763292693624807812497408 and ip <= 42540724579414763311140368881522049023) and active = 1;
@@ -377,11 +374,7 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             cidr: 64,
         };
 
-        let config = RefCell::new(Config {
-            interface_names: vec![],
-            hm: HashMap::new(),
-            used: None,
-        });
+        let config = RefCell::new(default_config());
         let f = format_details(&net, "%%b".to_string(), &None, None, None, &config);
 
         assert_eq!(f, Some("%b".to_string()));
@@ -394,11 +387,7 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             cidr: 64,
         };
 
-        let config = RefCell::new(Config {
-            interface_names: vec![],
-            hm: HashMap::new(),
-            used: None,
-        });
+        let config = RefCell::new(default_config());
         let f = format_details(&net, "%lb".to_string(), &None, None, None, &config);
 
         assert_eq!(
@@ -414,11 +403,7 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             cidr: 64,
         };
 
-        let config = RefCell::new(Config {
-            interface_names: vec![],
-            hm: HashMap::new(),
-            used: None,
-        });
+        let config = RefCell::new(default_config());
         let f = format_details(&net, "%lb\n\n\n%%".to_string(), &None, None, None, &config);
 
         assert_eq!(
@@ -433,11 +418,7 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             address: Addr::V6(Ipv6Addr::from_str("2001:ba8:1f1:f1cb::4").unwrap()),
             cidr: 64,
         };
-        let config = RefCell::new(Config {
-            interface_names: vec![],
-            hm: HashMap::new(),
-            used: None,
-        });
+        let config = RefCell::new(default_config());
 
         let f = format_details(&net, "\n".to_string(), &None, None, None, &config);
         assert_eq!(f, Some("\n".to_string()));
@@ -625,11 +606,7 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
 
     #[test]
     fn test_base_hex() {
-        let config = RefCell::new(Config {
-            interface_names: vec![],
-            hm: HashMap::new(),
-            used: None,
-        });
+        let config = RefCell::new(default_config());
         assert_eq!(
             parse_address_mask("192.168.1.1", None, None, Some(10), false, &config),
             Some(Ip {
@@ -663,11 +640,7 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
 
     #[test]
     fn test_reverse() {
-        let config = RefCell::new(Config {
-            interface_names: vec![],
-            hm: HashMap::new(),
-            used: None,
-        });
+        let config = RefCell::new(default_config());
 
         assert_eq!(
             parse_address_mask("0101A8C0", None, None, Some(16), true, &config),
@@ -685,11 +658,7 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             cidr: 30,
         };
 
-        let mut config = RefCell::new(Config {
-            interface_names: vec![],
-            hm: HashMap::new(),
-            used: None,
-        });
+        let mut config = RefCell::new(default_config());
 
         let f = format_details(&net, "%La".to_string(), &None, None, None, &mut config);
         assert_eq!(f, Some("-1819047474".to_string()));
@@ -1027,4 +996,35 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
         assert_eq!(is_like_hostname("n!"), false);
         assert_eq!(is_like_hostname("http://www.bbc.co.uk/"), false);
     }
+
+    #[test]
+    fn test_inside_filter() {
+        let config = RefCell::new(default_config());
+
+        let mut net_list = vec![];
+
+        net_list.push(parse_address_mask("192.168.0.0/24", None, None, None, false, &config).unwrap());
+
+        let ip = parse_address_mask("192.168.0.0/24", None, None, None, false, &config).unwrap();
+        assert_eq!(inside_filter(Some(true), net_list.as_slice(), &ip), true);
+        assert_eq!(inside_filter(Some(false), net_list.as_slice(), &ip), false);
+
+        let ip = parse_address_mask("192.168.1.0/24", None, None, None, false, &config).unwrap();
+        assert_eq!(inside_filter(Some(false), net_list.as_slice(), &ip), true);
+        assert_eq!(inside_filter(Some(true), net_list.as_slice(), &ip), false);
+
+        net_list.push(parse_address_mask("192.168.1.0/24", None, None, None, false, &config).unwrap());
+
+        let ip = parse_address_mask("192.168.0.0/24", None, None, None, false, &config).unwrap();
+        assert_eq!(inside_filter(Some(true), net_list.as_slice(), &ip), true);
+        assert_eq!(inside_filter(Some(false), net_list.as_slice(), &ip), false);
+
+        let ip = parse_address_mask("192.168.1.0/24", None, None, None, false, &config).unwrap();
+        assert_eq!(inside_filter(Some(true), net_list.as_slice(), &ip), true);
+        assert_eq!(inside_filter(Some(false), net_list.as_slice(), &ip), false);
+
+
+    }
+
+
 }

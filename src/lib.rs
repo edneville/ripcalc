@@ -1453,3 +1453,40 @@ pub fn is_like_hostname(word: &str) -> bool {
 
     r.is_match(word)
 }
+
+pub fn inside_filter(inside: Option<bool>, ip_args: &[Ip], ip: &Ip) -> bool {
+    match inside {
+        Some(true) => {
+            let mut found = false;
+            for arg in ip_args {
+                if within(arg, ip) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if found {
+                return true;
+            }
+        }
+        Some(false) => {
+            let mut found = false;
+
+            for arg in ip_args {
+                if within(arg, ip) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if !found {
+                return true;
+            }
+        }
+        None => {
+            return true;
+        }
+    }
+
+    false
+}

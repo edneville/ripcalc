@@ -272,6 +272,10 @@ fn process_input_file(
         let mut used: HashMap<Ip, bool> = HashMap::new();
         for a in find_ips(&mut reader, input_base, reverse, config) {
             for i in a {
+                if !inside_filter(inside, ip_args, &i) {
+                    continue;
+                }
+
                 used.insert(i, true);
             }
         }
@@ -311,39 +315,9 @@ fn process_input_file(
 
     for a in find_ips(&mut reader, input_base, reverse, config) {
         for ip in a {
-            match inside {
-                Some(true) => {
-                    let mut found = false;
-                    for arg in ip_args {
-                        if within(arg, &ip) {
-                            found = true;
-                            break;
-                        }
-                    }
-
-                    if found {
-                        found_match = true;
-                        print_details(&ip, matches, rows, None, config);
-                    }
-                }
-                Some(false) => {
-                    let mut found = false;
-
-                    for arg in ip_args {
-                        if within(arg, &ip) {
-                            found = true;
-                            break;
-                        }
-                    }
-
-                    if !found {
-                        found_match = true;
-                        print_details(&ip, matches, rows, None, config);
-                    }
-                }
-                None => {
-                    print_details(&ip, matches, rows, None, config);
-                }
+            if inside_filter(inside, ip_args, &ip) {
+                found_match = true;
+                print_details(&ip, matches, rows, None, config);
             }
         }
     }

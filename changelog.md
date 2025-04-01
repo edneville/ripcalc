@@ -1,3 +1,5 @@
+ * use --inside and --outside with encapsulating options
+
 0.2.1
 
  * to show how populated a network is, print number of used hosts as %C in
