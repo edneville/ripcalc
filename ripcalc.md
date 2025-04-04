@@ -4,7 +4,7 @@ section: 1
 header: User Manual
 footer: ripcalc 0.2.2
 author: Ed Neville (ed-ripcalc@s5h.net)
-date: 01 April 2025
+date: 04 April 2025
 ---
 
 # NAME
@@ -171,4 +171,9 @@ Suppose a large flood of requests are from a network pattern, to preserve servic
 Networks can be grouped, in a scenario where you have a list of unwanted traffic, you can turn this into a list of small networks to block, supposing you don't want to block anything that covers more than a /19:
 
     cat bad_traffic | ripcalc --encapsulating --group 19 --format cidr
+
+When using `group` the unique IP address count is available in the `%C` format string. This can give an overview of which networks have most IP sources:
+
+    cat bad_traffic | ripcalc --encapsulating --group 19 --format '%C %a/%c\n' | sort -rn
+
 

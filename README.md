@@ -204,6 +204,18 @@ Networks can be grouped, in a scenario where you have a list of unwanted traffic
 cat bad_traffic | ripcalc --encapsulating --group 19 --format cidr
 ```
 
+This might be of help to you, assuming you can select a chunk of bad traffic via a `grep`:
+
+```
+grep -h scams log/* | awk '{print $1}' | ripcalc --encapsulating --group 24 --format '%C %a/%c\n'
+15 192.168.1.0/25
+12 172.16.80.0/24
+1 172.16.209.9/32
+```
+
+Grouping with a limit helps show spread, without expanding beyond sensible limits. Setting a very large `group` mask would of course return very large results, using a smaller `group` can limit this so the probability of including legitimate traffic is reduced dramatically.
+
+
 # help
 
 ```
