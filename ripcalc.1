@@ -15,7 +15,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "ripcalc" "1" "01 April 2025" "ripcalc 0.2.2" "User Manual"
+.TH "ripcalc" "1" "04 April 2025" "ripcalc 0.2.2" "User Manual"
 .hy
 .SH NAME
 .PP
@@ -347,6 +347,16 @@ supposing you don\[cq]t want to block anything that covers more than a
 .nf
 \f[C]
 cat bad_traffic | ripcalc --encapsulating --group 19 --format cidr
+\f[R]
+.fi
+.PP
+When using \f[V]group\f[R] the unique IP address count is available in
+the \f[V]%C\f[R] format string.
+This can give an overview of which networks have most IP sources:
+.IP
+.nf
+\f[C]
+cat bad_traffic | ripcalc --encapsulating --group 19 --format \[aq]%C %a/%c\[rs]n\[aq] | sort -rn
 \f[R]
 .fi
 .SH AUTHORS
