@@ -15,7 +15,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "ripcalc" "1" "04 April 2025" "ripcalc 0.2.2" "User Manual"
+.TH "ripcalc" "1" "06 April 2025" "ripcalc 0.2.2" "User Manual"
 .hy
 .SH NAME
 .PP
@@ -88,6 +88,9 @@ encapsulating network can grow.
 The number (\f[B]%D\f[R]) of subnets can be printed when using the
 \f[V]--group\f[R] argument with the \f[B]%N\f[R] formatters.
 The argument should be the CIDR mask, see below for example.
+.PP
+If \f[B]base\f[R] is a negative number, input addresses are treated as
+though the input is a signed integer in \f[B]base\f[R].
 .SH CSV
 .PP
 Network matches can be returned from a \f[B]CSV\f[R].

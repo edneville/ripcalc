@@ -151,6 +151,10 @@ $ echo -e '192.168.0.0\n192.167.255.255\n' | ripcalc -s - --outside 192.168.0.0/
 
 IP addresses can be treated as reversed, if `/proc/net/route` holds addresses in reversed format, `--reverse inputs` and `--base 16` could be used together to convert to dotted-quad.
 
+# integer inputs
+
+To process addresses in signed integer form, use `--base -10` which will do the conversion.
+
 # within networks
 
 Is a domain wihtin a list of subnets? For example, in this part of the globe cloudflare.com was being served from their published list of networks:

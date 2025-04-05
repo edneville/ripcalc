@@ -60,6 +60,10 @@ bintest:
 	for i in `seq 1 20`; do for j in `seq 1 50`; do printf '192.168.%d.%d\n' $$i $$j; done; done | $(RELEASE) --group 24 --encapsulating --format '%a/%c %C\n' | grep '/26 50$$' | wc -l | grep -Fx 20
 	for i in `seq 1 20`; do for j in `seq 1 50`; do printf '192.168.%d.%d\n' $$i $$j; done; done | $(RELEASE) --group 24 --inside 192.168.1.1 --encapsulating --format '%a/%c %C\n' | grep '/26 50$$' | wc -l | grep -Fx 1
 	for i in `seq 1 20`; do for j in `seq 1 50`; do printf '192.168.%d.%d\n' $$i $$j; done; done | $(RELEASE) --group 24 --outside 192.168.1.1 --encapsulating --format '%a/%c %C\n' | grep '/26 50$$' | wc -l | grep -Fx 19
+	printf '3558236161\n' | $(RELEASE) --base 10 --format '%a\n' | grep -Fx 212.22.96.1
+	printf -- '-736731135\n' | $(RELEASE) --base -10 --format '%a\n' | grep -Fx 212.22.96.1
+	printf -- '-13259686110696736936355904651228348417\n' | $(RELEASE) --base -10 --format '%a\n' | grep -Fx f606:4700:3035:0:ffff:ffff:ffff:ffff
+	printf -- '42540766411282592856903984951653826560\n' | $(RELEASE) --base 10 --format '%a\n' | grep -Fx 2001:db8::
 
 install: all
 	command -v please && please install -m 0755 -s $(RELEASE) /usr/local/bin || sudo install -m 0755 -s $(RELEASE) /usr/local/bin 

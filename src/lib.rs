@@ -141,15 +141,23 @@ pub fn parse_mask(mask: &str) -> Option<u32> {
 
 pub fn parse_v6(address: &str, input_base: Option<i32>, reverse: bool) -> Option<Addr> {
     match input_base {
-        Some(base) => Some(Addr::V6(Ipv6Addr::from(
+        Some(base) => Some(Addr::V6(Ipv6Addr::from(if base < 0 {
+            match i128::from_str_radix(address, -base as u32) {
+                Ok(y) => y as u128,
+                Err(e) => {
+                    eprintln!("cannot convert {}: {}", address, e);
+                    return None;
+                }
+            }
+        } else {
             match u128::from_str_radix(address, base as u32) {
                 Ok(y) => y,
                 Err(e) => {
                     eprintln!("cannot convert {}: {}", address, e);
                     return None;
                 }
-            },
-        ))),
+            }
+        }))),
         None => match Ipv6Addr::from_str(address) {
             Ok(mut i) => {
                 if reverse {
@@ -186,15 +194,23 @@ pub fn parse_v4(address: &str, input_base: Option<i32>, reverse: bool) -> Option
                 && input_base.is_some()
                 && input_base.unwrap() != 16
             {
-                return Some(Addr::V4(Ipv4Addr::from(
+                return Some(Addr::V4(Ipv4Addr::from(if base < 0 {
+                    match i32::from_str_radix(address, -base as u32) {
+                        Ok(y) => y as u32,
+                        Err(e) => {
+                            eprintln!("cannot convert {}: {}", address, e);
+                            return None;
+                        }
+                    }
+                } else {
                     match u32::from_str_radix(address, base as u32) {
                         Ok(y) => y,
                         Err(e) => {
                             eprintln!("cannot convert {}: {}", address, e);
                             return None;
                         }
-                    },
-                )));
+                    }
+                })));
             }
 
             let parts: Vec<String>;

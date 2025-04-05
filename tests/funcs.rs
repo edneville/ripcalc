@@ -279,7 +279,6 @@ mod test {
         }
     }
 
-
     #[test]
     fn test_format_ng_ip() {
         let net = Ip {
@@ -1003,7 +1002,8 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
 
         let mut net_list = vec![];
 
-        net_list.push(parse_address_mask("192.168.0.0/24", None, None, None, false, &config).unwrap());
+        net_list
+            .push(parse_address_mask("192.168.0.0/24", None, None, None, false, &config).unwrap());
 
         let ip = parse_address_mask("192.168.0.0/24", None, None, None, false, &config).unwrap();
         assert_eq!(inside_filter(Some(true), net_list.as_slice(), &ip), true);
@@ -1013,7 +1013,8 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
         assert_eq!(inside_filter(Some(false), net_list.as_slice(), &ip), true);
         assert_eq!(inside_filter(Some(true), net_list.as_slice(), &ip), false);
 
-        net_list.push(parse_address_mask("192.168.1.0/24", None, None, None, false, &config).unwrap());
+        net_list
+            .push(parse_address_mask("192.168.1.0/24", None, None, None, false, &config).unwrap());
 
         let ip = parse_address_mask("192.168.0.0/24", None, None, None, false, &config).unwrap();
         assert_eq!(inside_filter(Some(true), net_list.as_slice(), &ip), true);
@@ -1022,9 +1023,5 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
         let ip = parse_address_mask("192.168.1.0/24", None, None, None, false, &config).unwrap();
         assert_eq!(inside_filter(Some(true), net_list.as_slice(), &ip), true);
         assert_eq!(inside_filter(Some(false), net_list.as_slice(), &ip), false);
-
-
     }
-
-
 }

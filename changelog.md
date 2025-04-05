@@ -1,3 +1,7 @@
+ * use base [negative integer] for signed inputs
+
+0.2.2
+
  * use --inside and --outside with encapsulating options
 
 0.2.1

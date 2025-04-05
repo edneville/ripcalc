@@ -4,7 +4,7 @@ section: 1
 header: User Manual
 footer: ripcalc 0.2.2
 author: Ed Neville (ed-ripcalc@s5h.net)
-date: 04 April 2025
+date: 06 April 2025
 ---
 
 # NAME
@@ -63,6 +63,8 @@ When `--reverse` is used the `inputs`, `sources` or both can be treated as back-
 When `--encapsulating` is used the containing network will be returned, use with `--group` to limit the range that an encapsulating network can grow.
 
 The number (**%D**) of subnets can be printed when using the `--group` argument with the **%N** formatters. The argument should be the CIDR mask, see below for example.
+
+If **base** is a negative number, input addresses are treated as though the input is a signed integer in **base**.
 
 # CSV
 
