@@ -346,7 +346,7 @@ fn wait_stdin(matches: &getopts::Matches) -> bool {
 fn main() {
     let mut opts = Options::new();
     let mut rows: Option<HashMap<Ip, NetRow>> = None;
-    let mut input_ip: Option<Addr> = None;
+    let input_ip: Option<Addr> = None;
     let mut input_mask: Option<u32> = None;
     let mut input_base: Option<i32> = None;
     let mut reverse = Reverse::None;
@@ -357,11 +357,12 @@ fn main() {
         interface_names: vec![],
         hm: HashMap::new(),
         used: None,
+        input_family: None,
     });
 
     opts.parsing_style(getopts::ParsingStyle::FloatingFrees);
-    opts.optopt("4", "ipv4", "ipv4 address", "IPv4");
-    opts.optopt("6", "ipv6", "ipv6 address", "IPv6");
+    opts.optflag("4", "ipv4", "treat inputs as ipv4 address");
+    opts.optflag("6", "ipv6", "treat inputs as ipv6 address");
 
     opts.optflag("a", "available", "display unused addresses");
     opts.optflag(
@@ -516,20 +517,12 @@ fn main() {
         input_mask = parse_mask(&v);
     }
 
-    if let Some(v) = matches.opt_str("ipv4") {
-        input_ip = parse_v4(
-            &v,
-            input_base,
-            matches!(reverse, Reverse::Both | Reverse::Input),
-        );
+    if matches.opt_present("ipv4") {
+        config.borrow_mut().input_family = Some(InputFamily::IPv4);
     }
 
-    if let Some(v) = matches.opt_str("ipv6") {
-        input_ip = parse_v6(
-            &v,
-            input_base,
-            matches!(reverse, Reverse::Both | Reverse::Input),
-        );
+    if matches.opt_present("ipv6") {
+        config.borrow_mut().input_family = Some(InputFamily::IPv6);
     }
 
     if input_mask.is_none() && matches.free.is_empty() {
