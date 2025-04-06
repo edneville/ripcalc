@@ -224,14 +224,16 @@ Grouping with a limit helps show spread, without expanding beyond sensible limit
 
 ```
 Options:
-    -4, --ipv4 IPv4     ipv4 address
-    -6, --ipv6 IPv6     ipv6 address
+    -4, --ipv4          treat inputs as ipv4 address
+    -6, --ipv6          treat inputs as ipv6 address
     -a, --available     display unused addresses
+        --allowemptyrow
+                        when no matching csv network, use empty fields
     -b, --base INTEGER  ipv4 base format, default to oct
     -c, --csv PATH      csv reference file
     -d, --divide CIDR   divide network into chunks
         --noexpand      do not expand networks in list
-    -e, --encapsulating 
+    -e, --encapsulating
                         display encapsulating network from arguments or lookup
                         list
     -f, --format STRING format output

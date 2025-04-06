@@ -276,6 +276,7 @@ mod test {
             interface_names: vec![],
             hm: HashMap::new(),
             used: None,
+            input_family: None,
         }
     }
 
