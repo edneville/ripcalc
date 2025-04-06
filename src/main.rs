@@ -485,7 +485,7 @@ fn main() {
     }
 
     if matches.opt_present("base") {
-        input_base = match i32::from_str(&matches.opt_str("b").unwrap()) {
+        input_base = match i32::from_str(&matches.opt_str("base").unwrap()) {
             Ok(x) => Some(x),
             Err(x) => {
                 println!("Cannot convert to an integer base: {}", x);
