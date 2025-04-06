@@ -1,3 +1,5 @@
+0.2.3
+
  * use base [negative integer] for signed inputs
  * deprecate ipv4 and ipv6 option so numerics can be coerced into either ip
    family
