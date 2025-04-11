@@ -1,3 +1,5 @@
+ * improve --group encapsulation counting
+
 0.2.3
 
  * use base [negative integer] for signed inputs

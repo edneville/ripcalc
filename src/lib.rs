@@ -37,6 +37,7 @@ pub struct Config {
     pub hm: HashMap<String, String>,
     pub used: Option<HashMap<Ip, bool>>,
     pub input_family: Option<InputFamily>,
+    pub net_used: HashMap<Ip, HashMap<Ip, bool>>,
 }
 
 #[derive(Debug, Clone)]
@@ -1353,12 +1354,7 @@ pub fn format_details(
                     }
                     'C' => {
                         if let Some(used) = &config.borrow().used {
-                            let mut count = 0;
-                            for i in used.keys() {
-                                if within(ip, i) {
-                                    count += 1;
-                                }
-                            }
+                            let count = used.keys().count();
                             out_str.push_str(&count.to_string());
                         } else {
                             out_str.push('C');
