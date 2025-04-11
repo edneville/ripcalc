@@ -270,24 +270,58 @@ fn process_input_file(
 
     if matches.opt_present("encapsulating") {
         let mut used: HashMap<Ip, bool> = HashMap::new();
+        let mut network_size: u32 = 0;
+
+        if matches.opt_present("group") {
+            network_size = matches.opt_str("group").unwrap().trim().parse().unwrap();
+        }
+
         for a in find_ips(&mut reader, input_base, reverse, config) {
             for i in a {
                 if !inside_filter(inside, ip_args, &i) {
                     continue;
                 }
 
-                used.insert(i, true);
+                used.insert(i.clone(), true);
+                if matches.opt_present("group") {
+                    let net_mask = network(&Ip {
+                        address: i.address.clone(),
+                        cidr: network_size,
+                    });
+                    let nu = &mut config.borrow_mut().net_used;
+
+                    if nu.get(&net_mask).is_none() {
+                        nu.insert(net_mask.clone(), HashMap::new());
+                    }
+
+                    let nm = nu.get_mut(&net_mask).unwrap();
+                    nm.insert(i.clone(), true);
+                }
             }
         }
 
         config.borrow_mut().used = Some(used.clone());
         if matches.opt_present("group") {
-            let network_size: u32 = matches.opt_str("group").unwrap().trim().parse().unwrap();
-
             match smallest_group_network_limited(&used, network_size) {
                 Some(mut x) => {
                     x.sort_by(|a, b| a.partial_cmp(b).unwrap());
                     for y in x {
+                        {
+                            let net_mask = network(&Ip {
+                                address: y.address.clone(),
+                                cidr: network_size,
+                            });
+
+                            let cfg = &mut config.borrow_mut();
+                            if !cfg.net_used.contains_key(&net_mask) {
+                                cfg.net_used.insert(net_mask.clone(), HashMap::new());
+                            }
+
+                            let nm = cfg.net_used.get(&net_mask).unwrap();
+
+                            cfg.used = Some(nm.clone());
+                        }
+
                         print_details(&y, matches, rows, None, config);
                     }
                 }
@@ -358,6 +392,7 @@ fn main() {
         hm: HashMap::new(),
         used: None,
         input_family: None,
+        net_used: HashMap::new(),
     });
 
     opts.parsing_style(getopts::ParsingStyle::FloatingFrees);
