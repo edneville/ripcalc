@@ -1,3 +1,5 @@
+0.2.4
+
  * improve --group encapsulation counting
 
 0.2.3
