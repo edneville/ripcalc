@@ -1,3 +1,5 @@
+ * move repeating group encapsulation process to fns
+
 0.2.4
 
  * improve --group encapsulation counting

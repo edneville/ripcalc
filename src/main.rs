@@ -229,6 +229,85 @@ fn process_csv(
     }
 }
 
+fn process_encapsulated_input(
+    matches: &getopts::Matches,
+    inside: Option<bool>,
+    ip_args: &[Ip],
+    i: &Ip,
+    network_size: u32,
+    used: &mut HashMap<Ip, bool>,
+    config: &RefCell<Config>,
+) {
+    if !inside_filter(inside, ip_args, i) {
+        return;
+    }
+
+    used.insert(i.clone(), true);
+    if matches.opt_present("group") {
+        let net_mask = network(&Ip {
+            address: i.address.clone(),
+            cidr: network_size,
+        });
+        let nu = &mut config.borrow_mut().net_used;
+
+        if nu.get(&net_mask).is_none() {
+            nu.insert(net_mask.clone(), HashMap::new());
+        }
+
+        let nm = nu.get_mut(&net_mask).unwrap();
+        nm.insert(i.clone(), true);
+    }
+}
+
+fn process_group_encapsulation(
+    matches: &getopts::Matches,
+    used: HashMap<Ip, bool>,
+    rows: &Option<HashMap<Ip, NetRow>>,
+    config: &RefCell<Config>,
+) {
+    if matches.opt_present("group") {
+        let network_size: u32 = matches.opt_str("group").unwrap().trim().parse().unwrap();
+        match smallest_group_network_limited(&used, network_size) {
+            Some(mut x) => {
+                x.sort_by(|a, b| a.partial_cmp(b).unwrap());
+                for y in x {
+                    {
+                        let net_mask = network(&Ip {
+                            address: y.address.clone(),
+                            cidr: network_size,
+                        });
+
+                        let cfg = &mut config.borrow_mut();
+                        if !cfg.net_used.contains_key(&net_mask) {
+                            cfg.net_used.insert(net_mask.clone(), HashMap::new());
+                        }
+
+                        let nm = cfg.net_used.get(&net_mask).unwrap();
+
+                        cfg.used = Some(nm.clone());
+                    }
+
+                    print_details(&y, matches, rows, None, config);
+                }
+            }
+            None => {
+                eprintln!("Could not find an encapsulating network, sorry");
+                std::process::exit(1);
+            }
+        }
+    } else {
+        match smallest_group_network(&used) {
+            Some(x) => {
+                print_details(&x, matches, rows, None, config);
+            }
+            None => {
+                eprintln!("Could not find an encapsulating network, sorry");
+                std::process::exit(1);
+            }
+        }
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 fn process_input_file(
     path: &str,
@@ -278,69 +357,21 @@ fn process_input_file(
 
         for a in find_ips(&mut reader, input_base, reverse, config) {
             for i in a {
-                if !inside_filter(inside, ip_args, &i) {
-                    continue;
-                }
-
-                used.insert(i.clone(), true);
-                if matches.opt_present("group") {
-                    let net_mask = network(&Ip {
-                        address: i.address.clone(),
-                        cidr: network_size,
-                    });
-                    let nu = &mut config.borrow_mut().net_used;
-
-                    if nu.get(&net_mask).is_none() {
-                        nu.insert(net_mask.clone(), HashMap::new());
-                    }
-
-                    let nm = nu.get_mut(&net_mask).unwrap();
-                    nm.insert(i.clone(), true);
-                }
+                process_encapsulated_input(
+                    matches,
+                    inside,
+                    ip_args,
+                    &i,
+                    network_size,
+                    &mut used,
+                    config,
+                );
             }
         }
 
         config.borrow_mut().used = Some(used.clone());
-        if matches.opt_present("group") {
-            match smallest_group_network_limited(&used, network_size) {
-                Some(mut x) => {
-                    x.sort_by(|a, b| a.partial_cmp(b).unwrap());
-                    for y in x {
-                        {
-                            let net_mask = network(&Ip {
-                                address: y.address.clone(),
-                                cidr: network_size,
-                            });
 
-                            let cfg = &mut config.borrow_mut();
-                            if !cfg.net_used.contains_key(&net_mask) {
-                                cfg.net_used.insert(net_mask.clone(), HashMap::new());
-                            }
-
-                            let nm = cfg.net_used.get(&net_mask).unwrap();
-
-                            cfg.used = Some(nm.clone());
-                        }
-
-                        print_details(&y, matches, rows, None, config);
-                    }
-                }
-                None => {
-                    eprintln!("Could not find an encapsulating network, sorry");
-                    std::process::exit(1);
-                }
-            }
-        } else {
-            match smallest_group_network(&used) {
-                Some(x) => {
-                    print_details(&x, matches, rows, None, config);
-                }
-                None => {
-                    eprintln!("Could not find an encapsulating network, sorry");
-                    std::process::exit(1);
-                }
-            }
-        }
+        process_group_encapsulation(matches, used, rows, config);
 
         std::process::exit(0);
     }
@@ -628,6 +659,20 @@ fn main() {
         }
 
         if matches.opt_present("encapsulating") {
+            let mut network_size: u32 = 0;
+
+            if matches.opt_present("group") {
+                network_size = matches.opt_str("group").unwrap().trim().parse().unwrap();
+            }
+            process_encapsulated_input(
+                &matches,
+                inside,
+                &ip_args,
+                arg,
+                network_size,
+                &mut used,
+                &config,
+            );
             used.insert(arg.clone(), true);
             continue;
         }
@@ -637,32 +682,7 @@ fn main() {
     config.borrow_mut().used = Some(used.clone());
 
     if matches.opt_present("encapsulating") {
-        if matches.opt_present("group") {
-            let network_size: u32 = matches.opt_str("group").unwrap().trim().parse().unwrap();
-
-            match smallest_group_network_limited(&used, network_size) {
-                Some(x) => {
-                    for y in x {
-                        print_details(&y, &matches, &rows, None, &config);
-                    }
-                }
-                None => {
-                    eprintln!("Could not find an encapsulating network, sorry");
-                    std::process::exit(1);
-                }
-            }
-        } else {
-            match smallest_group_network(&used) {
-                Some(x) => {
-                    print_details(&x, &matches, &rows, None, &config);
-                }
-                None => {
-                    eprintln!("Could not find an encapsulating network, sorry");
-                    std::process::exit(1);
-                }
-            }
-        }
-
+        process_group_encapsulation(&matches, used, &rows, &config);
         std::process::exit(0);
     }
 
