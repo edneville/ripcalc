@@ -606,6 +606,14 @@ fn main() {
         });
     }
 
+    if !matches.opt_present("inside")
+        && !matches.opt_present("outside")
+        && matches.opt_present("encapsulating")
+        && !matches.opt_present("mask")
+    {
+        input_mask = Some(32);
+    }
+
     let free_arg = matches.free.clone();
     if !free_arg.is_empty() {
         for arg in &free_arg {
@@ -664,6 +672,7 @@ fn main() {
             if matches.opt_present("group") {
                 network_size = matches.opt_str("group").unwrap().trim().parse().unwrap();
             }
+
             process_encapsulated_input(
                 &matches,
                 inside,

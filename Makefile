@@ -64,9 +64,10 @@ bintest:
 	printf -- '-736731135\n' | $(RELEASE) --base -10 --format '%a\n' | grep -Fx 212.22.96.1
 	printf -- '-13259686110696736936355904651228348417\n' | $(RELEASE) --base -10 --format '%a\n' | grep -Fx f606:4700:3035:0:ffff:ffff:ffff:ffff
 	printf -- '42540766411282592856903984951653826560\n' | $(RELEASE) --base 10 --format '%a\n' | grep -Fx 2001:db8::
-	$(RELEASE) -e 10.0.0.0 10.10.0.0 --group 24 --format '%a/%c %C ' | grep -Fx '10.0.0.0/24 1 10.10.0.0/24 1 ' >/dev/null
-	$(RELEASE) -e 10.0.0.0 10.10.0.0 10.10.0.1 --group 24 --format '%a/%c %C ' | grep -Fx '10.0.0.0/24 1 10.10.0.0/24 2 ' >/dev/null
+	$(RELEASE) -e 10.0.0.0 10.10.0.0 --group 24 --format '%a/%c %C ' | grep -Fx '10.0.0.0/32 1 10.10.0.0/32 1 ' >/dev/null
+	$(RELEASE) -e 10.0.0.0 10.10.0.0 10.10.0.1 --group 24 --format '%a/%c %C ' | grep -Fx '10.0.0.0/32 1 10.10.0.0/31 2 ' >/dev/null
 	printf '10.0.0.0 10.10.0.0 10.10.0.1\n' | $(RELEASE) -e --group 24 --format '%a/%c %C ' | sort -n | paste -sd' ' | grep -Fx '10.0.0.0/32 1 10.10.0.0/31 2 ' >/dev/null
+	$(RELEASE) --encapsulating 10.10.0.1 10.10.0.2 10.10.0.3 --format cidr | grep 10.10.0.0/30 >/dev/null
 
 install: all
 	command -v please && please install -m 0755 -s $(RELEASE) /usr/local/bin || sudo install -m 0755 -s $(RELEASE) /usr/local/bin 

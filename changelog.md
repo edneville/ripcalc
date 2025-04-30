@@ -1,3 +1,7 @@
+
+ * use a /32 mask for encapsulation if --mask is not present and addresses are
+   from command line arguments
+
 0.2.5
 
  * move repeating group encapsulation process to fns
