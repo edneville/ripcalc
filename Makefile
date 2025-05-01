@@ -48,17 +48,17 @@ bintest:
 	$(RELEASE) 192.168.0.0/16 --format cidr | grep 192.168.0.0/16 | wc -l | tr -d '[:blank:]' | grep -Fx 1
 	printf "127.0.0.1/8\n" | $(RELEASE) | grep "IP is: 127.0.0.1/8" | wc -l | tr -d '[:blank:]' | grep -Fx 1 
 	printf " 127.0.0.1/8 \n " | $(RELEASE) | grep "IP is: 127.0.0.1/8" | wc -l | tr -d '[:blank:]' | grep -Fx 1 
-	$(RELEASE) --base 10 -6 55835323703435061617372717077650323870 | grep "IP is: 2a01:7e00::f03c:92ff:fe35:b99e/64" | wc -l | tr -d '[:blank:]' | grep -Fx 1
+	$(RELEASE) --base 10 -6 55835323703435061617372717077650323870 | grep "IP is: 2a01:7e00::f03c:92ff:fe35:b99e/128" | wc -l | tr -d '[:blank:]' | grep -Fx 1
 	printf '10.0.1.0 10.0.255.0' | $(RELEASE) -e --format cidr | grep "10.0.0.0/16" | wc -l | tr -d '[:blank:]' | grep -Fx 1
 	printf '10.0.1.0 10.0.255.0\n10.2.0.0    10.2.2.2\n10.3.0.0\n10.10.10.10\n' | $(RELEASE) --format cidr | wc -l | tr -d '[:blank:]' | grep -Fx 6
 	printf '2a0a:1100:1002::/48' | $(RELEASE) --networks 64 | tr -d '[:blank:]' | grep -Fx "Networks(64):65536"
 	printf '2a0a:1100:1002::/48' | $(RELEASE) --networks 64 --format '%D:%N' | grep -Fx '64:65536'
 	for i in 1 2 3 4; do for j in 1 2 3 4; do echo 192.$$i.$$j.1; done; done | $(RELEASE) --group 16 --format short --encapsulating | wc -l | tr -d '[:blank:]' | grep -Fx 4
-	printf 'name,network\na,192.168.0.0/16\n' >ips.csv; $(RELEASE) --csv ips.csv 127.0.0.1 --allowemptyrow --format '%{name} %a/%c\n' | grep -Fx '{name} 127.0.0.1/24' && rm ips.csv
+	printf 'name,network\na,192.168.0.0/16\n' >ips.csv; $(RELEASE) --csv ips.csv 127.0.0.1 --allowemptyrow --format '%{name} %a/%c\n' | grep -Fx '{name} 127.0.0.1/32' && rm ips.csv
 	$(RELEASE) 8.8.4.4 --format '%p\n' | grep -Fx dns.google
 	$(RELEASE) -e 10.10.10.10 10.20.10.10 10.20.10.20 --group 24 --format '%a %c %C\n' | wc -l | grep -Fx 2
 	for i in `seq 1 20`; do for j in `seq 1 50`; do printf '192.168.%d.%d\n' $$i $$j; done; done | $(RELEASE) --group 24 --encapsulating --format '%a/%c %C\n' | grep '/26 50$$' | wc -l | grep -Fx 20
-	for i in `seq 1 20`; do for j in `seq 1 50`; do printf '192.168.%d.%d\n' $$i $$j; done; done | $(RELEASE) --group 24 --inside 192.168.1.1 --encapsulating --format '%a/%c %C\n' | grep '/26 50$$' | wc -l | grep -Fx 1
+	for i in `seq 1 20`; do for j in `seq 1 50`; do printf '192.168.%d.%d\n' $$i $$j; done; done | $(RELEASE) --group 24 --inside 192.168.1.1/24 --encapsulating --format '%a/%c %C\n' | grep '/26 50$$' | wc -l | grep -Fx 1
 	for i in `seq 1 20`; do for j in `seq 1 50`; do printf '192.168.%d.%d\n' $$i $$j; done; done | $(RELEASE) --group 24 --outside 192.168.1.1 --encapsulating --format '%a/%c %C\n' | grep '/26 50$$' | wc -l | grep -Fx 19
 	printf '3558236161\n' | $(RELEASE) --base 10 --format '%a\n' | grep -Fx 212.22.96.1
 	printf -- '-736731135\n' | $(RELEASE) --base -10 --format '%a\n' | grep -Fx 212.22.96.1
