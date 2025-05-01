@@ -305,8 +305,8 @@ pub fn parse_address_mask(
         return Some(Ip {
             address: input_ip.clone(),
             cidr: match input_ip {
-                Addr::V4(_) => input_mask.unwrap_or_else(|| default_v4_mask.unwrap_or(24)),
-                Addr::V6(_) => input_mask.unwrap_or_else(|| default_v6_mask.unwrap_or(64)),
+                Addr::V4(_) => input_mask.unwrap_or_else(|| default_v4_mask.unwrap_or(32)),
+                Addr::V6(_) => input_mask.unwrap_or_else(|| default_v6_mask.unwrap_or(128)),
             },
         });
     }

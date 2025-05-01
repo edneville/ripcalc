@@ -612,7 +612,7 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             parse_address_mask("192.168.1.1", None, None, Some(10), false, &config),
             Some(Ip {
                 address: Addr::V4(Ipv4Addr::from_str("192.168.1.1").unwrap()),
-                cidr: 24,
+                cidr: 32,
             })
         );
 
@@ -620,21 +620,21 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             parse_address_mask("192.168.1.1", None, None, None, false, &config),
             Some(Ip {
                 address: Addr::V4(Ipv4Addr::from_str("192.168.1.1").unwrap()),
-                cidr: 24,
+                cidr: 32,
             })
         );
         assert_eq!(
             parse_address_mask("D4166001", None, None, Some(16), false, &config),
             Some(Ip {
                 address: Addr::V4(Ipv4Addr::from_str("212.22.96.1").unwrap()),
-                cidr: 24,
+                cidr: 32,
             })
         );
         assert_eq!(
             parse_address_mask("177.0.0.1", None, None, Some(8), false, &config),
             Some(Ip {
                 address: Addr::V4(Ipv4Addr::from_str("127.0.0.1").unwrap()),
-                cidr: 24,
+                cidr: 32,
             })
         );
     }
@@ -647,7 +647,7 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             parse_address_mask("0101A8C0", None, None, Some(16), true, &config),
             Some(Ip {
                 address: Addr::V4(Ipv4Addr::from_str("192.168.1.1").unwrap()),
-                cidr: 24,
+                cidr: 32,
             })
         );
     }

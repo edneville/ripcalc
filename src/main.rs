@@ -592,10 +592,10 @@ fn main() {
     }
 
     if input_mask.is_none() && matches.free.is_empty() {
-        input_mask = Some(24);
+        input_mask = Some(32);
 
         if let Some(Addr::V6(_)) = input_ip {
-            input_mask = Some(64);
+            input_mask = Some(128);
         }
     }
 
