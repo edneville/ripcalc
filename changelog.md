@@ -1,6 +1,7 @@
 
  * use a /32 mask for encapsulation if --mask is not present and addresses are
    from command line arguments
+ * assume v4/32 and v6/128 in csv if not specified
 
 0.2.5
 

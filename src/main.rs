@@ -157,17 +157,16 @@ fn process_csv(
 
         if record.get(field_num).is_some() {
             let rec = record.get(field_num).unwrap();
-            let parts: Vec<&str> = rec.split('/').collect();
-            if parts.len() < 2 {
-                eprintln!("{}: not in ip/cidr format", rec);
-                continue;
-            }
-
+            let mut parts: Vec<&str> = rec.split('/').collect();
             let mut row_ip: Option<Addr> = None;
 
             if parts[0].contains(':') {
                 if rows.is_none() {
                     *rows = Some(HashMap::new());
+                }
+
+                if parts.len() == 1 {
+                    parts.push("128");
                 }
 
                 let v6 = parse_v6(
@@ -193,6 +192,9 @@ fn process_csv(
                     input_base,
                     matches!(reverse, Reverse::Both | Reverse::Source),
                 );
+                if parts.len() == 1 {
+                    parts.push("32");
+                }
 
                 if v4.is_none() {
                     eprintln!("{}: not in ip/cidr format", rec);
