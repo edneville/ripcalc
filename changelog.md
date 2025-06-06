@@ -1,3 +1,5 @@
+ * bump nix -> 0.30
+
 0.2.6
 
  * use a /32 mask for encapsulation if --mask is not present and addresses are
