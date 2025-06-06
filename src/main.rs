@@ -4,7 +4,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
-use std::os::unix::io::AsRawFd;
+use std::os::fd::AsFd;
 use std::str::FromStr;
 
 fn print_details(
@@ -634,7 +634,7 @@ fn main() {
         }
     }
 
-    let stdin_ready = fd_ready(std::io::stdin().as_raw_fd());
+    let stdin_ready = fd_ready(std::io::stdin().as_fd());
     if (stdin_ready && wait_stdin(&matches)) || matches.opt_str("file").is_some() {
         let path = if stdin_ready {
             "-".to_string()

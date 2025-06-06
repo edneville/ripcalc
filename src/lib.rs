@@ -12,7 +12,7 @@ use std::fmt;
 use std::io::BufRead;
 use std::net::Ipv4Addr;
 use std::net::Ipv6Addr;
-use std::os::unix::io::RawFd;
+use std::os::fd::BorrowedFd;
 use std::str::FromStr;
 
 #[derive(Debug, PartialEq, PartialOrd, Hash, Eq, Clone)]
@@ -1415,7 +1415,7 @@ pub fn format_details(
     Some(out_str)
 }
 
-pub fn fd_ready(fd: RawFd) -> bool {
+pub fn fd_ready(fd: BorrowedFd) -> bool {
     let s = fstat(fd);
     if let Ok(x) = s {
         if SFlag::S_IFIFO.bits() & x.st_mode == SFlag::S_IFIFO.bits() {
