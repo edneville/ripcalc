@@ -17,6 +17,6 @@ keywords = ["ip","network","csv"]
 [dependencies]
 getopts = "0.2"
 csv = "1"
-nix = { version = ">= 0.30", features = ["signal", "net", "fs" ] }
+nix = { version = "0.30", features = ["signal", "net", "fs" ] }
 dns-lookup = "1"
 regex = "1.*"
