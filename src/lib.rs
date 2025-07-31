@@ -8,6 +8,7 @@ use nix::sys::stat::SFlag;
 use regex::*;
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::convert::TryInto;
 use std::fmt;
 use std::io::BufRead;
 use std::net::Ipv4Addr;
@@ -70,14 +71,32 @@ pub enum Reverse {
     Both,
 }
 
+impl Config {
+    pub fn new() -> Config {
+        Config {
+            interface_names: vec![],
+            hm: HashMap::new(),
+            used: None,
+            input_family: None,
+            net_used: HashMap::new(),
+        }
+    }
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Ip {
-    fn num_representation(&self) -> String {
+    pub fn num_representation(&self) -> String {
         match self.address {
             Addr::V4(x) => u32::from(x).to_string(),
             Addr::V6(x) => u128::from(x).to_string(),
         }
     }
-    fn signed_num_representation(&self) -> String {
+    pub fn signed_num_representation(&self) -> String {
         match self.address {
             Addr::V4(x) => {
                 let n = u32::from(x) as i32;
@@ -89,13 +108,13 @@ impl Ip {
             }
         }
     }
-    fn bin_representation(&self) -> String {
+    pub fn bin_representation(&self) -> String {
         match self.address {
             Addr::V4(x) => format!("{:032b}", u32::from(x)),
             Addr::V6(x) => format!("{:0128b}", u128::from(x)),
         }
     }
-    fn bin_split_representation(&self) -> String {
+    pub fn bin_split_representation(&self) -> String {
         let mut s = match self.address {
             Addr::V4(x) => format!("{:032b}", u32::from(x)),
             Addr::V6(x) => format!("{:0128b}", u128::from(x)),
@@ -103,7 +122,7 @@ impl Ip {
         s.insert(self.cidr as usize, ' ');
         s
     }
-    fn hex_quad_representation(&self) -> String {
+    pub fn hex_quad_representation(&self) -> String {
         match self.address {
             Addr::V4(x) => {
                 let mut s: String = "".to_string();
@@ -338,6 +357,25 @@ pub fn parse_address_mask(
     }
 
     None
+}
+
+pub fn network_iter(ip: &Ip) -> impl std::iter::Iterator<Item = Ip> + '_ {
+    let mut cidr: i32 = ip.cidr.try_into().unwrap();
+
+    std::iter::from_fn(move || {
+        let mut n = ip.clone();
+
+        n.cidr = cidr as u32;
+        eprintln!("{}", n.cidr);
+        n = network(&n);
+
+        cidr -= 1;
+        if cidr >= 0 {
+            Some(n)
+        } else {
+            None
+        }
+    })
 }
 
 pub fn addresses<'a>(

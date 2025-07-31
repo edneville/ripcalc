@@ -1026,4 +1026,146 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
         assert_eq!(inside_filter(Some(true), net_list.as_slice(), &ip), true);
         assert_eq!(inside_filter(Some(false), net_list.as_slice(), &ip), false);
     }
+
+    #[test]
+    fn test_network_match_iter() {
+        let net = Ip {
+            address: Addr::V4(Ipv4Addr::from_str("255.255.255.255").unwrap()),
+            cidr: 32,
+        };
+
+        let mut i = network_iter(&net);
+
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("255.255.255.255").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("255.255.255.254").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("255.255.255.252").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("255.255.255.248").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("255.255.255.240").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("255.255.255.224").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("255.255.255.192").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("255.255.255.128").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("255.255.255.0").unwrap())
+        );
+
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("255.255.254.0").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("255.255.252.0").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("255.255.248.0").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("255.255.240.0").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("255.255.224.0").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("255.255.192.0").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("255.255.128.0").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("255.255.0.0").unwrap())
+        );
+
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("255.254.0.0").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("255.252.0.0").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("255.248.0.0").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("255.240.0.0").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("255.224.0.0").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("255.192.0.0").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("255.128.0.0").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("255.0.0.0").unwrap())
+        );
+
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("254.0.0.0").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("252.0.0.0").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("248.0.0.0").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("240.0.0.0").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("224.0.0.0").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("192.0.0.0").unwrap())
+        );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("128.0.0.0").unwrap())
+        );
+    }
 }

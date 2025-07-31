@@ -1,4 +1,8 @@
+0.2.7
+
+ * adding network match iter
  * bump nix -> 0.30
+ * making Ip functions pub
 
 0.2.6
 
