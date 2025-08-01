@@ -366,7 +366,6 @@ pub fn network_iter(ip: &Ip) -> impl std::iter::Iterator<Item = Ip> + '_ {
         let mut n = ip.clone();
 
         n.cidr = cidr as u32;
-        eprintln!("{}", n.cidr);
         n = network(&n);
 
         cidr -= 1;
