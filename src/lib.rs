@@ -363,16 +363,14 @@ pub fn network_iter(ip: &Ip) -> impl std::iter::Iterator<Item = Ip> + '_ {
     let mut cidr: i32 = ip.cidr.try_into().unwrap();
 
     std::iter::from_fn(move || {
-        let mut n = ip.clone();
-
-        n.cidr = cidr as u32;
-        n = network(&n);
-
-        cidr -= 1;
-        if cidr >= 0 {
-            Some(n)
-        } else {
+        if cidr == -1 {
             None
+        } else {
+            cidr -= 1;
+            Some(network(&Ip {
+                address: ip.address.clone(),
+                cidr: (cidr + 1) as u32,
+            }))
         }
     })
 }
