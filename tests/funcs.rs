@@ -1167,5 +1167,10 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             i.next().as_ref().unwrap().address,
             Addr::V4(Ipv4Addr::from_str("128.0.0.0").unwrap())
         );
+        assert_eq!(
+            i.next().as_ref().unwrap().address,
+            Addr::V4(Ipv4Addr::from_str("0.0.0.0").unwrap())
+        );
+        assert_eq!(i.next().as_ref(), None,);
     }
 }
