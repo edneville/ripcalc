@@ -1217,7 +1217,10 @@ pub fn format_details(
 
         let rows = rows.as_ref().unwrap();
 
-        for i in network_iter(&Ip { address: ip.address.clone(), cidr: ip.cidr } ) {
+        for i in network_iter(&Ip {
+            address: ip.address.clone(),
+            cidr: ip.cidr,
+        }) {
             let net_row = rows.get(&i);
 
             if net_row.is_none() {
@@ -1227,8 +1230,8 @@ pub fn format_details(
             let net_row = net_row.unwrap();
 
             for f in net_row.row.keys() {
-                reformatted = reformatted
-                    .replace(&format!("%{{{}}}", f), net_row.row.get(f).unwrap());
+                reformatted =
+                    reformatted.replace(&format!("%{{{}}}", f), net_row.row.get(f).unwrap());
             }
 
             ip.cidr = i.cidr;
