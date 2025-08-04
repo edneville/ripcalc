@@ -1217,70 +1217,24 @@ pub fn format_details(
 
         let rows = rows.as_ref().unwrap();
 
-        match ip.address {
-            Addr::V4(x) => {
-                let search_ip = x;
+        for i in network_iter(&Ip { address: ip.address.clone(), cidr: ip.cidr } ) {
+            let net_row = rows.get(&i);
 
-                for i in 0..32 {
-                    let cidr = 32 - i;
-                    let mn = network(&Ip {
-                        address: Addr::V4(search_ip),
-                        cidr,
-                    });
-
-                    let net_row = rows.get(&Ip {
-                        address: mn.address,
-                        cidr,
-                    });
-
-                    if net_row.is_none() {
-                        continue;
-                    }
-
-                    let net_row = net_row.unwrap();
-                    ip.cidr = cidr;
-
-                    for f in net_row.row.keys() {
-                        reformatted = reformatted
-                            .replace(&format!("%{{{}}}", f), net_row.row.get(f).unwrap());
-                    }
-                    found_match = true;
-
-                    break;
-                }
+            if net_row.is_none() {
+                continue;
             }
-            Addr::V6(x) => {
-                let search_ip = x;
 
-                for i in 0..128 {
-                    let cidr = 128 - i;
-                    let mn = network(&Ip {
-                        address: Addr::V6(search_ip),
-                        cidr,
-                    });
+            let net_row = net_row.unwrap();
 
-                    let net_row = rows.get(&Ip {
-                        address: mn.address,
-                        cidr,
-                    });
-
-                    if net_row.is_none() {
-                        continue;
-                    }
-
-                    ip.cidr = cidr;
-
-                    let net_row = net_row.unwrap();
-
-                    for f in net_row.row.keys() {
-                        reformatted = reformatted
-                            .replace(&format!("%{{{}}}", f), net_row.row.get(f).unwrap());
-                    }
-                    found_match = true;
-
-                    break;
-                }
+            for f in net_row.row.keys() {
+                reformatted = reformatted
+                    .replace(&format!("%{{{}}}", f), net_row.row.get(f).unwrap());
             }
+
+            ip.cidr = i.cidr;
+            found_match = true;
+
+            break;
         }
         if !found_match {
             if let Some(m) = matches {
