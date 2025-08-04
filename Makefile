@@ -59,6 +59,7 @@ bintest:
 	printf 'name,network\na,2001:db8::\n' >ips.csv; $(RELEASE) --csv ips.csv   2001:db8::0 --allowemptyrow --format '%{name} %a/%c\n' | grep -Fx 'a 2001:db8::/128' && rm ips.csv
 	printf 'name,network\na,192.168.0.0/24\n' >ips.csv; $(RELEASE) --csv ips.csv 192.168.0.1 --allowemptyrow --format '%{name} %a/%c\n' | grep -Fx 'a 192.168.0.1/24' && rm ips.csv
 	printf 'name,network\na,192.168.0.0/24\n' >ips.csv; echo 192.168.0.1 | $(RELEASE) --csv ips.csv --allowemptyrow --format '%{name} %a/%c\n' | grep -Fx 'a 192.168.0.1/24' && rm ips.csv
+	printf 'name,network\nloop,127.0.0.0/8\nprinters,172.16.0.0/12\niot1,192.168.0.0/24\niot2,192.168.1.0/24\niot3,192.168.2.0/24\niot4,192.168.3.0/24' >ips.csv; echo 192.168.0.1 | $(RELEASE) --csv ips.csv --allowemptyrow --format '%{name} %a/%c\n' | grep -Fx 'iot1 192.168.0.1/24' && rm ips.csv
 	$(RELEASE) 8.8.4.4 --format '%p\n' | grep -Fx dns.google
 	$(RELEASE) -e 10.10.10.10 10.20.10.10 10.20.10.20 --group 24 --format '%a %c %C\n' | wc -l | grep -Fx 2
 	for i in `seq 1 20`; do for j in `seq 1 50`; do printf '192.168.%d.%d\n' $$i $$j; done; done | $(RELEASE) --group 24 --encapsulating --format '%a/%c %C\n' | grep '/26 50$$' | wc -l | grep -Fx 20
