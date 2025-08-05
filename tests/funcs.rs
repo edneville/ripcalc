@@ -1173,4 +1173,17 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
         );
         assert_eq!(i.next().as_ref(), None,);
     }
-}
+
+    #[test]
+    fn test_network_reservation() {
+        let net = Ip {
+            address: Addr::V4(Ipv4Addr::from_str("255.255.255.255").unwrap()),
+            cidr: 32,
+        };
+
+        assert_eq!(
+            network_reservation(&net),
+            Some("Reserved for limited broadcast destination address.".to_string())
+        );
+    }
+ }

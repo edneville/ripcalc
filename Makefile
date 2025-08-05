@@ -73,6 +73,8 @@ bintest:
 	$(RELEASE) -e 10.0.0.0 10.10.0.0 10.10.0.1 --group 24 --format '%a/%c %C ' | grep -Fx '10.0.0.0/32 1 10.10.0.0/31 2 ' >/dev/null
 	printf '10.0.0.0 10.10.0.0 10.10.0.1\n' | $(RELEASE) -e --group 24 --format '%a/%c %C ' | sort -n | paste -sd' ' | grep -Fx '10.0.0.0/32 1 10.10.0.0/31 2 ' >/dev/null
 	$(RELEASE) --encapsulating 10.10.0.1 10.10.0.2 10.10.0.3 --format cidr | grep 10.10.0.0/30 >/dev/null
+	$(RELEASE) 192.168.1.1 --format '%r\n' | grep 'RFC 1918' >/dev/null
+	$(RELEASE) 127.0.0.1 --format '%r\n' | grep 'Used for loopback addresses to the local host.' >/dev/null
 
 install: all
 	command -v please && please install -m 0755 -s $(RELEASE) /usr/local/bin || sudo install -m 0755 -s $(RELEASE) /usr/local/bin 
