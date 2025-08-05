@@ -981,38 +981,11 @@ pub fn network_reservation(ip: &Ip) -> Option<String> {
         "Link local".to_string(),
     );
 
-    match ip.address {
-        Addr::V4(x) => {
-            let search_ip = x;
+    for i in network_iter(&ip.clone()) {
+        let net_row = rows.get(&network(&i));
 
-            for i in 0..32 {
-                let cidr = 32 - i;
-
-                let net_row = rows.get(&network(&Ip {
-                    address: Addr::V4(search_ip),
-                    cidr,
-                }));
-
-                if let Some(s) = net_row {
-                    return Some(s.to_string());
-                }
-            }
-        }
-        Addr::V6(x) => {
-            let search_ip = x;
-
-            for i in 0..128 {
-                let cidr = 128 - i;
-
-                let net_row = rows.get(&network(&Ip {
-                    address: Addr::V6(search_ip),
-                    cidr,
-                }));
-
-                if let Some(s) = net_row {
-                    return Some(s.to_string());
-                }
-            }
+        if let Some(s) = net_row {
+            return Some(s.to_string());
         }
     }
 
