@@ -71,6 +71,13 @@ pub enum Reverse {
     Both,
 }
 
+pub enum MaskType {
+    Network,
+    Broadcast,
+    Wildcard,
+    SubnetMask,
+}
+
 impl Config {
     pub fn new() -> Config {
         Config {
@@ -360,6 +367,25 @@ pub fn parse_address_mask(
 }
 
 pub fn network_iter(ip: &Ip) -> impl std::iter::Iterator<Item = Ip> + '_ {
+    mask_iter(ip, &MaskType::Network)
+}
+
+pub fn broadcast_iter(ip: &Ip) -> impl std::iter::Iterator<Item = Ip> + '_ {
+    mask_iter(ip, &MaskType::Broadcast)
+}
+
+pub fn wildcard_iter(ip: &Ip) -> impl std::iter::Iterator<Item = Ip> + '_ {
+    mask_iter(ip, &MaskType::Wildcard)
+}
+
+pub fn subnet_iter(ip: &Ip) -> impl std::iter::Iterator<Item = Ip> + '_ {
+    mask_iter(ip, &MaskType::SubnetMask)
+}
+
+pub fn mask_iter<'a>(
+    ip: &'a Ip,
+    mask_type: &'a MaskType,
+) -> impl std::iter::Iterator<Item = Ip> + 'a {
     let mut cidr: i32 = ip.cidr.try_into().unwrap();
 
     std::iter::from_fn(move || {
@@ -367,10 +393,24 @@ pub fn network_iter(ip: &Ip) -> impl std::iter::Iterator<Item = Ip> + '_ {
             None
         } else {
             cidr -= 1;
-            Some(network(&Ip {
-                address: ip.address.clone(),
-                cidr: (cidr + 1) as u32,
-            }))
+            Some(match mask_type {
+                MaskType::Network => network(&Ip {
+                    address: ip.address.clone(),
+                    cidr: (cidr + 1) as u32,
+                }),
+                MaskType::Broadcast => broadcast(&Ip {
+                    address: ip.address.clone(),
+                    cidr: (cidr + 1) as u32,
+                }),
+                MaskType::SubnetMask => subnet(&Ip {
+                    address: ip.address.clone(),
+                    cidr: (cidr + 1) as u32,
+                }),
+                MaskType::Wildcard => wildcard(&Ip {
+                    address: ip.address.clone(),
+                    cidr: (cidr + 1) as u32,
+                }),
+            })
         }
     })
 }
@@ -655,6 +695,31 @@ pub fn subnet(ip: &Ip) -> Ip {
                 bin |= 1 << i;
             }
             bin = !bin;
+            Ip {
+                address: Addr::V6(Ipv6Addr::from(bin)),
+                cidr: ip.cidr,
+            }
+        }
+    }
+}
+
+pub fn wildcard(ip: &Ip) -> Ip {
+    match ip.address {
+        Addr::V4(_x) => {
+            let mut bin: u32 = 0;
+            for i in 0..32 - ip.cidr {
+                bin |= 1 << i;
+            }
+            Ip {
+                address: Addr::V4(Ipv4Addr::from(bin)),
+                cidr: ip.cidr,
+            }
+        }
+        Addr::V6(_x) => {
+            let mut bin: u128 = 0;
+            for i in 0..128 - ip.cidr {
+                bin |= 1 << i;
+            }
             Ip {
                 address: Addr::V6(Ipv6Addr::from(bin)),
                 cidr: ip.cidr,
@@ -990,31 +1055,6 @@ pub fn network_reservation(ip: &Ip) -> Option<String> {
     }
 
     None
-}
-
-pub fn wildcard(ip: &Ip) -> Ip {
-    match ip.address {
-        Addr::V4(_x) => {
-            let mut bin: u32 = 0;
-            for i in 0..32 - ip.cidr {
-                bin |= 1 << i;
-            }
-            Ip {
-                address: Addr::V4(Ipv4Addr::from(bin)),
-                cidr: ip.cidr,
-            }
-        }
-        Addr::V6(_x) => {
-            let mut bin: u128 = 0;
-            for i in 0..128 - ip.cidr {
-                bin |= 1 << i;
-            }
-            Ip {
-                address: Addr::V6(Ipv6Addr::from(bin)),
-                cidr: ip.cidr,
-            }
-        }
-    }
 }
 
 pub fn matching_network_interface(
