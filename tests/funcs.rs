@@ -272,13 +272,7 @@ mod test {
     }
 
     fn default_config() -> Config {
-        Config {
-            interface_names: vec![],
-            hm: HashMap::new(),
-            used: None,
-            input_family: None,
-            net_used: HashMap::new(),
-        }
+        Config::new()
     }
 
     #[test]
