@@ -4,7 +4,7 @@ section: 1
 header: User Manual
 footer: ripcalc 0.2.6
 author: Ed Neville (ed-ripcalc@s5h.net)
-date: 03 August 2025
+date: 08 August 2025
 ---
 
 # NAME
@@ -41,6 +41,8 @@ ripcalc - a tool for network addresses
 
 **ripcalc --networks [CIDR] 127.0.0.1/24**
 
+**ripcalc -q/--quiet**
+
 **ripcalc -h/--help**
 
 
@@ -65,6 +67,8 @@ When `--encapsulating` is used the containing network will be returned, use with
 The number (**%D**) of subnets can be printed when using the `--group` argument with the **%N** formatters. The argument should be the CIDR mask, see below for example.
 
 If **base** is a negative number, input addresses are treated as though the input is a signed integer in **base**.
+
+If `--quiet` is specified then parsing error messages will be suppressed.
 
 # CSV
 

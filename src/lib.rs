@@ -39,6 +39,7 @@ pub struct Config {
     pub used: Option<HashMap<Ip, bool>>,
     pub input_family: Option<InputFamily>,
     pub net_used: HashMap<Ip, HashMap<Ip, bool>>,
+    pub options: HashMap<String, String>,
 }
 
 #[derive(Debug, Clone)]
@@ -86,6 +87,7 @@ impl Config {
             used: None,
             input_family: None,
             net_used: HashMap::new(),
+            options: HashMap::new(),
         }
     }
 }
@@ -1458,7 +1460,15 @@ pub fn find_ips<'a>(
                 ) {
                     Some(x) => x,
                     None => {
-                        eprintln!("Could not parse {}", p);
+                        if config
+                            .borrow()
+                            .options
+                            .get("quiet")
+                            .unwrap_or(&"false".to_string())
+                            != "true"
+                        {
+                            eprintln!("Could not parse {}", p);
+                        }
                         continue;
                     }
                 };

@@ -420,13 +420,7 @@ fn main() {
     let mut inside: Option<bool> = None;
     let args: Vec<String> = std::env::args().collect();
     let mut ip_args: Vec<Ip> = vec![];
-    let config = RefCell::new(Config {
-        interface_names: vec![],
-        hm: HashMap::new(),
-        used: None,
-        input_family: None,
-        net_used: HashMap::new(),
-    });
+    let config = RefCell::new(Config::new());
 
     opts.parsing_style(getopts::ParsingStyle::FloatingFrees);
     opts.optflag("4", "ipv4", "treat inputs as ipv4 address");
@@ -474,6 +468,8 @@ fn main() {
         "CIDR",
     );
 
+    opts.optflag("q", "quiet", "don't report errors");
+
     opts.optopt(
         "r",
         "reverse",
@@ -513,6 +509,13 @@ fn main() {
             std::process::exit(1);
         }
         inside = Some(false);
+    }
+
+    if matches.opt_present("quiet") {
+        config
+            .borrow_mut()
+            .options
+            .insert("quiet".to_string(), "true".to_string());
     }
 
     if matches.opt_present("group") {

@@ -15,7 +15,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "ripcalc" "1" "03 August 2025" "ripcalc 0.2.6" "User Manual"
+.TH "ripcalc" "1" "08 August 2025" "ripcalc 0.2.6" "User Manual"
 .hy
 .SH NAME
 .PP
@@ -49,6 +49,8 @@ ripcalc - a tool for network addresses
 \f[B]ripcalc -d/--divide [CIDR] 127.0.0.1/24\f[R]
 .PP
 \f[B]ripcalc \[en]networks [CIDR] 127.0.0.1/24\f[R]
+.PP
+\f[B]ripcalc -q/--quiet\f[R]
 .PP
 \f[B]ripcalc -h/--help\f[R]
 .SH DESCRIPTION
@@ -91,6 +93,9 @@ The argument should be the CIDR mask, see below for example.
 .PP
 If \f[B]base\f[R] is a negative number, input addresses are treated as
 though the input is a signed integer in \f[B]base\f[R].
+.PP
+If \f[V]--quiet\f[R] is specified then parsing error messages will be
+suppressed.
 .SH CSV
 .PP
 Network matches can be returned from a \f[B]CSV\f[R].
