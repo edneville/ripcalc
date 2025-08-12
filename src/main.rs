@@ -434,6 +434,7 @@ fn main() {
     );
     opts.optopt("b", "base", "ipv4 base format, default to oct", "INTEGER");
     opts.optopt("c", "csv", "csv reference file", "PATH");
+    opts.optopt("", "cdb", "cdb reference file", "PATH");
     opts.optopt("d", "divide", "divide network into chunks", "CIDR");
     opts.optflag("", "noexpand", "do not expand networks in list");
 
@@ -452,7 +453,7 @@ fn main() {
     );
     opts.optflag("h", "help", "display help");
 
-    opts.optopt("i", "field", "csv field", "FIELD");
+    opts.optopt("i", "field", "csv/db field", "FIELD");
     opts.optflag("l", "list", "list all addresses in network");
     opts.optflag(
         "",
@@ -582,6 +583,12 @@ fn main() {
         };
 
         process_csv(reader, field_name, &mut rows, input_base, &reverse);
+    }
+
+    if matches.opt_present("cdb") {
+        let path = matches.opt_str("cdb").unwrap();
+
+        config.borrow_mut().options.insert("cdb_path".to_string(), path);
     }
 
     if let Some(v) = matches.opt_str("mask") {

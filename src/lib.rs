@@ -15,11 +15,17 @@ use std::net::Ipv4Addr;
 use std::net::Ipv6Addr;
 use std::os::fd::BorrowedFd;
 use std::str::FromStr;
+use cdb::CDB;
 
 #[derive(Debug, PartialEq, PartialOrd, Hash, Eq, Clone)]
 pub enum Addr {
     V6(Ipv6Addr),
     V4(Ipv4Addr),
+}
+
+#[derive(Debug, PartialEq, PartialOrd, Hash, Eq, Clone)]
+pub enum Db {
+    CdbPath(String),
 }
 
 #[derive(Debug, PartialEq, PartialOrd, Hash, Eq, Clone)]
@@ -32,6 +38,7 @@ pub struct NetRow {
     pub row: HashMap<String, String>,
 }
 
+
 #[derive(Debug, Clone)]
 pub struct Config {
     pub interface_names: Vec<InterfaceAddress>,
@@ -40,6 +47,7 @@ pub struct Config {
     pub input_family: Option<InputFamily>,
     pub net_used: HashMap<Ip, HashMap<Ip, bool>>,
     pub options: HashMap<String, String>,
+    pub db: Option<Db>,
 }
 
 #[derive(Debug, Clone)]
@@ -88,6 +96,7 @@ impl Config {
             input_family: None,
             net_used: HashMap::new(),
             options: HashMap::new(),
+            db: None,
         }
     }
 }
@@ -1216,6 +1225,56 @@ pub fn formatted_address(ip: &Ip, mode: &FormatMode) -> String {
     }
 }
 
+pub fn cdb_lookup( ip: &mut Ip, config: &RefCell<Config>) -> Option<HashMap<String,String>> {
+    let mut hm: HashMap<String,String> = HashMap::new();
+
+    let config = config.borrow();
+    let path = config.options.get("cdb_path");
+    if path.is_none() {
+        return None;
+    }
+
+    let path = path.unwrap();
+    let cdb = cdb::CDB::open(path);
+    if cdb.is_err() {
+        eprintln!("cannot open {}", path);
+        return None;
+    }
+
+    let cdb = cdb.unwrap();
+    let lookup_ip = ip.clone();
+
+    for k in network_iter(&lookup_ip) {
+        let str_key = format!("{}/{}", network(&k), k.cidr);
+        let key = str_key.as_bytes();
+        let result = cdb.get(key);
+        if result.is_none() {
+            continue;
+        }
+
+        *ip = k;
+
+        let result = result.unwrap().unwrap();
+        if result.is_empty() {
+            return None;
+        }
+
+        let value = String::from_utf8(result).unwrap();
+        let value: Vec<&str> = value.split('\0').collect();
+        for v in value {
+            let p: Vec<&str> = v.split('=').collect();
+            if p.len() < 2 {
+                continue;
+            }
+
+            hm.insert(p[0].to_string(), p[1].to_string());
+        }
+        return Some(hm);
+    }
+
+    None
+}
+
 pub fn format_details(
     ip: &Ip,
     formatted: String,
@@ -1262,6 +1321,27 @@ pub fn format_details(
             };
         }
     }
+
+    // need to make this more like the loop above
+    if config.borrow().options.get("cdb_path").is_some() {
+        let mut lookup_ip = ip.clone();
+        if let Some(row) = cdb_lookup(&mut lookup_ip, config) {
+            for f in row.keys() {
+                reformatted =
+                    reformatted.replace(&format!("%{{{}}}", f), row.get(f).unwrap());
+            }
+
+            ip.cidr = lookup_ip.cidr;
+        }
+        else {
+            if let Some(m) = matches {
+                if !m.opt_present("allowemptyrow") {
+                    return None;
+                }
+            };
+        }
+    }
+
     let b = broadcast(ip);
     let n = network(ip);
     let s = subnet(ip);
