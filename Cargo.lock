@@ -24,6 +24,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf4b9d6a944f767f8e5e0db018570623c85f3d925ac718db4e06d0187adb21c1"
 
 [[package]]
+name = "cdb"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d40365487fcb26c3c826eb57802b33bd767e401771e71a69608edc9b95b320a5"
+dependencies = [
+ "filebuffer",
+ "libc",
+]
+
+[[package]]
 name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -65,6 +75,16 @@ dependencies = [
  "cfg-if",
  "libc",
  "socket2",
+ "winapi",
+]
+
+[[package]]
+name = "filebuffer"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1b41bfe1d74263ea9d084be951077614b3b98b4e59a9dafab1467645a9e52305"
+dependencies = [
+ "libc",
  "winapi",
 ]
 
@@ -168,6 +188,7 @@ checksum = "2b15c43186be67a4fd63bee50d0303afffcef381492ebe2c5d87f324e1b8815c"
 name = "ripcalc"
 version = "0.2.7"
 dependencies = [
+ "cdb",
  "csv",
  "dns-lookup",
  "getopts",
