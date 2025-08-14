@@ -2,6 +2,7 @@ use getopts::Options;
 use ripcalc::*;
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::fs;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::os::fd::AsFd;
@@ -410,6 +411,50 @@ fn wait_stdin(matches: &getopts::Matches) -> bool {
     false
 }
 
+fn make_cdb(path: String, config: &RefCell<Config>) {
+    let reader = BufReader::new(std::io::stdin());
+    let tmp_file = format!("{}.tmp", path);
+    let cdb = cdb::CDBWriter::create(&tmp_file);
+
+    if cdb.is_err() {
+        eprintln!("Cannot create: {}", tmp_file);
+        std::process::exit(1);
+    }
+
+    let mut cdb = cdb.unwrap();
+
+    for line in reader.lines() {
+        match line {
+            Ok(_) => {
+                let line = line.unwrap();
+                let mut parts: Vec<&str> = line.split(',').collect();
+                if let Some(key) = parse_address_mask(parts[0], None, None, None, false, config) {
+                    for j in &mut parts {
+                        *j = j.trim();
+                    }
+                    let key = format!("{}/{}", network(&key), key.cidr);
+                    let value = parts[1..].join("\0");
+                    let _ = cdb.add(key.as_bytes(), value.as_bytes());
+                }
+            }
+            Err(x) => {
+                eprintln!("Cannot read: {}", x);
+                std::process::exit(1);
+            }
+        }
+    }
+
+    if cdb.finish().is_err() {
+        eprintln!("Cannot finish writing: {}", tmp_file);
+        std::process::exit(1);
+    }
+
+    if fs::rename(&tmp_file, &path).is_err() {
+        eprintln!("Cannot rename {} to {}", tmp_file, path);
+        std::process::exit(1);
+    }
+}
+
 fn main() {
     let mut opts = Options::new();
     let mut rows: Option<HashMap<Ip, NetRow>> = None;
@@ -461,6 +506,7 @@ fn main() {
         "display when extremities are outside network",
     );
     opts.optflag("", "inside", "display when extremities are inside network");
+    opts.optopt("", "makecdb", "build a cdb file from STDIN", "PATH");
     opts.optopt("m", "mask", "cidr mask", "CIDR");
     opts.optopt(
         "n",
@@ -588,11 +634,19 @@ fn main() {
     if matches.opt_present("cdb") {
         let path = matches.opt_str("cdb").unwrap();
 
-        config.borrow_mut().options.insert("cdb_path".to_string(), path);
+        config
+            .borrow_mut()
+            .options
+            .insert("cdb_path".to_string(), path);
     }
 
     if let Some(v) = matches.opt_str("mask") {
         input_mask = parse_mask(&v);
+    }
+
+    if let Some(v) = matches.opt_str("makecdb") {
+        make_cdb(v, &config);
+        std::process::exit(0);
     }
 
     if matches.opt_present("ipv4") {
