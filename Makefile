@@ -79,3 +79,30 @@ bintest:
 install: all
 	command -v please && please install -m 0755 -s $(RELEASE) /usr/local/bin || sudo install -m 0755 -s $(RELEASE) /usr/local/bin 
 
+get_add:
+	mkdir -p data
+	cd data \
+	&& wget https://thyme.apnic.net/current/ipv6-raw-table \
+	&& wget https://thyme.apnic.net/current/data-add-AFRINIC \
+	&& wget https://thyme.apnic.net/current/data-add-APNIC \
+	&& wget https://thyme.apnic.net/current/data-add-ARIN \
+	&& wget https://thyme.apnic.net/current/data-add-LACNIC \
+	&& wget https://thyme.apnic.net/current/data-add-RIPE
+
+get_as:
+	mkdir -p data
+	cd data \
+	&& wget https://thyme.apnic.net/current/data-AS20net \
+	&& wget https://thyme.apnic.net/current/data-AS20net-AFRINIC \
+	&& wget https://thyme.apnic.net/current/data-AS20net-APNIC \
+	&& wget https://thyme.apnic.net/current/data-AS20net-ARIN \
+	&& wget https://thyme.apnic.net/current/data-AS20net-LACNIC \
+	&& wget https://thyme.apnic.net/current/data-AS20net-RIPE
+
+makecdb:
+	cat data/data-AS20net-* >data/data_as20
+	cat data/data-add-* >data/data_add
+	perl cdb_maker.pl data/data_as20 data/data_add data/ipv6-raw-table | $(RELEASE) --makecdb ipdb.cdb
+
+ipdb: get_add get_as makecdb
+
