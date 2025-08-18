@@ -15,6 +15,7 @@ use std::net::Ipv4Addr;
 use std::net::Ipv6Addr;
 use std::os::fd::BorrowedFd;
 use std::str::FromStr;
+use cdb::CDB;
 
 #[derive(Debug, PartialEq, PartialOrd, Hash, Eq, Clone)]
 pub enum Addr {
@@ -32,7 +33,6 @@ pub struct NetRow {
     pub row: HashMap<String, String>,
 }
 
-#[derive(Debug, Clone)]
 pub struct Config {
     pub interface_names: Vec<InterfaceAddress>,
     pub hm: HashMap<String, String>,
@@ -40,6 +40,7 @@ pub struct Config {
     pub input_family: Option<InputFamily>,
     pub net_used: HashMap<Ip, HashMap<Ip, bool>>,
     pub options: HashMap<String, String>,
+    pub cdb: Option<CDB>,
 }
 
 #[derive(Debug, Clone)]
@@ -88,6 +89,7 @@ impl Config {
             input_family: None,
             net_used: HashMap::new(),
             options: HashMap::new(),
+            cdb: None,
         }
     }
 }
@@ -1219,25 +1221,30 @@ pub fn formatted_address(ip: &Ip, mode: &FormatMode) -> String {
 pub fn cdb_lookup(ip: &mut Ip, config: &RefCell<Config>) -> Option<HashMap<String, String>> {
     let mut hm: HashMap<String, String> = HashMap::new();
 
-    let config = config.borrow();
-    let path = config.options.get("cdb_path");
+    let mut config = config.borrow_mut();
 
-    path?;
+    if config.cdb.is_none() {
+        let path = config.options.get("cdb_path");
 
-    let path = path.unwrap();
-    let cdb = cdb::CDB::open(path);
-    if cdb.is_err() {
-        eprintln!("cannot open {}", path);
-        return None;
-    }
+        path?;
 
-    let cdb = cdb.unwrap();
+        let path = path.unwrap();
+        let cdb = cdb::CDB::open(path);
+        if cdb.is_err() {
+            eprintln!("cannot open {}", path);
+            return None;
+        }
+
+        config.cdb = Some(cdb.unwrap());
+    };
+
+
     let lookup_ip = ip.clone();
 
     for k in network_iter(&lookup_ip) {
         let str_key = format!("{}/{}", network(&k), k.cidr);
         let key = str_key.as_bytes();
-        let result = cdb.get(key);
+        let result = config.cdb.as_ref().unwrap().get(key);
         if result.is_none() {
             continue;
         }
@@ -1259,6 +1266,7 @@ pub fn cdb_lookup(ip: &mut Ip, config: &RefCell<Config>) -> Option<HashMap<Strin
 
             hm.insert(p[0].to_string(), p[1].to_string());
         }
+
         return Some(hm);
     }
 
