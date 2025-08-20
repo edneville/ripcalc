@@ -1,3 +1,4 @@
+use cdb::CDB;
 use dns_lookup::{lookup_addr, lookup_host};
 use nix::ifaddrs::*;
 use nix::sys::socket::AddressFamily;
@@ -15,7 +16,7 @@ use std::net::Ipv4Addr;
 use std::net::Ipv6Addr;
 use std::os::fd::BorrowedFd;
 use std::str::FromStr;
-use cdb::CDB;
+use std::sync::Arc;
 
 #[derive(Debug, PartialEq, PartialOrd, Hash, Eq, Clone)]
 pub enum Addr {
@@ -33,6 +34,7 @@ pub struct NetRow {
     pub row: HashMap<String, String>,
 }
 
+#[derive(Clone)]
 pub struct Config {
     pub interface_names: Vec<InterfaceAddress>,
     pub hm: HashMap<String, String>,
@@ -40,7 +42,7 @@ pub struct Config {
     pub input_family: Option<InputFamily>,
     pub net_used: HashMap<Ip, HashMap<Ip, bool>>,
     pub options: HashMap<String, String>,
-    pub cdb: Option<CDB>,
+    pub cdb: Option<Arc<CDB>>,
 }
 
 #[derive(Debug, Clone)]
@@ -97,6 +99,43 @@ impl Config {
 impl Default for Config {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[allow(dead_code)]
+impl fmt::Debug for Config {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        #[derive(Debug)]
+        struct Config<'a> {
+            interface_names: &'a Vec<InterfaceAddress>,
+            hm: &'a HashMap<String, String>,
+            used: &'a Option<HashMap<Ip, bool>>,
+            input_family: &'a Option<InputFamily>,
+            net_used: &'a HashMap<Ip, HashMap<Ip, bool>>,
+            options: &'a HashMap<String, String>,
+        }
+
+        let Self {
+            interface_names,
+            hm,
+            used,
+            input_family,
+            net_used,
+            options,
+            cdb: _,
+        } = self;
+
+        fmt::Debug::fmt(
+            &Config {
+                interface_names,
+                hm,
+                used,
+                input_family,
+                net_used,
+                options,
+            },
+            f,
+        )
     }
 }
 
@@ -1235,9 +1274,8 @@ pub fn cdb_lookup(ip: &mut Ip, config: &RefCell<Config>) -> Option<HashMap<Strin
             return None;
         }
 
-        config.cdb = Some(cdb.unwrap());
+        config.cdb = Some(cdb.unwrap().into());
     };
-
 
     let lookup_ip = ip.clone();
 
