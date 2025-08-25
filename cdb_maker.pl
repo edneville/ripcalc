@@ -41,7 +41,7 @@ sub process_add {
 
     while (my $line = <$fh>) {
         chomp $line;
-        if ($line =~ /^\s*(\d)\s+(\S+)$/) {
+        if ($line =~ /^\s*(\d+)\s+(\S+)$/) {
             if (defined $db->{$1}) {
                 my ($desc,$cc) = split /,\s*/, $db->{$1}, 2;
                 if (defined $desc && defined $cc) {

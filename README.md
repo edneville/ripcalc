@@ -219,6 +219,26 @@ grep -h scams log/* | awk '{print $1}' | ripcalc --encapsulating --group 24 --fo
 
 Grouping with a limit helps show spread, without expanding beyond sensible limits. Setting a very large `group` mask would of course return very large results, using a smaller `group` can limit this so the probability of including legitimate traffic is reduced dramatically.
 
+# cdb
+
+CDB databases are fast and if you have a large list of networks they offer a good way to lookup addresses without parsing CSV. CDB lookups can be performed using IP/cidr keys and the returned values should be stored as a NULL joined key=value string, e.g.:
+
+```
+192.168.1.0/24 name=lan\0owner=build\0service=web
+```
+
+This is read as stdin with `makecdb`:
+
+```
+ripcalc --makecdb ipdb.cdb
+```
+
+An example for making these can be seen in the Makefile in the ipdb target, it download ASN data and builds that using cdb_maker.pl, and this can be used like this:
+
+```
+ripcalc --cdb ipdb.cdb --format '%{ASNDESC} %a/%c\n' 1.1.1.1
+CLOUDFLARENET 1.1.1.1/24
+```
 
 # help
 
@@ -227,13 +247,14 @@ Options:
     -4, --ipv4          treat inputs as ipv4 address
     -6, --ipv6          treat inputs as ipv6 address
     -a, --available     display unused addresses
-        --allowemptyrow
+        --allowemptyrow 
                         when no matching csv network, use empty fields
     -b, --base INTEGER  ipv4 base format, default to oct
     -c, --csv PATH      csv reference file
+        --cdb PATH      cdb reference file
     -d, --divide CIDR   divide network into chunks
         --noexpand      do not expand networks in list
-    -e, --encapsulating
+    -e, --encapsulating 
                         display encapsulating network from arguments or lookup
                         list
     -f, --format STRING format output
@@ -242,13 +263,15 @@ Options:
                         See manual for more options
         --group CIDR    maximum network group size for encapsulation
     -h, --help          display help
-    -i, --field FIELD   csv field
+    -i, --field FIELD   csv/db field
     -l, --list          list all addresses in network
         --outside       display when extremities are outside network
         --inside        display when extremities are inside network
+        --makecdb PATH  build a cdb file from STDIN
     -m, --mask CIDR     cidr mask
     -n, --networks CIDR instead of hosts, display number of subnets of this
                         size
+    -q, --quiet         don't report errors
     -r, --reverse       (none, inputs, sources or both) v4 octets, v6 hex
     -s, --file PATH     lookup addresses from, - for stdin
     -v, --version       print version
