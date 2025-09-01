@@ -102,10 +102,10 @@ impl Default for Config {
     }
 }
 
-#[allow(dead_code)]
 impl fmt::Debug for Config {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         #[derive(Debug)]
+        #[allow(dead_code)]
         struct Config<'a> {
             interface_names: &'a Vec<InterfaceAddress>,
             hm: &'a HashMap<String, String>,

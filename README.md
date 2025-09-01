@@ -227,18 +227,34 @@ CDB databases are fast and if you have a large list of networks they offer a goo
 192.168.1.0/24 name=lan\0owner=build\0service=web
 ```
 
-This is read as stdin with `makecdb`:
+Files can be made using `--makecdb`, the stdin should be in the format of:
 
 ```
-ripcalc --makecdb ipdb.cdb
+2600:3c0f:25::/48,ASNDESC=AKAMAI-LINODE-AP Akamai Connected Cloud,ASNCC=SG,ASN=2600:3c0f:25::/48,NET=63949
 ```
 
-An example for making these can be seen in the Makefile in the ipdb target, it download ASN data and builds that using cdb_maker.pl, and this can be used like this:
+See cdb_maker.pl for a helper script which builds this. An example for making these can be seen in the Makefile in the ipdb target, it download ASN data and builds that using cdb_maker.pl, and this can be used like this:
 
 ```
 ripcalc --cdb ipdb.cdb --format '%{ASNDESC} %a/%c\n' 1.1.1.1
 CLOUDFLARENET 1.1.1.1/24
 ```
+
+# filter
+
+Input can be filtered using `--filter` which can be helpful as an accompaniment for `grep`-like workflows.
+
+```
+cat /var/log/apache/access.log | ripcalc --filter 1.2.3.0/24
+```
+
+Or inverted with `--outside`.
+
+```
+cat /var/log/apache/access.log | ripcalc --filter 1.1.1.0/24 --outside
+```
+
+`--filter` will use the first word in the inputline and try to parse that for an IP address, if the IP address is not the first word in the input, then `--filternum` can be used to indicate which word number holds the IP.
 
 # help
 
@@ -261,6 +277,10 @@ Options:
                         'cidr' expands to %a/%c\n
                         'short' expands to %a\n
                         See manual for more options
+        --filter        print STDIN line if field parses as an IP and matches,
+                        defaults to 1, use filternum to adjust
+        --filternum NUMBER
+                        change position NUMBER for IP filter, enables --filter
         --group CIDR    maximum network group size for encapsulation
     -h, --help          display help
     -i, --field FIELD   csv/db field
@@ -276,5 +296,4 @@ Options:
     -s, --file PATH     lookup addresses from, - for stdin
     -v, --version       print version
 ```
-
 

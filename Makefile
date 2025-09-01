@@ -75,6 +75,10 @@ bintest:
 	$(RELEASE) --encapsulating 10.10.0.1 10.10.0.2 10.10.0.3 --format cidr | grep 10.10.0.0/30 >/dev/null
 	$(RELEASE) 192.168.1.1 --format '%r\n' | grep 'RFC 1918' >/dev/null
 	$(RELEASE) 127.0.0.1 --format '%r\n' | grep 'Used for loopback addresses to the local host.' >/dev/null
+	printf "192.168.1.1 this should match\n192.168.1.10 so should this\n192.168.2.1 this should not\n" | $(RELEASE) --filter 192.168.1.0/24 --format cidr | wc -l | grep -Fx 2 >/dev/null
+	printf "192.168.1.1 this should match\n192.168.1.10 so should this\n192.168.2.1 this should not\n" | $(RELEASE) --filter 192.168.1.0/24 --format cidr --outside | wc -l | grep -Fx 1 >/dev/null
+	printf "this should match 192.168.1.1\nthis should match 192.168.1.20\nthis should not 192.168.10.1\n" | $(RELEASE) --filternum 4 192.168.1.0/24 --format cidr | wc -l | grep -Fx 2 >/dev/null
+	printf "this should match 192.168.1.1\nthis should match 192.168.1.20\nthis should not 192.168.10.1\n" | $(RELEASE) --filternum 4 --outside 192.168.1.0/24 --format cidr | wc -l | grep -Fx 1 >/dev/null
 
 install: all
 	command -v please && please install -m 0755 -s $(RELEASE) /usr/local/bin || sudo install -m 0755 -s $(RELEASE) /usr/local/bin 
@@ -100,6 +104,7 @@ get_as:
 	&& wget https://thyme.apnic.net/current/data-AS20net-RIPE
 
 makecdb:
+	mkdir -p data
 	cat data/data-AS20net-* >data/data_as20
 	cat data/data-add-* >data/data_add
 	perl cdb_maker.pl data/data_as20 data/data_add data/ipv6-raw-table | $(RELEASE) --makecdb ipdb.cdb

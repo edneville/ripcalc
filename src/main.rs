@@ -311,6 +311,64 @@ fn process_group_encapsulation(
     }
 }
 
+fn process_input_filter(
+    reader: &mut Box<dyn BufRead>,
+    ip_args: &[Ip],
+    inside: Option<bool>,
+    config: &RefCell<Config>,
+) {
+    let position: u32 = match config
+        .borrow()
+        .options
+        .get("filter")
+        .unwrap()
+        .trim()
+        .parse()
+    {
+        Ok(x) => {
+            if x < 1 {
+                eprintln!("filternum {} should be 1 or more", x);
+                std::process::exit(1);
+            }
+            x
+        }
+        Err(x) => {
+            eprintln!("Cannot convert {} to number", x);
+            std::process::exit(1);
+        }
+    };
+
+    for line in reader.lines() {
+        match line {
+            Ok(_) => {
+                let line = line.unwrap();
+                let parts: Vec<&str> = line.split(' ').collect();
+
+                if parts.is_empty() || parts.len() < position as usize {
+                    continue;
+                }
+
+                if let Some(ip) = parse_address_mask(
+                    parts[(position - 1) as usize],
+                    None,
+                    None,
+                    None,
+                    false,
+                    config,
+                ) {
+                    if inside_filter(Some(inside.unwrap_or(true)), ip_args, &ip) {
+                        println!("{}", line);
+                    }
+                }
+            }
+            Err(x) => {
+                eprintln!("Cannot read input: {}", x);
+                std::process::exit(1);
+            }
+        }
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 fn process_input_file(
     path: &str,
@@ -335,6 +393,12 @@ fn process_input_file(
         }
         Box::new(BufReader::new(File::open(path).unwrap()))
     };
+
+    if matches.opt_present("filter") || matches.opt_present("filternum") {
+        process_input_filter(&mut reader, ip_args, inside, config);
+
+        std::process::exit(0);
+    }
 
     if matches.opt_present("available") {
         let mut used: HashMap<Addr, bool> = HashMap::new();
@@ -402,6 +466,8 @@ fn wait_stdin(matches: &getopts::Matches) -> bool {
     if matches.opt_present("list")
         || matches.opt_present("inside")
         || matches.opt_present("outside")
+        || matches.opt_present("filter")
+        || matches.opt_present("filternum")
     {
         return true;
     }
@@ -490,6 +556,13 @@ fn main() {
     );
 
     opts.optopt("f", "format", "format output\n'cidr' expands to %a/%c\\n\n'short' expands to %a\\n\nSee manual for more options", "STRING");
+    opts.optflag("", "filter", "print STDIN line if field parses as an IP and matches, defaults to 1, use filternum to adjust");
+    opts.optopt(
+        "",
+        "filternum",
+        "change position NUMBER for IP filter, enables --filter",
+        "NUMBER",
+    );
     opts.optopt(
         "",
         "group",
@@ -655,6 +728,28 @@ fn main() {
 
     if matches.opt_present("ipv6") {
         config.borrow_mut().input_family = Some(InputFamily::IPv6);
+    }
+
+    if matches.opt_present("filter") {
+        config
+            .borrow_mut()
+            .options
+            .insert("filter".to_string(), String::from("1"));
+    }
+
+    if matches.opt_present("filternum") {
+        let num: u32 = match matches.opt_str("filternum").unwrap().trim().parse() {
+            Ok(x) => x,
+            Err(x) => {
+                eprintln!("Cannot convert {} to number", x);
+                std::process::exit(1);
+            }
+        };
+
+        config
+            .borrow_mut()
+            .options
+            .insert("filter".to_string(), num.to_string());
     }
 
     if input_mask.is_none() && matches.free.is_empty() {
