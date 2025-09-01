@@ -4,7 +4,7 @@ section: 1
 header: User Manual
 footer: ripcalc 0.2.7
 author: Ed Neville (ed-ripcalc@s5h.net)
-date: 08 August 2025
+date: 01 September 2025
 ---
 
 # NAME
@@ -39,12 +39,17 @@ ripcalc - a tool for network addresses
 
 **ripcalc -d/--divide [CIDR] 127.0.0.1/24**
 
+**ripcalc --makecdb [PATH]**
+
 **ripcalc --networks [CIDR] 127.0.0.1/24**
+
+**ripcalc --filter [CIDR]**
+
+**ripcalc --filternum [NUMBER] [CIDR]**
 
 **ripcalc -q/--quiet**
 
 **ripcalc -h/--help**
-
 
 # DESCRIPTION
 
@@ -69,6 +74,8 @@ The number (**%D**) of subnets can be printed when using the `--group` argument 
 If **base** is a negative number, input addresses are treated as though the input is a signed integer in **base**.
 
 If `--quiet` is specified then parsing error messages will be suppressed.
+
+When `--filter` is specified STDIN is filtered for inclusion addresses/masks given as arguments. Use `--filternum` to set the space delimited parameter that contains the input address.
 
 # CSV
 
@@ -182,4 +189,9 @@ When using `group` the unique IP address count is available in the `%C` format s
 
     cat bad_traffic | ripcalc --encapsulating --group 19 --format '%C %a/%c\n' | sort -rn
 
+# ipdb
+
+CDB files can be used for address lookup. `--cdb` should hold a path to a valid CDB file, in which a CIDR network address should be used as a key, and NULL-separated key=value pairs should be the lookup data.
+
+CDB files can be created with `--makecdb`, which reads comma separated input, the first value is a CIDR network, followed by `,` joined key=value pairs. See `cdb_maker.pl` for an example script which can be used to create such files.
 
