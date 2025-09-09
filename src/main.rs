@@ -12,7 +12,7 @@ fn print_details(
     ip: &Ip,
     matches: &getopts::Matches,
     rows: &Option<HashMap<Ip, NetRow>>,
-    used: Option<&HashMap<Addr, bool>>,
+    used: Option<&HashMap<Addr, usize>>,
     config: &RefCell<Config>,
 ) {
     let mut networks: Option<u32> = None;
@@ -238,14 +238,14 @@ fn process_encapsulated_input(
     ip_args: &[Ip],
     i: &Ip,
     network_size: u32,
-    used: &mut HashMap<Ip, bool>,
+    used: &mut HashMap<Ip, usize>,
     config: &RefCell<Config>,
 ) {
     if !inside_filter(inside, ip_args, i) {
         return;
     }
 
-    used.insert(i.clone(), true);
+    used.insert(i.clone(), used.get(&i.clone()).unwrap_or(&0) + 1_usize);
     if matches.opt_present("group") {
         let net_mask = network(&Ip {
             address: i.address.clone(),
@@ -258,13 +258,13 @@ fn process_encapsulated_input(
         }
 
         let nm = nu.get_mut(&net_mask).unwrap();
-        nm.insert(i.clone(), true);
+        nm.insert(i.clone(), nm.get(&i.clone()).unwrap_or(&0) + 1_usize);
     }
 }
 
 fn process_group_encapsulation(
     matches: &getopts::Matches,
-    used: HashMap<Ip, bool>,
+    used: HashMap<Ip, usize>,
     rows: &Option<HashMap<Ip, NetRow>>,
     config: &RefCell<Config>,
 ) {
@@ -401,10 +401,13 @@ fn process_input_file(
     }
 
     if matches.opt_present("available") {
-        let mut used: HashMap<Addr, bool> = HashMap::new();
+        let mut used: HashMap<Addr, usize> = HashMap::new();
         for a in find_ips(&mut reader, input_base, reverse, config) {
             for ip in a {
-                used.insert(ip.address, true);
+                used.insert(
+                    ip.address.clone(),
+                    used.get(&ip.address.clone()).unwrap_or(&0) + 1,
+                );
             }
         }
 
@@ -415,7 +418,7 @@ fn process_input_file(
     }
 
     if matches.opt_present("encapsulating") {
-        let mut used: HashMap<Ip, bool> = HashMap::new();
+        let mut used: HashMap<Ip, usize> = HashMap::new();
         let mut network_size: u32 = 0;
 
         if matches.opt_present("group") {
@@ -544,8 +547,9 @@ fn main() {
         "when no matching csv network, use empty fields",
     );
     opts.optopt("b", "base", "ipv4 base format, default to oct", "INTEGER");
-    opts.optopt("c", "csv", "csv reference file", "PATH");
     opts.optopt("", "cdb", "cdb reference file", "PATH");
+    opts.optflag("", "countseen", "count occurrences of addresses");
+    opts.optopt("c", "csv", "csv reference file", "PATH");
     opts.optopt("d", "divide", "divide network into chunks", "CIDR");
     opts.optflag("", "noexpand", "do not expand networks in list");
 
@@ -621,6 +625,13 @@ fn main() {
 
     if matches.opt_present("inside") {
         inside = Some(true);
+    }
+
+    if matches.opt_present("countseen") {
+        config
+            .borrow_mut()
+            .options
+            .insert("countseen".to_string(), "true".to_string());
     }
 
     if matches.opt_present("outside") {
@@ -809,7 +820,7 @@ fn main() {
         }
     }
 
-    let mut used: HashMap<Ip, bool> = HashMap::new();
+    let mut used: HashMap<Ip, usize> = HashMap::new();
 
     for arg in &ip_args {
         match arg.address {
@@ -843,7 +854,7 @@ fn main() {
                 &mut used,
                 &config,
             );
-            used.insert(arg.clone(), true);
+            used.insert(arg.clone(), used.get(&arg.clone()).unwrap_or(&0) + 1_usize);
             continue;
         }
         print_details(arg, &matches, &rows, None, &config);

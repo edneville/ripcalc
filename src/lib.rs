@@ -38,9 +38,9 @@ pub struct NetRow {
 pub struct Config {
     pub interface_names: Vec<InterfaceAddress>,
     pub hm: HashMap<String, String>,
-    pub used: Option<HashMap<Ip, bool>>,
+    pub used: Option<HashMap<Ip, usize>>,
     pub input_family: Option<InputFamily>,
-    pub net_used: HashMap<Ip, HashMap<Ip, bool>>,
+    pub net_used: HashMap<Ip, HashMap<Ip, usize>>,
     pub options: HashMap<String, String>,
     pub cdb: Option<Arc<CDB>>,
 }
@@ -109,9 +109,9 @@ impl fmt::Debug for Config {
         struct Config<'a> {
             interface_names: &'a Vec<InterfaceAddress>,
             hm: &'a HashMap<String, String>,
-            used: &'a Option<HashMap<Ip, bool>>,
+            used: &'a Option<HashMap<Ip, usize>>,
             input_family: &'a Option<InputFamily>,
-            net_used: &'a HashMap<Ip, HashMap<Ip, bool>>,
+            net_used: &'a HashMap<Ip, HashMap<Ip, usize>>,
             options: &'a HashMap<String, String>,
         }
 
@@ -460,7 +460,7 @@ pub fn mask_iter<'a>(
 
 pub fn addresses<'a>(
     ip: &'a Ip,
-    used: Option<&'a HashMap<Addr, bool>>,
+    used: Option<&'a HashMap<Addr, usize>>,
     mask: Option<u32>,
 ) -> impl std::iter::Iterator<Item = Ip> + 'a {
     let b = broadcast(ip);
@@ -560,7 +560,7 @@ pub fn addresses<'a>(
     })
 }
 
-pub fn smallest_group_network(networks: &HashMap<Ip, bool>) -> Option<Ip> {
+pub fn smallest_group_network(networks: &HashMap<Ip, usize>) -> Option<Ip> {
     if networks.is_empty() {
         return None;
     }
@@ -600,7 +600,7 @@ pub fn smallest_group_network(networks: &HashMap<Ip, bool>) -> Option<Ip> {
     Some(ip)
 }
 
-pub fn smallest_group_network_limited(networks: &HashMap<Ip, bool>, cidr: u32) -> Option<Vec<Ip>> {
+pub fn smallest_group_network_limited(networks: &HashMap<Ip, usize>, cidr: u32) -> Option<Vec<Ip>> {
     if networks.is_empty() {
         return None;
     }
@@ -1311,6 +1311,10 @@ pub fn cdb_lookup(ip: &mut Ip, config: &RefCell<Config>) -> Option<HashMap<Strin
     None
 }
 
+pub fn config_option_true(config: &Config, opt: String) -> bool {
+    config.options.get(&opt).unwrap_or(&"false".to_string()) == "true"
+}
+
 pub fn format_details(
     ip: &Ip,
     formatted: String,
@@ -1472,12 +1476,24 @@ pub fn format_details(
                         };
                     }
                     'C' => {
-                        if let Some(used) = &config.borrow().used {
+                        let config = config.borrow();
+                        let count = if config_option_true(&config, "countseen".to_string()) {
+                            let cfg = &config.net_used;
+                            match cfg.get(ip) {
+                                Some(x) => match x.get(ip) {
+                                    Some(x) => &x.to_string(),
+                                    None => &"1".to_string(),
+                                },
+                                None => &"1".to_string(),
+                            }
+                        } else if let Some(used) = &config.used {
                             let count = used.keys().count();
-                            out_str.push_str(&count.to_string());
+                            &count.to_string()
                         } else {
-                            out_str.push('C');
-                        }
+                            &'C'.to_string()
+                        };
+
+                        out_str.push_str(&count.to_string());
                     }
                     _ => {
                         out_str.push(k);
