@@ -435,11 +435,11 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             cidr: 30,
         };
 
-        let mut hm: HashMap<Addr, usize> = HashMap::new();
+        let mut hm: HashMap<Addr, bool> = HashMap::new();
 
-        hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()), 1);
-        hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.0.1").unwrap()), 1);
-        hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.0.2").unwrap()), 1);
+        hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()), true);
+        hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.0.1").unwrap()), true);
+        hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.0.2").unwrap()), true);
 
         let mut i = addresses(&net, Some(&hm), None);
 
@@ -449,11 +449,11 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
         );
         assert_eq!(i.next(), None);
 
-        let mut hm: HashMap<Addr, usize> = HashMap::new();
+        let mut hm: HashMap<Addr, bool> = HashMap::new();
 
-        hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.1.0").unwrap()), 1);
-        hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.1.1").unwrap()), 1);
-        hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.1.2").unwrap()), 1);
+        hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.1.0").unwrap()), true);
+        hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.1.1").unwrap()), true);
+        hm.insert(Addr::V4(Ipv4Addr::from_str("192.168.1.2").unwrap()), true);
 
         let mut i = addresses(&net, Some(&hm), None);
 
@@ -465,48 +465,48 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
 
     #[test]
     fn test_smallest_network() {
-        let mut hm: HashMap<Ip, usize> = HashMap::new();
+        let mut hm: HashMap<Ip, bool> = HashMap::new();
 
         let net = Ip {
             address: Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()),
             cidr: 30,
         };
-        hm.insert(net, 1);
+        hm.insert(net, true);
 
         let net = Ip {
             address: Addr::V4(Ipv4Addr::from_str("192.168.1.0").unwrap()),
             cidr: 24,
         };
-        hm.insert(net, 1);
+        hm.insert(net, true);
 
         let net = Ip {
             address: Addr::V4(Ipv4Addr::from_str("192.168.2.0").unwrap()),
             cidr: 24,
         };
-        hm.insert(net, 1);
+        hm.insert(net, true);
         let net = Ip {
             address: Addr::V4(Ipv4Addr::from_str("192.168.3.0").unwrap()),
             cidr: 24,
         };
-        hm.insert(net, 1);
+        hm.insert(net, true);
 
         let net = Ip {
             address: Addr::V4(Ipv4Addr::from_str("192.168.4.0").unwrap()),
             cidr: 24,
         };
-        hm.insert(net, 1);
+        hm.insert(net, true);
 
         let net = Ip {
             address: Addr::V4(Ipv4Addr::from_str("192.168.5.0").unwrap()),
             cidr: 24,
         };
-        hm.insert(net, 1);
+        hm.insert(net, true);
 
         let net = Ip {
             address: Addr::V4(Ipv4Addr::from_str("192.168.2.0").unwrap()),
             cidr: 24,
         };
-        hm.insert(net, 1);
+        hm.insert(net, true);
 
         assert_eq!(
             smallest_group_network(&hm),
@@ -516,54 +516,54 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             })
         );
 
-        let mut hm: HashMap<Ip, usize> = HashMap::new();
+        let mut hm: HashMap<Ip, bool> = HashMap::new();
 
         let net = Ip {
             address: Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()),
             cidr: 24,
         };
-        hm.insert(net, 1);
+        hm.insert(net, true);
         let net = Ip {
             address: Addr::V4(Ipv4Addr::from_str("192.168.1.0").unwrap()),
             cidr: 24,
         };
-        hm.insert(net, 1);
+        hm.insert(net, true);
         let net = Ip {
             address: Addr::V4(Ipv4Addr::from_str("192.168.20.0").unwrap()),
             cidr: 24,
         };
-        hm.insert(net, 1);
+        hm.insert(net, true);
         let net = Ip {
             address: Addr::V4(Ipv4Addr::from_str("192.168.40.0").unwrap()),
             cidr: 24,
         };
-        hm.insert(net, 1);
+        hm.insert(net, true);
         let net = Ip {
             address: Addr::V4(Ipv4Addr::from_str("192.168.70.0").unwrap()),
             cidr: 24,
         };
-        hm.insert(net, 1);
+        hm.insert(net, true);
         let net = Ip {
             address: Addr::V4(Ipv4Addr::from_str("192.168.90.0").unwrap()),
             cidr: 24,
         };
-        hm.insert(net, 1);
+        hm.insert(net, true);
         let net = Ip {
             address: Addr::V4(Ipv4Addr::from_str("192.168.200.0").unwrap()),
             cidr: 24,
         };
-        hm.insert(net, 1);
+        hm.insert(net, true);
         let net = Ip {
             address: Addr::V4(Ipv4Addr::from_str("192.168.255.0").unwrap()),
             cidr: 24,
         };
-        hm.insert(net, 1);
+        hm.insert(net, true);
 
         let net = Ip {
             address: Addr::V4(Ipv4Addr::from_str("192.168.220.0").unwrap()),
             cidr: 24,
         };
-        hm.insert(net, 1);
+        hm.insert(net, true);
 
         assert_eq!(
             smallest_group_network(&hm),
@@ -573,22 +573,22 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             })
         );
 
-        let mut hm: HashMap<Ip, usize> = HashMap::new();
+        let mut hm: HashMap<Ip, bool> = HashMap::new();
         let net = Ip {
             address: Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()),
             cidr: 30,
         };
-        hm.insert(net, 1);
+        hm.insert(net, true);
         let net = Ip {
             address: Addr::V4(Ipv4Addr::from_str("192.168.0.1").unwrap()),
             cidr: 30,
         };
-        hm.insert(net, 1);
+        hm.insert(net, true);
         let net = Ip {
             address: Addr::V4(Ipv4Addr::from_str("192.168.0.2").unwrap()),
             cidr: 30,
         };
-        hm.insert(net, 1);
+        hm.insert(net, true);
 
         assert_eq!(
             smallest_group_network(&hm),
@@ -864,13 +864,13 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
 
     #[test]
     fn test_smallest_network_limited() {
-        let empty: HashMap<Ip, usize> = HashMap::new();
+        let empty: HashMap<Ip, bool> = HashMap::new();
         assert_eq!(smallest_group_network_limited(&empty, 32), None);
     }
 
     #[test]
     fn test_smallest_network_limited_22_24() {
-        let mut net_list: HashMap<Ip, usize> = HashMap::new();
+        let mut net_list: HashMap<Ip, bool> = HashMap::new();
         for i in 0..4 {
             for j in 0..4 {
                 net_list.insert(
@@ -880,7 +880,7 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
                         ),
                         cidr: 24,
                     },
-                    1,
+                    true,
                 );
             }
         }
@@ -898,7 +898,7 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
 
     #[test]
     fn test_smallest_network_limited_22_8() {
-        let mut net_list: HashMap<Ip, usize> = HashMap::new();
+        let mut net_list: HashMap<Ip, bool> = HashMap::new();
         for i in 0..4 {
             for j in 0..4 {
                 net_list.insert(
@@ -908,7 +908,7 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
                         ),
                         cidr: 8,
                     },
-                    1,
+                    true,
                 );
             }
         }
@@ -940,7 +940,7 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
 
     #[test]
     fn test_smallest_network_limited_24_8() {
-        let mut net_list: HashMap<Ip, usize> = HashMap::new();
+        let mut net_list: HashMap<Ip, bool> = HashMap::new();
         for i in 0..4 {
             for j in 0..4 {
                 net_list.insert(
@@ -950,7 +950,7 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
                         ),
                         cidr: 8,
                     },
-                    1,
+                    true,
                 );
             }
         }
