@@ -4,7 +4,7 @@ section: 1
 header: User Manual
 footer: ripcalc 0.2.7
 author: Ed Neville (ed-ripcalc@s5h.net)
-date: 01 September 2025
+date: 14 September 2025
 ---
 
 # NAME
@@ -31,7 +31,7 @@ ripcalc - a tool for network addresses
 
 **ripcalc -s/--file [-] 127.0.0.1**
 
-**ripcalc -e/--encapsulating [-s/--file name] [--group CIDR]**
+**ripcalc -e/--encapsulating [-s/--file name] [--group CIDR] [--countseen]**
 
 **ripcalc -s/--file name [--inside/--outside] 127.0.0.1**
 
@@ -67,7 +67,7 @@ When `--reverse` is used the `inputs`, `sources` or both can be treated as back-
 
 **ripcalc** can return a list of subnets when a network is provided along with the `--divide` argument and a subnet CIDR mask.
 
-When `--encapsulating` is used the containing network will be returned, use with `--group` to limit the range that an encapsulating network can grow.
+When `--encapsulating` is used the containing network will be returned, use with `--group` to limit the range that an encapsulating network can grow. Combine with `--countseen` to count the number of times the addresses are read in.
 
 The number (**%D**) of subnets can be printed when using the `--group` argument with the **%N** formatters. The argument should be the CIDR mask, see below for example.
 

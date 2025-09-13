@@ -79,6 +79,7 @@ bintest:
 	printf "192.168.1.1 this should match\n192.168.1.10 so should this\n192.168.2.1 this should not\n" | $(RELEASE) --filter 192.168.1.0/24 --format cidr --outside | wc -l | grep -Fx 1 >/dev/null
 	printf "this should match 192.168.1.1\nthis should match 192.168.1.20\nthis should not 192.168.10.1\n" | $(RELEASE) --filternum 4 192.168.1.0/24 --format cidr | wc -l | grep -Fx 2 >/dev/null
 	printf "this should match 192.168.1.1\nthis should match 192.168.1.20\nthis should not 192.168.10.1\n" | $(RELEASE) --filternum 4 --outside 192.168.1.0/24 --format cidr | wc -l | grep -Fx 1 >/dev/null
+	for i in `seq 1 100`; do printf "192.168.10.1\n"; done | $(RELEASE) --countseen --encapsulating --format '%C %a/%c\n' | grep -Fx "100 192.168.10.1/32" >/dev/null
 
 install: all
 	command -v please && please install -m 0755 -s $(RELEASE) /usr/local/bin || sudo install -m 0755 -s $(RELEASE) /usr/local/bin 
