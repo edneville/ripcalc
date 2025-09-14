@@ -219,6 +219,13 @@ grep -h scams log/* | awk '{print $1}' | ripcalc --encapsulating --group 24 --fo
 
 Grouping with a limit helps show spread, without expanding beyond sensible limits. Setting a very large `group` mask would of course return very large results, using a smaller `group` can limit this so the probability of including legitimate traffic is reduced dramatically.
 
+IP address counts can be shown with `countseen` and `group`:
+
+```
+cat log | ripcalc --encapsulating --group 32 --countseen  --quiet  --for
+mat '%C %a/%c\n'
+```
+
 # cdb
 
 CDB databases are fast and if you have a large list of networks they offer a good way to lookup addresses without parsing CSV. CDB lookups can be performed using IP/cidr keys and the returned values should be stored as a NULL joined key=value string, e.g.:
@@ -266,8 +273,9 @@ Options:
         --allowemptyrow 
                         when no matching csv network, use empty fields
     -b, --base INTEGER  ipv4 base format, default to oct
-    -c, --csv PATH      csv reference file
         --cdb PATH      cdb reference file
+        --countseen     count times an ip is seen
+    -c, --csv PATH      csv reference file
     -d, --divide CIDR   divide network into chunks
         --noexpand      do not expand networks in list
     -e, --encapsulating 

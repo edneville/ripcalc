@@ -130,6 +130,13 @@ fn print_version() {
     println!("{}", &banner());
 }
 
+fn increment_seen_count(config: &mut Config, i: Ip) {
+    if config_option_true(config, "countseen".to_string()) && config.count.is_some() {
+        let count = config.count.as_ref().unwrap().get(&i).unwrap_or(&0) + 1;
+        config.count.as_mut().unwrap().insert(i.clone(), count);
+    }
+}
+
 fn process_csv(
     mut reader: csv::Reader<File>,
     field_name: String,
@@ -244,9 +251,25 @@ fn process_encapsulated_input(
     if !inside_filter(inside, ip_args, i) {
         return;
     }
+    let mut network_size = network_size;
 
     used.insert(i.clone(), true);
+
+    increment_seen_count(&mut config.borrow_mut(), i.clone());
+
     if matches.opt_present("group") {
+        match i.address {
+            Addr::V4(_) => {
+                if network_size > 32 {
+                    network_size = 32;
+                }
+            }
+            Addr::V6(_) => {
+                if network_size > 128 {
+                    network_size = 128;
+                }
+            }
+        }
         let net_mask = network(&Ip {
             address: i.address.clone(),
             cidr: network_size,
@@ -447,6 +470,7 @@ fn process_input_file(
 
     for a in find_ips(&mut reader, input_base, reverse, config) {
         for ip in a {
+            increment_seen_count(&mut config.borrow_mut(), ip.clone());
             if inside_filter(inside, ip_args, &ip) {
                 found_match = true;
                 print_details(&ip, matches, rows, None, config);
@@ -544,8 +568,9 @@ fn main() {
         "when no matching csv network, use empty fields",
     );
     opts.optopt("b", "base", "ipv4 base format, default to oct", "INTEGER");
-    opts.optopt("c", "csv", "csv reference file", "PATH");
     opts.optopt("", "cdb", "cdb reference file", "PATH");
+    opts.optflag("", "countseen", "count times an ip is seen");
+    opts.optopt("c", "csv", "csv reference file", "PATH");
     opts.optopt("d", "divide", "divide network into chunks", "CIDR");
     opts.optflag("", "noexpand", "do not expand networks in list");
 
@@ -640,7 +665,13 @@ fn main() {
 
     if matches.opt_present("group") {
         let _: u32 = match matches.opt_str("group").unwrap().trim().parse() {
-            Ok(x) => x,
+            Ok(x) => {
+                if x > 128 {
+                    eprintln!("Cannot use a group greater than 128");
+                    std::process::exit(1);
+                }
+                x
+            }
             Err(x) => {
                 eprintln!("Cannot convert {} to number", x);
                 std::process::exit(1);
@@ -711,6 +742,14 @@ fn main() {
             .borrow_mut()
             .options
             .insert("cdb_path".to_string(), path);
+    }
+
+    if matches.opt_present("countseen") {
+        config
+            .borrow_mut()
+            .options
+            .insert("countseen".to_string(), "true".to_string());
+        config.borrow_mut().count = Some(HashMap::new());
     }
 
     if let Some(v) = matches.opt_str("mask") {

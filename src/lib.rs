@@ -43,6 +43,7 @@ pub struct Config {
     pub net_used: HashMap<Ip, HashMap<Ip, bool>>,
     pub options: HashMap<String, String>,
     pub cdb: Option<Arc<CDB>>,
+    pub count: Option<HashMap<Ip, usize>>,
 }
 
 #[derive(Debug, Clone)]
@@ -92,6 +93,7 @@ impl Config {
             net_used: HashMap::new(),
             options: HashMap::new(),
             cdb: None,
+            count: None,
         }
     }
 }
@@ -113,6 +115,7 @@ impl fmt::Debug for Config {
             input_family: &'a Option<InputFamily>,
             net_used: &'a HashMap<Ip, HashMap<Ip, bool>>,
             options: &'a HashMap<String, String>,
+            count: &'a Option<HashMap<Ip, usize>>,
         }
 
         let Self {
@@ -123,6 +126,7 @@ impl fmt::Debug for Config {
             net_used,
             options,
             cdb: _,
+            count,
         } = self;
 
         fmt::Debug::fmt(
@@ -133,6 +137,7 @@ impl fmt::Debug for Config {
                 input_family,
                 net_used,
                 options,
+                count,
             },
             f,
         )
@@ -693,27 +698,35 @@ pub fn broadcast(ip: &Ip) -> Ip {
 }
 
 pub fn network(ip: &Ip) -> Ip {
+    let mut cidr = ip.cidr;
     match ip.address {
         Addr::V4(x) => {
+            if ip.cidr > 32 {
+                cidr = 32;
+            }
+
             let mut bin: u32 = 0;
-            for i in 0..32 - ip.cidr {
+            for i in 0..32 - cidr {
                 bin |= 1 << i;
             }
             bin = !(bin) & u32::from(x);
             Ip {
                 address: Addr::V4(Ipv4Addr::from(bin)),
-                cidr: ip.cidr,
+                cidr,
             }
         }
         Addr::V6(x) => {
+            if ip.cidr > 128 {
+                cidr = 128;
+            }
             let mut bin: u128 = 0;
-            for i in 0..128 - ip.cidr {
+            for i in 0..128 - cidr {
                 bin |= 1 << i;
             }
             bin = !(bin) & u128::from(x);
             Ip {
                 address: Addr::V6(Ipv6Addr::from(bin)),
-                cidr: ip.cidr,
+                cidr,
             }
         }
     }
@@ -1311,6 +1324,10 @@ pub fn cdb_lookup(ip: &mut Ip, config: &RefCell<Config>) -> Option<HashMap<Strin
     None
 }
 
+pub fn config_option_true(config: &Config, opt: String) -> bool {
+    config.options.get(&opt).unwrap_or(&"false".to_string()) == "true"
+}
+
 pub fn format_details(
     ip: &Ip,
     formatted: String,
@@ -1472,7 +1489,20 @@ pub fn format_details(
                         };
                     }
                     'C' => {
-                        if let Some(used) = &config.borrow().used {
+                        let config = config.borrow();
+                        if config_option_true(&config, "countseen".to_string())
+                            && config.count.is_some()
+                        {
+                            out_str.push_str(
+                                &config
+                                    .count
+                                    .as_ref()
+                                    .unwrap()
+                                    .get(ip)
+                                    .unwrap_or(&0)
+                                    .to_string(),
+                            );
+                        } else if let Some(used) = &config.used {
                             let count = used.keys().count();
                             out_str.push_str(&count.to_string());
                         } else {
