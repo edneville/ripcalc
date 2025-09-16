@@ -1,5 +1,7 @@
 use getopts::Options;
+use reqwest::header::HeaderMap;
 use ripcalc::*;
+use serde_json::*;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs;
@@ -7,8 +9,6 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::os::fd::AsFd;
 use std::str::FromStr;
-use serde_json::*;
-use reqwest::header::HeaderMap;
 
 fn print_details(
     ip: &Ip,
@@ -18,8 +18,6 @@ fn print_details(
     config: &RefCell<Config>,
 ) {
     let mut networks: Option<u32> = None;
-
-
 
     if matches.opt_present("networks") {
         let nets = matches.opt_str("networks").unwrap().trim().parse().unwrap();
@@ -124,7 +122,7 @@ fn print_details(
         let key = key.unwrap().clone();
         drop(cfg);
 
-        get_abuseipdb_details(&config, ip, &key);
+        get_abuseipdb_details(config, ip, &key);
     }
 
     if let Some(m) = format_details(ip, formatted, rows, networks, Some(matches), config) {
@@ -133,12 +131,15 @@ fn print_details(
 }
 
 fn get_abuseipdb_details(config: &RefCell<Config>, ip: &Ip, key: &str) {
-
     let mut headers = HeaderMap::new();
     headers.insert("Key", key.parse().unwrap());
 
     let client = reqwest::blocking::Client::new();
-    let response = client.get(format!("https://api.abuseipdb.com/api/v2/check?ipAddress={}&maxAgeInDays={}", ip.to_string(), 30) )
+    let response = client
+        .get(format!(
+            "https://api.abuseipdb.com/api/v2/check?ipAddress={}&maxAgeInDays={}",
+            ip, 30
+        ))
         .header("Key".to_string(), key)
         .send();
 
@@ -151,9 +152,11 @@ fn get_abuseipdb_details(config: &RefCell<Config>, ip: &Ip, key: &str) {
         std::process::exit(1);
     }
 
-    let data = h["data"].as_object().unwrap(); 
+    let data = h["data"].as_object().unwrap();
     for k in data.keys() {
-        config.options.insert(format!("abuseipdb_{}", k).to_string(), data[k].to_string());
+        config
+            .options
+            .insert(format!("abuseipdb_{}", k).to_string(), data[k].to_string());
     }
 }
 
@@ -817,10 +820,10 @@ fn main() {
     }
 
     if matches.opt_present("abuseipdb") {
-        config
-            .borrow_mut()
-            .options
-            .insert("abuseipdb".to_string(), matches.opt_str("abuseipdb").unwrap());
+        config.borrow_mut().options.insert(
+            "abuseipdb".to_string(),
+            matches.opt_str("abuseipdb").unwrap(),
+        );
     }
 
     if matches.opt_present("filternum") {
