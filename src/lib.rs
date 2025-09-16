@@ -1378,7 +1378,10 @@ pub fn format_details(
     if config_option_true(&config.borrow(), "abuseipdb".to_string()) {
         for k in config.borrow().options.keys() {
             if k.starts_with("abuseipdb") {
-                reformatted = reformatted.replace( &format!("%{{{}}}", k), config.borrow().options.get(k).unwrap());
+                reformatted = reformatted.replace(
+                    &format!("%{{{}}}", k),
+                    config.borrow().options.get(k).unwrap(),
+                );
             }
         }
     }
