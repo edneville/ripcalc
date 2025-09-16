@@ -4,7 +4,7 @@ section: 1
 header: User Manual
 footer: ripcalc 0.2.7
 author: Ed Neville (ed-ripcalc@s5h.net)
-date: 14 September 2025
+date: 16 September 2025
 ---
 
 # NAME
@@ -28,6 +28,8 @@ ripcalc - a tool for network addresses
 **ripcalc -l/--list 127.0.0.1**
 
 **ripcalc -a/--available**
+
+**ripcalc --abuseipdb [KEY]**
 
 **ripcalc -s/--file [-] 127.0.0.1**
 
@@ -76,6 +78,8 @@ If **base** is a negative number, input addresses are treated as though the inpu
 If `--quiet` is specified then parsing error messages will be suppressed.
 
 When `--filter` is specified STDIN is filtered for inclusion addresses/masks given as arguments. Use `--filternum` to set the space delimited parameter that contains the input address.
+
+Using `--abuseipdb [key]` can populate `%{abuseipdb_var}` values for `--format` strings, where `var` is the field name in a abuseipdb result structure.
 
 # CSV
 

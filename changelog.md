@@ -2,6 +2,7 @@
  * read and make cdb files
  * example cdb maker
  * countseen adds occurrence count of IP when in encapsulating and group mode
+ * abuseipdb support
 
 0.2.7
 

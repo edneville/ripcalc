@@ -1325,7 +1325,7 @@ pub fn cdb_lookup(ip: &mut Ip, config: &RefCell<Config>) -> Option<HashMap<Strin
 }
 
 pub fn config_option_true(config: &Config, opt: String) -> bool {
-    config.options.get(&opt).unwrap_or(&"false".to_string()) == "true"
+    config.options.get(&opt).unwrap_or(&"false".to_string()) != "false"
 }
 
 pub fn format_details(
@@ -1372,6 +1372,14 @@ pub fn format_details(
                     return None;
                 }
             };
+        }
+    }
+
+    if config_option_true(&config.borrow(), "abuseipdb".to_string()) {
+        for k in config.borrow().options.keys() {
+            if k.starts_with("abuseipdb") {
+                reformatted = reformatted.replace( &format!("%{{{}}}", k), config.borrow().options.get(k).unwrap());
+            }
         }
     }
 
