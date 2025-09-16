@@ -263,13 +263,19 @@ cat /var/log/apache/access.log | ripcalc --filter 1.1.1.0/24 --outside
 
 `--filter` will use the first word in the inputline and try to parse that for an IP address, if the IP address is not the first word in the input, then `--filternum` can be used to indicate which word number holds the IP.
 
+# abuseipdb
+
+If `--abuseipdb [key]` is used then a successful lookup will populate `%{abuseipdb_var}` (where `var` is the lookup result data field) for use in a `--format` string.
+
+Replace `[key]` with your abuseipdb API key.
+
 # help
 
 ```
-Options:
     -4, --ipv4          treat inputs as ipv4 address
     -6, --ipv6          treat inputs as ipv6 address
     -a, --available     display unused addresses
+        --abuseipdb KEY abuseipdb API
         --allowemptyrow 
                         when no matching csv network, use empty fields
     -b, --base INTEGER  ipv4 base format, default to oct
@@ -303,5 +309,6 @@ Options:
     -r, --reverse       (none, inputs, sources or both) v4 octets, v6 hex
     -s, --file PATH     lookup addresses from, - for stdin
     -v, --version       print version
+
 ```
 
