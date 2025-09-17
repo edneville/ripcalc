@@ -22,7 +22,9 @@ fn print_details(
     if matches.opt_present("networks") {
         let nets = matches.opt_str("networks").unwrap().trim().parse().unwrap();
 
-        if nets < ip.cidr && !(matches.opt_present("encapsulating") && matches.opt_present("group"))
+        if nets < ip.cidr && !(
+            config_option_true(&config.borrow(), "encapsulating".to_string()) &&
+            config_option_true(&config.borrow(), "group".to_string()))
         {
             eprintln!("{} is bigger than the network mask {}", nets, ip.cidr);
             std::process::exit(1);
@@ -282,7 +284,6 @@ fn process_csv(
 }
 
 fn process_encapsulated_input(
-    matches: &getopts::Matches,
     inside: Option<bool>,
     ip_args: &[Ip],
     i: &Ip,
@@ -299,7 +300,7 @@ fn process_encapsulated_input(
 
     increment_seen_count(&mut config.borrow_mut(), i.clone());
 
-    if matches.opt_present("group") {
+    if config_option_true(&config.borrow(), "group".to_string()) {
         match i.address {
             Addr::V4(_) => {
                 if network_size > 32 {
@@ -333,8 +334,8 @@ fn process_group_encapsulation(
     rows: &Option<HashMap<Ip, NetRow>>,
     config: &RefCell<Config>,
 ) {
-    if matches.opt_present("group") {
-        let network_size: u32 = matches.opt_str("group").unwrap().trim().parse().unwrap();
+    if config_option_true(&config.borrow(), "group".to_string()) {
+        let network_size: u32 = config.borrow().options.get("group").unwrap().trim().parse().unwrap();
         match smallest_group_network_limited(&used, network_size) {
             Some(mut x) => {
                 x.sort_by(|a, b| a.partial_cmp(b).unwrap());
@@ -479,18 +480,17 @@ fn process_input_file(
         std::process::exit(0);
     }
 
-    if matches.opt_present("encapsulating") {
+    if config_option_true(&config.borrow(), "encapsulating".to_string()) {
         let mut used: HashMap<Ip, bool> = HashMap::new();
         let mut network_size: u32 = 0;
 
-        if matches.opt_present("group") {
-            network_size = matches.opt_str("group").unwrap().trim().parse().unwrap();
+        if config_option_true(&config.borrow(), "group".to_string()) {
+            network_size = config.borrow().options.get("group").unwrap().trim().parse().unwrap();
         }
 
         for a in find_ips(&mut reader, input_base, reverse, config) {
             for i in a {
                 process_encapsulated_input(
-                    matches,
                     inside,
                     ip_args,
                     &i,
@@ -707,7 +707,7 @@ fn main() {
     }
 
     if matches.opt_present("group") {
-        let _: u32 = match matches.opt_str("group").unwrap().trim().parse() {
+        let n: u32 = match matches.opt_str("group").unwrap().trim().parse() {
             Ok(x) => {
                 if x > 128 {
                     eprintln!("Cannot use a group greater than 128");
@@ -720,6 +720,7 @@ fn main() {
                 std::process::exit(1);
             }
         };
+        config.borrow_mut().options.insert("group".to_string(), n.to_string());
     }
 
     if matches.opt_present("networks") {
@@ -793,6 +794,8 @@ fn main() {
             .options
             .insert("countseen".to_string(), "true".to_string());
         config.borrow_mut().count = Some(HashMap::new());
+        config.borrow_mut().options.insert("encapsulating".to_string(), "true".to_string());
+        config.borrow_mut().options.insert("group".to_string(), "128".to_string());
     }
 
     if let Some(v) = matches.opt_str("mask") {
@@ -817,6 +820,10 @@ fn main() {
             .borrow_mut()
             .options
             .insert("filter".to_string(), String::from("1"));
+    }
+
+    if matches.opt_present("encapsulating") {
+        config.borrow_mut().options.insert("encapsulating".to_string(), "true".to_string());
     }
 
     if matches.opt_present("abuseipdb") {
@@ -858,7 +865,7 @@ fn main() {
 
     if !matches.opt_present("inside")
         && !matches.opt_present("outside")
-        && matches.opt_present("encapsulating")
+        && config_option_true(&config.borrow(), "encapsulating".to_string())
         && !matches.opt_present("mask")
     {
         input_mask = Some(32);
@@ -916,15 +923,14 @@ fn main() {
             }
         }
 
-        if matches.opt_present("encapsulating") {
+        if config_option_true(&config.borrow(), "encapsulating".to_string()) {
             let mut network_size: u32 = 0;
 
-            if matches.opt_present("group") {
-                network_size = matches.opt_str("group").unwrap().trim().parse().unwrap();
+            if let Some(group) = config.borrow().options.get("group") {
+                network_size = group.trim().parse().unwrap();
             }
 
             process_encapsulated_input(
-                &matches,
                 inside,
                 &ip_args,
                 arg,
@@ -940,7 +946,7 @@ fn main() {
 
     config.borrow_mut().used = Some(used.clone());
 
-    if matches.opt_present("encapsulating") {
+    if config_option_true(&config.borrow(), "encapsulating".to_string()) {
         process_group_encapsulation(&matches, used, &rows, &config);
         std::process::exit(0);
     }
