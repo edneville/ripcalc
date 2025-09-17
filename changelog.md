@@ -1,7 +1,7 @@
  * filter arguments to filter STDIN for matching address lines only
  * read and make cdb files
  * example cdb maker
- * countseen adds occurrence count of IP when in encapsulating and group mode
+ * countseen adds occurrence count of IP when in encapsulating and group mode, this option automatically sets encapsulating and group too 128
  * abuseipdb support
 
 0.2.7

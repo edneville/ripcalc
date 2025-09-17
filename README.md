@@ -222,8 +222,7 @@ Grouping with a limit helps show spread, without expanding beyond sensible limit
 IP address counts can be shown with `countseen` and `group`:
 
 ```
-cat log | ripcalc --encapsulating --group 32 --countseen  --quiet  --for
-mat '%C %a/%c\n'
+cat log | ripcalc --countseen --quiet --format '%C %a/%c\n'
 ```
 
 # cdb
