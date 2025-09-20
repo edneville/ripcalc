@@ -1504,15 +1504,7 @@ pub fn format_details(
                         if config_option_true(&config, "countseen".to_string())
                             && config.count.is_some()
                         {
-                            out_str.push_str(
-                                &config
-                                    .count
-                                    .as_ref()
-                                    .unwrap()
-                                    .get(ip)
-                                    .unwrap_or(&0)
-                                    .to_string(),
-                            );
+                            out_str.push_str(&get_seen_count(&config, ip).to_string());
                         } else if let Some(used) = &config.used {
                             let count = used.keys().count();
                             out_str.push_str(&count.to_string());
@@ -1680,4 +1672,47 @@ pub fn inside_filter(inside: Option<bool>, ip_args: &[Ip], ip: &Ip) -> bool {
     }
 
     false
+}
+
+pub fn increment_seen_count(config: &mut Config, i: Ip) {
+    if config_option_true(config, "countseen".to_string()) && config.count.is_some() {
+        let net_mask = network(&Ip {
+            address: i.address.clone(),
+            cidr: config
+                .options
+                .get("group")
+                .unwrap_or(&"128".to_string())
+                .parse()
+                .unwrap(),
+        });
+
+        let count = config.count.as_ref().unwrap().get(&net_mask).unwrap_or(&0) + 1;
+        config
+            .count
+            .as_mut()
+            .unwrap()
+            .insert(net_mask.clone(), count);
+    }
+}
+
+pub fn get_seen_count(config: &Config, i: &Ip) -> usize {
+    if config_option_true(config, "countseen".to_string()) && config.count.is_some() {
+        let net_mask = network(&Ip {
+            address: i.address.clone(),
+            cidr: config
+                .options
+                .get("group")
+                .unwrap_or(&"128".to_string())
+                .parse()
+                .unwrap(),
+        });
+
+        return *config
+            .count
+            .as_ref()
+            .unwrap()
+            .get(&net_mask.clone())
+            .unwrap_or(&0);
+    }
+    0
 }

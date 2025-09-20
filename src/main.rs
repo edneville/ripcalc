@@ -22,9 +22,9 @@ fn print_details(
     if matches.opt_present("networks") {
         let nets = matches.opt_str("networks").unwrap().trim().parse().unwrap();
 
-        if nets < ip.cidr && !(
-            config_option_true(&config.borrow(), "encapsulating".to_string()) &&
-            config_option_true(&config.borrow(), "group".to_string()))
+        if nets < ip.cidr
+            && !(config_option_true(&config.borrow(), "encapsulating".to_string())
+                && config_option_true(&config.borrow(), "group".to_string()))
         {
             eprintln!("{} is bigger than the network mask {}", nets, ip.cidr);
             std::process::exit(1);
@@ -172,13 +172,6 @@ fn banner() -> String {
 
 fn print_version() {
     println!("{}", &banner());
-}
-
-fn increment_seen_count(config: &mut Config, i: Ip) {
-    if config_option_true(config, "countseen".to_string()) && config.count.is_some() {
-        let count = config.count.as_ref().unwrap().get(&i).unwrap_or(&0) + 1;
-        config.count.as_mut().unwrap().insert(i.clone(), count);
-    }
 }
 
 fn process_csv(
@@ -335,7 +328,14 @@ fn process_group_encapsulation(
     config: &RefCell<Config>,
 ) {
     if config_option_true(&config.borrow(), "group".to_string()) {
-        let network_size: u32 = config.borrow().options.get("group").unwrap().trim().parse().unwrap();
+        let network_size: u32 = config
+            .borrow()
+            .options
+            .get("group")
+            .unwrap()
+            .trim()
+            .parse()
+            .unwrap();
         match smallest_group_network_limited(&used, network_size) {
             Some(mut x) => {
                 x.sort_by(|a, b| a.partial_cmp(b).unwrap());
@@ -485,19 +485,19 @@ fn process_input_file(
         let mut network_size: u32 = 0;
 
         if config_option_true(&config.borrow(), "group".to_string()) {
-            network_size = config.borrow().options.get("group").unwrap().trim().parse().unwrap();
+            network_size = config
+                .borrow()
+                .options
+                .get("group")
+                .unwrap()
+                .trim()
+                .parse()
+                .unwrap();
         }
 
         for a in find_ips(&mut reader, input_base, reverse, config) {
             for i in a {
-                process_encapsulated_input(
-                    inside,
-                    ip_args,
-                    &i,
-                    network_size,
-                    &mut used,
-                    config,
-                );
+                process_encapsulated_input(inside, ip_args, &i, network_size, &mut used, config);
             }
         }
 
@@ -720,7 +720,10 @@ fn main() {
                 std::process::exit(1);
             }
         };
-        config.borrow_mut().options.insert("group".to_string(), n.to_string());
+        config
+            .borrow_mut()
+            .options
+            .insert("group".to_string(), n.to_string());
     }
 
     if matches.opt_present("networks") {
@@ -794,8 +797,16 @@ fn main() {
             .options
             .insert("countseen".to_string(), "true".to_string());
         config.borrow_mut().count = Some(HashMap::new());
-        config.borrow_mut().options.insert("encapsulating".to_string(), "true".to_string());
-        config.borrow_mut().options.insert("group".to_string(), "128".to_string());
+        config
+            .borrow_mut()
+            .options
+            .insert("encapsulating".to_string(), "true".to_string());
+        if !config_option_true(&config.borrow(), "group".to_string()) {
+            config
+                .borrow_mut()
+                .options
+                .insert("group".to_string(), "128".to_string());
+        }
     }
 
     if let Some(v) = matches.opt_str("mask") {
@@ -823,7 +834,10 @@ fn main() {
     }
 
     if matches.opt_present("encapsulating") {
-        config.borrow_mut().options.insert("encapsulating".to_string(), "true".to_string());
+        config
+            .borrow_mut()
+            .options
+            .insert("encapsulating".to_string(), "true".to_string());
     }
 
     if matches.opt_present("abuseipdb") {
@@ -930,14 +944,7 @@ fn main() {
                 network_size = group.trim().parse().unwrap();
             }
 
-            process_encapsulated_input(
-                inside,
-                &ip_args,
-                arg,
-                network_size,
-                &mut used,
-                &config,
-            );
+            process_encapsulated_input(inside, &ip_args, arg, network_size, &mut used, &config);
             used.insert(arg.clone(), true);
             continue;
         }
