@@ -145,12 +145,19 @@ fn get_abuseipdb_details(config: &RefCell<Config>, ip: &Ip, key: &str) {
         .header("Key".to_string(), key)
         .send();
 
+    if response.as_ref().is_err() {
+        eprintln!("Could not communicate with abuseipdb.com");
+        std::process::exit(1);
+    }
+
+    let status = response.as_ref().unwrap().status();
     let body = response.unwrap().text().unwrap();
     let h: Value = serde_json::from_str(&body).unwrap();
 
     let mut config = config.borrow_mut();
     if h["data"].as_object().is_none() {
         eprintln!("Error communicating with abuseipdb.com");
+        eprintln!("{}", status);
         std::process::exit(1);
     }
 
