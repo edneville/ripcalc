@@ -1691,7 +1691,7 @@ pub fn increment_seen_count(config: &mut Config, i: Ip) {
             .count
             .as_mut()
             .unwrap()
-            .insert(net_mask.clone(), count);
+            .insert(net_mask, count);
     }
 }
 
@@ -1711,7 +1711,7 @@ pub fn get_seen_count(config: &Config, i: &Ip) -> usize {
             .count
             .as_ref()
             .unwrap()
-            .get(&net_mask.clone())
+            .get(&net_mask)
             .unwrap_or(&0);
     }
     0

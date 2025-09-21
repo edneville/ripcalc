@@ -242,8 +242,8 @@ Files can be made using `--makecdb`, the stdin should be in the format of:
 See cdb_maker.pl for a helper script which builds this. An example for making these can be seen in the Makefile in the ipdb target, it download ASN data and builds that using cdb_maker.pl, and this can be used like this:
 
 ```
-ripcalc --cdb ipdb.cdb --format '%{ASNDESC} %a/%c\n' 1.1.1.1
-CLOUDFLARENET 1.1.1.1/24
+ripcalc --cdb ipdb.cdb --format '%{ASNDESC} %{ASNCC} %a/%c\n' 1.1.1.1
+CLOUDFLARENET US 1.1.1.1/24
 ```
 
 # filter
@@ -267,6 +267,8 @@ cat /var/log/apache/access.log | ripcalc --filter 1.1.1.0/24 --outside
 If `--abuseipdb [key]` is used then a successful lookup will populate `%{abuseipdb_var}` (where `var` is the lookup result data field) for use in a `--format` string.
 
 Replace `[key]` with your abuseipdb API key.
+
+If only the country code or ISP is needed, then using a locally generated `cdb` is more efficient, see the CDB section above as that can be much faster if you don't require an external abuse score.
 
 # help
 

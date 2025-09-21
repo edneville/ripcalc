@@ -89,24 +89,30 @@ install: all
 	command -v please && please install -m 0755 -s $(RELEASE) /usr/local/bin || sudo install -m 0755 -s $(RELEASE) /usr/local/bin 
 
 get_add:
-	mkdir -p data
-	cd data \
-	&& wget https://thyme.apnic.net/current/ipv6-raw-table \
-	&& wget https://thyme.apnic.net/current/data-add-AFRINIC \
-	&& wget https://thyme.apnic.net/current/data-add-APNIC \
-	&& wget https://thyme.apnic.net/current/data-add-ARIN \
-	&& wget https://thyme.apnic.net/current/data-add-LACNIC \
-	&& wget https://thyme.apnic.net/current/data-add-RIPE
+	mkdir -p data/`date +%Y%m%d` \
+	&& cd data/`date +%Y%m%d` \
+	&& wget -O ipv6-raw-table https://thyme.apnic.net/current/ipv6-raw-table \
+	&& wget -O data-add-AFRINIC https://thyme.apnic.net/current/data-add-AFRINIC \
+	&& wget -O data-add-APNIC https://thyme.apnic.net/current/data-add-APNIC \
+	&& wget -O data-add-ARIN https://thyme.apnic.net/current/data-add-ARIN \
+	&& wget -O data-add-LACNIC https://thyme.apnic.net/current/data-add-LACNIC \
+	&& wget -O data-add-RIPE https://thyme.apnic.net/current/data-add-RIPE
+	cd data && for i in ipv6-raw-table data-add-AFRINIC data-add-APNIC data-add-ARIN data-add-LACNIC data-add-RIPE; do \
+		ln -sf `date +%Y%m%d`/$$i $$i; \
+	done
 
 get_as:
-	mkdir -p data
-	cd data \
-	&& wget https://thyme.apnic.net/current/data-AS20net \
-	&& wget https://thyme.apnic.net/current/data-AS20net-AFRINIC \
-	&& wget https://thyme.apnic.net/current/data-AS20net-APNIC \
-	&& wget https://thyme.apnic.net/current/data-AS20net-ARIN \
-	&& wget https://thyme.apnic.net/current/data-AS20net-LACNIC \
-	&& wget https://thyme.apnic.net/current/data-AS20net-RIPE
+	mkdir -p data/`date +%Y%m%d` \
+	&& cd data/`date +%Y%m%d` \
+	&& wget -O data-AS20net https://thyme.apnic.net/current/data-AS20net \
+	&& wget -O data-AS20net-AFRINIC https://thyme.apnic.net/current/data-AS20net-AFRINIC \
+	&& wget -O data-AS20net-APNIC https://thyme.apnic.net/current/data-AS20net-APNIC \
+	&& wget -O data-AS20net-ARIN https://thyme.apnic.net/current/data-AS20net-ARIN \
+	&& wget -O data-AS20net-LACNIC https://thyme.apnic.net/current/data-AS20net-LACNIC \
+	&& wget -O data-AS20net-RIPE https://thyme.apnic.net/current/data-AS20net-RIPE
+	cd data && for i in data-AS20net data-AS20net-AFRINIC data-AS20net-APNIC data-AS20net-ARIN data-AS20net-LACNIC data-AS20net-RIPE; do \
+		ln -sf `date +%Y%m%d`/$$i $$i; \
+	done
 
 makecdb:
 	mkdir -p data
