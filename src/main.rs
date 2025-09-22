@@ -390,25 +390,31 @@ fn process_input_filter(
     inside: Option<bool>,
     config: &RefCell<Config>,
 ) {
-    let position: u32 = match config
-        .borrow()
-        .options
-        .get("filter")
-        .unwrap()
-        .trim()
-        .parse()
-    {
-        Ok(x) => {
-            if x < 1 {
-                eprintln!("filternum {} should be 1 or more", x);
+    let filterany = config_option_true(&config.borrow(), "filterany".to_string());
+
+    let position: u32 = if config_option_true(&config.borrow(), "filter".to_string()) {
+        match config
+            .borrow()
+            .options
+            .get("filter")
+            .unwrap()
+            .trim()
+            .parse()
+        {
+            Ok(x) => {
+                if x < 1 {
+                    eprintln!("filternum {} should be 1 or more", x);
+                    std::process::exit(1);
+                }
+                x
+            }
+            Err(x) => {
+                eprintln!("Cannot convert {} to number", x);
                 std::process::exit(1);
             }
-            x
         }
-        Err(x) => {
-            eprintln!("Cannot convert {} to number", x);
-            std::process::exit(1);
-        }
+    } else {
+        0
     };
 
     for line in reader.lines() {
@@ -421,17 +427,41 @@ fn process_input_filter(
                     continue;
                 }
 
-                if let Some(ip) = parse_address_mask(
-                    parts[(position - 1) as usize],
-                    None,
-                    None,
-                    None,
-                    false,
-                    config,
-                ) {
-                    if inside_filter(Some(inside.unwrap_or(true)), ip_args, &ip) {
-                        println!("{}", line);
+                let mut found = false;
+                if filterany {
+                    for p in &parts {
+                        let p = p.trim();
+
+                        if p.is_empty() {
+                            continue;
+                        }
+
+                        if let Some(ip) = parse_address_mask(p, None, None, None, false, config) {
+                            if inside_filter(Some(inside.unwrap_or(true)), ip_args, &ip) {
+                                found = true;
+                                break;
+                            }
+                        }
                     }
+                }
+
+                if !filterany {
+                    if let Some(ip) = parse_address_mask(
+                        parts[(position - 1) as usize],
+                        None,
+                        None,
+                        None,
+                        false,
+                        config,
+                    ) {
+                        if inside_filter(Some(inside.unwrap_or(true)), ip_args, &ip) {
+                            found = true;
+                        }
+                    }
+                }
+
+                if found {
+                    println!("{}", line);
                 }
             }
             Err(x) => {
@@ -467,7 +497,10 @@ fn process_input_file(
         Box::new(BufReader::new(File::open(path).unwrap()))
     };
 
-    if matches.opt_present("filter") || matches.opt_present("filternum") {
+    if matches.opt_present("filter")
+        || matches.opt_present("filterany")
+        || matches.opt_present("filternum")
+    {
         process_input_filter(&mut reader, ip_args, inside, config);
 
         std::process::exit(0);
@@ -540,6 +573,7 @@ fn wait_stdin(matches: &getopts::Matches) -> bool {
         || matches.opt_present("inside")
         || matches.opt_present("outside")
         || matches.opt_present("filter")
+        || matches.opt_present("filterany")
         || matches.opt_present("filternum")
     {
         return true;
@@ -632,6 +666,11 @@ fn main() {
 
     opts.optopt("f", "format", "format output\n'cidr' expands to %a/%c\\n\n'short' expands to %a\\n\nSee manual for more options", "STRING");
     opts.optflag("", "filter", "print STDIN line if field parses as an IP and matches, defaults to 1, use filternum to adjust");
+    opts.optflag(
+        "",
+        "filterany",
+        "print STDIN line if any IP on STDIN matches",
+    );
     opts.optopt(
         "",
         "filternum",
@@ -838,6 +877,13 @@ fn main() {
             .borrow_mut()
             .options
             .insert("filter".to_string(), String::from("1"));
+    }
+
+    if matches.opt_present("filterany") {
+        config
+            .borrow_mut()
+            .options
+            .insert("filterany".to_string(), "true".to_string());
     }
 
     if matches.opt_present("encapsulating") {
