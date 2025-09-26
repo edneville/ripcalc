@@ -93,34 +93,22 @@ install: all
 get_add:
 	mkdir -p data/`date +%Y%m%d` \
 	&& cd data/`date +%Y%m%d` \
-	&& wget -O ipv6-raw-table https://thyme.apnic.net/current/ipv6-raw-table \
-	&& wget -O data-add-AFRINIC https://thyme.apnic.net/current/data-add-AFRINIC \
-	&& wget -O data-add-APNIC https://thyme.apnic.net/current/data-add-APNIC \
-	&& wget -O data-add-ARIN https://thyme.apnic.net/current/data-add-ARIN \
-	&& wget -O data-add-LACNIC https://thyme.apnic.net/current/data-add-LACNIC \
-	&& wget -O data-add-RIPE https://thyme.apnic.net/current/data-add-RIPE
-	cd data && for i in ipv6-raw-table data-add-AFRINIC data-add-APNIC data-add-ARIN data-add-LACNIC data-add-RIPE; do \
-		ln -sf `date +%Y%m%d`/$$i $$i; \
+	&& wget -O data-raw-table https://thyme.apnic.net/.combined/data-raw-table \
+	&& wget -O ipv6-raw-table https://thyme.apnic.net/.combined/ipv6-raw-table
+	cd data && for i in data-raw-table ipv6-raw-table; do \
+			ln -sf `date +%Y%m%d`/$$i $$i; \
 	done
 
 get_as:
 	mkdir -p data/`date +%Y%m%d` \
 	&& cd data/`date +%Y%m%d` \
-	&& wget -O data-AS20net https://thyme.apnic.net/current/data-AS20net \
-	&& wget -O data-AS20net-AFRINIC https://thyme.apnic.net/current/data-AS20net-AFRINIC \
-	&& wget -O data-AS20net-APNIC https://thyme.apnic.net/current/data-AS20net-APNIC \
-	&& wget -O data-AS20net-ARIN https://thyme.apnic.net/current/data-AS20net-ARIN \
-	&& wget -O data-AS20net-LACNIC https://thyme.apnic.net/current/data-AS20net-LACNIC \
-	&& wget -O data-AS20net-RIPE https://thyme.apnic.net/current/data-AS20net-RIPE
-	cd data && for i in data-AS20net data-AS20net-AFRINIC data-AS20net-APNIC data-AS20net-ARIN data-AS20net-LACNIC data-AS20net-RIPE; do \
-		ln -sf `date +%Y%m%d`/$$i $$i; \
+	&& wget -O data-used-autnums https://thyme.apnic.net/.combined/data-used-autnums
+	cd data && for i in data-used-autnums; do \
+			ln -sf `date +%Y%m%d`/$$i $$i; \
 	done
 
 makecdb:
-	mkdir -p data
-	cat data/data-AS20net-* >data/data_as20
-	cat data/data-add-* >data/data_add
-	perl cdb_maker.pl data/data_as20 data/data_add data/ipv6-raw-table | $(RELEASE) --makecdb ipdb.cdb
+	perl cdb_maker.pl data/data-raw-table data/data-used-autnums data/ipv6-raw-table | $(RELEASE) --makecdb ipdb.cdb
 
 ipdb: get_add get_as makecdb
 

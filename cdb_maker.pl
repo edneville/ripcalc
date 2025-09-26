@@ -19,15 +19,16 @@ use Data::Dumper;
 
 my %db;
 my %net;
+my %asn;
 
-sub process_as20 {
+sub process_raw {
     my $fh = shift;
     my $db = shift;
 
     while (my $line = <$fh>) {
         chomp $line;
-        if ($line =~ /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(.+)\s*$/) {
-            $db->{$1} = $4;
+        if ($line =~ m,^\s*([\d.]+\/\d+)\s+(\d+)\s*$,) {
+            $db->{$1} = $2;
         }
     }
 
@@ -41,12 +42,10 @@ sub process_add {
 
     while (my $line = <$fh>) {
         chomp $line;
-        if ($line =~ /^\s*(\d+)\s+(\S+)$/) {
-            if (defined $db->{$1}) {
-                my ($desc,$cc) = split /,\s*/, $db->{$1}, 2;
-                if (defined $desc && defined $cc) {
-                    $net->{$2} = "ASNDESC=$desc,ASNCC=$cc,ASN=$1,NET=$2";
-                }
+        if ($line =~ /^\s*(\d+)\s+(.*)$/) {
+            my ($desc,$cc) = split /,\s*/, $2, 2;
+            if (defined $desc && defined $cc) {
+                $net->{$1} = "ASNDESC=$desc,ASNCC=$cc,ASN=$1,NET=$2";
             }
         }
     }
@@ -62,12 +61,7 @@ sub process_ipv6 {
     while (my $line = <$fh>) {
         chomp $line;
         if ($line =~ /^\s*(\S+)\s+(\S+)$/) {
-            if (defined $db->{$2}) {
-                my ($desc,$cc) = split /,\s*/, $db->{$2}, 2;
-                if (defined $desc && defined $cc) {
-                    $net->{$1} = "ASNDESC=$desc,ASNCC=$cc,ASN=$1,NET=$2";
-                }
-            }
+            $db->{$1} = $2;
         }
     }
 
@@ -75,7 +69,7 @@ sub process_ipv6 {
 }
 
 open my $fh,  '<', $ARGV[0] || die "cannot open ${ARGV[0]}";
-process_as20($fh, \%db);
+process_raw($fh, \%db);
 close $fh;
 
 open my $add_fh,  '<', $ARGV[1] || die "cannot open ${ARGV[1]}";
@@ -86,7 +80,9 @@ open my $ipv6_fh,  '<', $ARGV[2] || die "cannot open ${ARGV[2]}";
 process_ipv6($ipv6_fh, \%db, \%net);
 close $ipv6_fh;
 
-for my $k (keys %net) {
-    print "$k,$net{$k}\n";
+for my $k (keys %db) {
+    if ($net{$db{$k}}) {
+        print $k, ",", $net{$db{$k}}, "\n";
+    }
 }
 
