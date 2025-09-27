@@ -43,7 +43,7 @@ sub process_add {
     while (my $line = <$fh>) {
         chomp $line;
         if ($line =~ /^\s*(\d+)\s+(.*)$/) {
-            my ($desc,$cc) = split /,\s*/, $2, 2;
+            my ($desc,$cc) = split(/,\s*([^,]+)$/, $2);
             if (defined $desc && defined $cc) {
                 $net->{$1} = "ASNDESC=$desc,ASNCC=$cc,ASN=$1,NET=$2";
             }
