@@ -471,8 +471,10 @@ pub fn addresses<'a>(
     let b = broadcast(ip);
     let mut net = network(ip);
 
+    let mut last = false;
+
     std::iter::from_fn(move || {
-        if let Addr::V4(mut x) = net.address {
+        if let Addr::V4(x) = net.address {
             if let Addr::V4(y) = b.address {
                 let adder = match mask {
                     Some(x) => {
@@ -482,41 +484,44 @@ pub fn addresses<'a>(
                     }
                     None => 1,
                 };
-                while u32::from(x) <= u32::from(y) {
+
+                let mut p = u32::from(x);
+                let q = u32::from(y);
+
+                loop {
                     net = Ip {
-                        address: Addr::V4(Ipv4Addr::from(u32::from(x) + adder)),
+                        address: Addr::V4(Ipv4Addr::from(p + adder)),
                         cidr: net.cidr,
                     };
 
-                    if let Addr::V4(a) = net.address {
-                        x = a
+                    let i = Ip {
+                        address: Addr::V4(Ipv4Addr::from(p)),
+                        cidr: net.cidr,
                     };
 
+                    if last {
+                        return None;
+                    }
+
+                    let diff = q - p;
+                    if diff < adder {
+                        last = true;
+                    }
+
                     if let Some(map) = &used {
-                        if map
-                            .get(&Addr::V4(Ipv4Addr::from(u32::from(x) - 1)))
-                            .is_some()
-                        {
+                        if map.get(&Addr::V4(Ipv4Addr::from(p))).is_some() {
+                            p += adder;
+
                             continue;
                         }
                     }
 
-                    return Some(if mask.is_none() {
-                        Ip {
-                            address: Addr::V4(Ipv4Addr::from(u32::from(x) - 1)),
-                            cidr: net.cidr,
-                        }
-                    } else {
-                        network(&Ip {
-                            address: Addr::V4(Ipv4Addr::from(u32::from(x) - 1)),
-                            cidr: net.cidr,
-                        })
-                    });
+                    return Some(if mask.is_none() { i } else { network(&i) });
                 }
             }
         }
 
-        if let Addr::V6(mut x) = net.address {
+        if let Addr::V6(x) = net.address {
             if let Addr::V6(y) = b.address {
                 let adder = match mask {
                     Some(x) => {
@@ -527,41 +532,43 @@ pub fn addresses<'a>(
                     None => 1,
                 };
 
-                while u128::from(x) < u128::from(y) {
+                let mut p = u128::from(x);
+                let q = u128::from(y);
+
+                loop {
                     net = Ip {
-                        address: Addr::V6(Ipv6Addr::from(u128::from(x) + adder)),
+                        address: Addr::V6(Ipv6Addr::from(p + adder)),
                         cidr: net.cidr,
                     };
 
-                    if let Addr::V6(a) = net.address {
-                        x = a
+                    let i = Ip {
+                        address: Addr::V6(Ipv6Addr::from(p)),
+                        cidr: net.cidr,
                     };
 
+                    if last {
+                        return None;
+                    }
+
+                    let diff = q - p;
+                    if diff < adder {
+                        last = true;
+                    }
+
                     if let Some(map) = &used {
-                        if map
-                            .get(&Addr::V6(Ipv6Addr::from(u128::from(x) - 1)))
-                            .is_some()
-                        {
+                        if map.get(&Addr::V6(Ipv6Addr::from(p))).is_some() {
+                            p += adder;
+
                             continue;
                         }
                     }
 
-                    return Some(if mask.is_none() {
-                        Ip {
-                            address: Addr::V6(Ipv6Addr::from(u128::from(x) - 1)),
-                            cidr: net.cidr,
-                        }
-                    } else {
-                        network(&Ip {
-                            address: Addr::V6(Ipv6Addr::from(u128::from(x) - 1)),
-                            cidr: net.cidr,
-                        })
-                    });
+                    return Some(if mask.is_none() { i } else { network(&i) });
                 }
             }
         }
 
-        None
+        Some(net.clone())
     })
 }
 
