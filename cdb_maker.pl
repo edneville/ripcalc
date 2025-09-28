@@ -15,7 +15,6 @@
 
 use strict;
 use warnings;
-use Data::Dumper;
 
 my %db;
 my %net;
@@ -68,21 +67,31 @@ sub process_ipv6 {
     return;
 }
 
-open my $fh,  '<', $ARGV[0] || die "cannot open ${ARGV[0]}";
-process_raw($fh, \%db);
-close $fh;
-
-open my $add_fh,  '<', $ARGV[1] || die "cannot open ${ARGV[1]}";
-process_add($add_fh, \%db, \%net);
-close $add_fh;
-
-open my $ipv6_fh,  '<', $ARGV[2] || die "cannot open ${ARGV[2]}";
-process_ipv6($ipv6_fh, \%db, \%net);
-close $ipv6_fh;
-
-for my $k (keys %db) {
-    if ($net{$db{$k}}) {
-        print $k, ",", $net{$db{$k}}, "\n";
+sub main {
+    if (scalar(@ARGV) < 3) {
+        print (STDERR "Usage: $0 data-raw data-asn data-ipv6\n");
+        exit 1;
     }
+
+    open my $fh,  '<', $ARGV[0] || die "cannot open ${ARGV[0]}";
+    process_raw($fh, \%db);
+    close $fh;
+
+    open my $add_fh,  '<', $ARGV[1] || die "cannot open ${ARGV[1]}";
+    process_add($add_fh, \%db, \%net);
+    close $add_fh;
+
+    open my $ipv6_fh,  '<', $ARGV[2] || die "cannot open ${ARGV[2]}";
+    process_ipv6($ipv6_fh, \%db, \%net);
+    close $ipv6_fh;
+
+    for my $k (keys %db) {
+        if ($net{$db{$k}}) {
+            print ($k, ",", $net{$db{$k}}, "\n");
+        }
+    }
+
+    return;
 }
 
+main;
