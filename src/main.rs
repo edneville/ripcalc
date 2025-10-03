@@ -601,14 +601,27 @@ fn make_cdb(path: String, config: &RefCell<Config>) {
             Ok(_) => {
                 let line = line.unwrap();
                 let mut parts: Vec<&str> = line.split(',').collect();
-                if let Some(key) = parse_address_mask(parts[0], None, None, None, false, config) {
-                    for j in &mut parts {
-                        *j = j.trim();
-                    }
-                    let key = format!("{}/{}", network(&key), key.cidr);
-                    let value = parts[1..].join("\0");
-                    let _ = cdb.add(key.as_bytes(), value.as_bytes());
+
+                if parts.len() < 2 {
+                    eprintln!("Not sufficient parts in line: {}", line);
+                    continue;
                 }
+
+                for j in &mut parts {
+                    *j = j.trim();
+                }
+
+                let key = parts[0];
+                let value = parts[1..].join("\0");
+
+                if let Some(key) = parse_address_mask(key, None, None, None, false, config) {
+                    let key = format!("{}/{}", network(&key), key.cidr);
+                    let _ = cdb.add(key.as_bytes(), value.as_bytes());
+                    continue;
+                }
+
+                // treat other input (trimmed) verbatim
+                let _ = cdb.add(key.as_bytes(), value.as_bytes());
             }
             Err(x) => {
                 eprintln!("Cannot read: {}", x);
