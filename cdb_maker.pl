@@ -23,11 +23,13 @@ my %asn;
 sub process_raw {
     my $fh = shift;
     my $db = shift;
+    my $asn = shift;
 
     while (my $line = <$fh>) {
         chomp $line;
         if ($line =~ m,^\s*([\d.]+\/\d+)\s+(\d+)\s*$,) {
             $db->{$1} = $2;
+            push(@{$asn->{$2}}, $1);
         }
     }
 
@@ -55,12 +57,13 @@ sub process_add {
 sub process_ipv6 {
     my $fh = shift;
     my $db = shift;
-    my $net = shift;
+    my $asn = shift;
 
     while (my $line = <$fh>) {
         chomp $line;
         if ($line =~ /^\s*(\S+)\s+(\S+)$/) {
             $db->{$1} = $2;
+            push(@{$asn->{$2}}, $1);
         }
     }
 
@@ -74,7 +77,7 @@ sub main {
     }
 
     open my $fh,  '<', $ARGV[0] || die "cannot open ${ARGV[0]}";
-    process_raw($fh, \%db);
+    process_raw($fh, \%db, \%asn);
     close $fh;
 
     open my $add_fh,  '<', $ARGV[1] || die "cannot open ${ARGV[1]}";
@@ -82,13 +85,18 @@ sub main {
     close $add_fh;
 
     open my $ipv6_fh,  '<', $ARGV[2] || die "cannot open ${ARGV[2]}";
-    process_ipv6($ipv6_fh, \%db, \%net);
+    process_ipv6($ipv6_fh, \%db, \%asn);
     close $ipv6_fh;
 
     for my $k (keys %db) {
         if ($net{$db{$k}}) {
             print ($k, ",", $net{$db{$k}}, "\n");
         }
+    }
+
+    for my $k (keys %asn) {
+        my @p = @{$asn{$k}};
+        print ($k, ",", join(",", @p), "\n");
     }
 
     return;
