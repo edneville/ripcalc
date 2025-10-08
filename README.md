@@ -155,6 +155,15 @@ IP addresses can be treated as reversed, if `/proc/net/route` holds addresses in
 
 To process addresses in signed integer form, use `--base -10` which will do the conversion.
 
+To quickly format human-readable IP addresses to a database that stores addresses as integers, assuming addreses are in a table called IP4 and are signed integers:
+
+```
+printf '10.0.0.0/8\n192.168.0.0/16\n172.16.0.0/12\n127.0.0.0/8\n1.0.0.0/8\n' \
+| ripcalc --format 'select ip from IP4 where active = 1 and (ip > %Ln and ip < %Lb);\n' \
+| mysql -urip -pcalc ipdata \
+| ripcalc -q --base 10 --format short
+```
+
 # within networks
 
 Is a domain wihtin a list of subnets? For example, in this part of the globe cloudflare.com was being served from their published list of networks:
