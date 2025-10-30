@@ -55,11 +55,34 @@ fn print_details(
         if matches.opt_present("networks") {
             network_size = format!("Networks ({}): %N", networks.as_ref().unwrap()).to_string();
         }
-        match ip.address {
-
+        let mut def = match ip.address {
             Addr::V4(_) => format!("{ip:>width$}/{cidr}\n{broadcast:>width$}\n{network:>width$}\n{subnet:>width$}\n{wildcard:>width$}\n{network_size:>width$}\n", ip="IP is: %a", cidr="%c", broadcast="Broadcast is: %b", network="Network is: %n", subnet="Subnet is: %s", wildcard="Wildcard is: %w", network_size=network_size, width=width),
             Addr::V6(_) => format!("{ip:>widthn$}/{cidr}\n{expanded:>width$}\n{network:>width$}\n{last_host_address:>width$}\n{subnet:>width$}\n{network_size:>widthn$}\n", ip="IP is: %a", cidr="%c", expanded="Expanded: %xa", network="Network is: %xn", last_host_address="Last host address: %xb", subnet="Subnet is: %xs", network_size=network_size, width=width, widthn=width-1),
+        };
+
+        if matches.opt_present("cdb") {
+            let distance = match ip.address {
+                Addr::V4(_) => width - 4,
+                Addr::V6(_) => width - 5,
+            };
+
+            let mut lookup_ip = ip.clone();
+            if let Some(row) = cdb_lookup(&mut lookup_ip, config) {
+                if !matches.opt_present("format") {
+                    let mut c: Vec<_> = row.keys().collect();
+                    c.sort();
+                    for f in c {
+                        def.push_str(&format!(
+                            "{f:>width$}: {v}\n",
+                            width = distance,
+                            v = row.get(f).unwrap()
+                        ));
+                    }
+                }
+            }
         }
+
+        def
     };
 
     if formatted == "cidr" {
