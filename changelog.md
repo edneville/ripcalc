@@ -3,6 +3,7 @@
  * example cdb maker
  * countseen adds occurrence count of IP when in encapsulating and group mode, this option automatically sets encapsulating and group too 128
  * abuseipdb support
+ * add cdb pairs to output when no format is specified
 
 0.2.7
 
