@@ -7,6 +7,8 @@ use nix::sys::socket::SockaddrStorage;
 use nix::sys::stat::fstat;
 use nix::sys::stat::SFlag;
 use regex::*;
+use reqwest::header::HeaderMap;
+use serde_json::*;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::convert::TryInto;
@@ -105,7 +107,7 @@ impl Default for Config {
 }
 
 impl fmt::Debug for Config {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> std::result::Result<(), fmt::Error> {
         #[derive(Debug)]
         #[allow(dead_code)]
         struct Config<'a> {
@@ -1382,14 +1384,20 @@ pub fn format_details(
         }
     }
 
-    if config_option_true(&config.borrow(), "abuseipdb".to_string()) {
-        for k in config.borrow().options.keys() {
-            if k.starts_with("abuseipdb") {
-                reformatted = reformatted.replace(
-                    &format!("%{{{}}}", k),
-                    config.borrow().options.get(k).unwrap(),
-                );
-            }
+    if config_option_true(&config.borrow(), "abuseipdb".to_string())
+        && reformatted.contains("%{abuseipdb")
+    {
+        let key = config
+            .borrow()
+            .options
+            .get("abuseipdb")
+            .unwrap()
+            .to_string();
+        let map = get_abuseipdb_details(config, ip, &key);
+
+        for k in map.keys() {
+            let word = format!("abuseipdb_{}", k);
+            reformatted = reformatted.replace(&format!("%{{{}}}", word), map.get(k).unwrap());
         }
     }
 
@@ -1713,4 +1721,50 @@ pub fn get_seen_count(config: &Config, i: &Ip) -> usize {
         return *config.count.as_ref().unwrap().get(&net_mask).unwrap_or(&0);
     }
     0
+}
+
+pub fn get_abuseipdb_details(
+    config: &RefCell<Config>,
+    ip: &Ip,
+    key: &str,
+) -> HashMap<String, String> {
+    let mut headers = HeaderMap::new();
+    headers.insert("Key", key.parse().unwrap());
+
+    let client = reqwest::blocking::Client::new();
+    let response = client
+        .get(format!(
+            "https://api.abuseipdb.com/api/v2/check?ipAddress={}&maxAgeInDays={}",
+            ip, 30
+        ))
+        .header("Key".to_string(), key)
+        .send();
+
+    if response.as_ref().is_err() {
+        eprintln!("Could not communicate with abuseipdb.com");
+        std::process::exit(1);
+    }
+
+    let status = response.as_ref().unwrap().status();
+    let body = response.unwrap().text().unwrap();
+    let h: Value = serde_json::from_str(&body).unwrap();
+
+    let mut config = config.borrow_mut();
+    if h["data"].as_object().is_none() {
+        eprintln!("Error communicating with abuseipdb.com");
+        eprintln!("{}", status);
+        std::process::exit(1);
+    }
+
+    let data = h["data"].as_object().unwrap();
+    let mut map: HashMap<String, String> = HashMap::new();
+    for k in data.keys() {
+        config
+            .options
+            .insert(format!("abuseipdb_{}", k).to_string(), data[k].to_string());
+
+        map.insert(k.to_string(), data[k].to_string());
+    }
+
+    map
 }

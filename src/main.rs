@@ -1,7 +1,5 @@
 use getopts::Options;
-use reqwest::header::HeaderMap;
 use ripcalc::*;
-use serde_json::*;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs;
@@ -9,6 +7,64 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::os::fd::AsFd;
 use std::str::FromStr;
+
+fn default_cdb_format(
+    distance: usize,
+    config: &RefCell<Config>,
+    lookup_ip: &mut Ip,
+    matches: &getopts::Matches,
+) -> String {
+    let mut ret_str = "".to_string();
+    if let Some(row) = cdb_lookup(lookup_ip, config) {
+        if !matches.opt_present("format") {
+            let mut c: Vec<_> = row.keys().collect();
+            c.sort();
+            for f in c {
+                ret_str.push_str(&format!(
+                    "{f:>width$}: {v}\n",
+                    width = distance,
+                    v = row.get(f).unwrap()
+                ));
+            }
+        }
+    }
+    ret_str.to_string()
+}
+
+fn default_abuseipdb_format(
+    distance: usize,
+    config: &RefCell<Config>,
+    lookup_ip: &Ip,
+    matches: &getopts::Matches,
+) -> String {
+    let mut ret_str = "".to_string();
+
+    if !matches.opt_present("abuseipdb") {
+        return "".to_string();
+    }
+
+    let key = config
+        .borrow()
+        .options
+        .get("abuseipdb")
+        .unwrap()
+        .to_string();
+
+    let map = get_abuseipdb_details(config, lookup_ip, &key);
+
+    let mut k: Vec<_> = map.keys().collect();
+    k.sort();
+
+    for k in k {
+        ret_str.push_str(&format!(
+            "{f:>width$}: {v}\n",
+            width = distance,
+            f = k,
+            v = map.get(k).unwrap()
+        ));
+    }
+    ret_str.to_string()
+}
 
 fn print_details(
     ip: &Ip,
@@ -66,20 +122,26 @@ fn print_details(
                 Addr::V6(_) => width - 5,
             };
 
-            let mut lookup_ip = ip.clone();
-            if let Some(row) = cdb_lookup(&mut lookup_ip, config) {
-                if !matches.opt_present("format") {
-                    let mut c: Vec<_> = row.keys().collect();
-                    c.sort();
-                    for f in c {
-                        def.push_str(&format!(
-                            "{f:>width$}: {v}\n",
-                            width = distance,
-                            v = row.get(f).unwrap()
-                        ));
-                    }
-                }
-            }
+            def.push_str(&default_cdb_format(
+                distance,
+                config,
+                &mut ip.clone(),
+                matches,
+            ));
+        }
+
+        if matches.opt_present("abuseipdb") {
+            let distance = match ip.address {
+                Addr::V4(_) => width - 4,
+                Addr::V6(_) => width - 5,
+            };
+
+            def.push_str(&default_abuseipdb_format(
+                distance,
+                config,
+                &ip.clone(),
+                matches,
+            ));
         }
 
         def
@@ -140,55 +202,8 @@ fn print_details(
         return;
     }
 
-    if config_option_true(&config.borrow(), "abuseipdb".to_string()) {
-        let cfg = config.borrow();
-
-        let key = cfg.options.get("abuseipdb");
-        let key = key.unwrap().clone();
-        drop(cfg);
-
-        get_abuseipdb_details(config, ip, &key);
-    }
-
     if let Some(m) = format_details(ip, formatted, rows, networks, Some(matches), config) {
         print!("{}", m);
-    }
-}
-
-fn get_abuseipdb_details(config: &RefCell<Config>, ip: &Ip, key: &str) {
-    let mut headers = HeaderMap::new();
-    headers.insert("Key", key.parse().unwrap());
-
-    let client = reqwest::blocking::Client::new();
-    let response = client
-        .get(format!(
-            "https://api.abuseipdb.com/api/v2/check?ipAddress={}&maxAgeInDays={}",
-            ip, 30
-        ))
-        .header("Key".to_string(), key)
-        .send();
-
-    if response.as_ref().is_err() {
-        eprintln!("Could not communicate with abuseipdb.com");
-        std::process::exit(1);
-    }
-
-    let status = response.as_ref().unwrap().status();
-    let body = response.unwrap().text().unwrap();
-    let h: Value = serde_json::from_str(&body).unwrap();
-
-    let mut config = config.borrow_mut();
-    if h["data"].as_object().is_none() {
-        eprintln!("Error communicating with abuseipdb.com");
-        eprintln!("{}", status);
-        std::process::exit(1);
-    }
-
-    let data = h["data"].as_object().unwrap();
-    for k in data.keys() {
-        config
-            .options
-            .insert(format!("abuseipdb_{}", k).to_string(), data[k].to_string());
     }
 }
 

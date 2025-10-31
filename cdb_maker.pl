@@ -46,7 +46,7 @@ sub process_add {
         if ($line =~ /^\s*(\d+)\s+(.*)$/) {
             my ($desc,$cc) = split(/,\s*([^,]+)$/, $2);
             if (defined $desc && defined $cc) {
-                $net->{$1} = "ASNDESC=$desc,ASNCC=$cc,ASN=$1,NET=$2";
+                $net->{$1} = "ASNDESC=$desc,ASNCC=$cc,ASN=$1";
             }
         }
     }
