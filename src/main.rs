@@ -1,4 +1,5 @@
 use getopts::Options;
+use regex::Regex;
 use ripcalc::*;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -627,8 +628,8 @@ fn make_cdb(path: String, config: &RefCell<Config>) {
     let tmp_file = format!("{}.tmp", path);
     let cdb = cdb::CDBWriter::create(&tmp_file);
 
-    if cdb.is_err() {
-        eprintln!("Cannot create: {}", tmp_file);
+    if let Err(msg) = cdb {
+        eprintln!("Cannot create {}: {}", tmp_file, msg);
         std::process::exit(1);
     }
 
@@ -679,6 +680,170 @@ fn make_cdb(path: String, config: &RefCell<Config>) {
     }
 }
 
+fn make_thyme_cdb(location: String) {
+    fn process_raw(
+        data: String,
+        db: &mut HashMap<String, String>,
+        asn_list: &mut HashMap<String, Vec<String>>,
+    ) {
+        let r = Regex::new(r#"^\s*([\d.]+\/\d+)\s+(\d+)\s*$"#).unwrap();
+
+        for l in data.split("\n") {
+            let c = r.captures(l);
+            if c.is_none() {
+                continue;
+            }
+            let c = c.unwrap();
+
+            let ip = c[1].to_string();
+            let prefix = c[2].to_string();
+
+            db.insert(ip.clone(), prefix.clone());
+            if asn_list.get(&prefix).is_none() {
+                asn_list.insert(prefix.clone(), vec![]);
+            }
+
+            asn_list.get_mut(&prefix).unwrap().push(ip.clone());
+        }
+    }
+
+    fn process_ipv6(
+        data: String,
+        db: &mut HashMap<String, String>,
+        asn_list: &mut HashMap<String, Vec<String>>,
+    ) {
+        let r = Regex::new(r#"\s*(\S+)\s+(\S+)"#).unwrap();
+
+        for l in data.split("\n") {
+            let c = r.captures(l);
+            if c.is_none() {
+                continue;
+            }
+            let c = c.unwrap();
+
+            let ip = c[1].to_string();
+            let prefix = c[2].to_string();
+
+            db.insert(ip.clone(), prefix.clone());
+            if asn_list.get(&prefix).is_none() {
+                asn_list.insert(prefix.clone(), vec![]);
+            }
+
+            asn_list.get_mut(&prefix).unwrap().push(ip.clone());
+        }
+    }
+
+    fn process_asn(
+        cdb: &mut cdb::CDBWriter,
+        lines: String,
+        asn: &mut HashMap<String, String>,
+        data: &HashMap<String, String>,
+        asn_list: &mut HashMap<String, Vec<String>>,
+    ) {
+        let s = Regex::new(r#"^\s*(?<num>[0-9]+)\s+(?<desc>.*?)(,\s+)?(?<cc>\S+)?\s*$"#).unwrap();
+
+        for l in lines.split("\n") {
+            let c = s.captures(l);
+            if c.is_none() {
+                continue;
+            }
+            let c = c.unwrap();
+
+            let num = &c["num"];
+            let desc = &c["desc"];
+            let cc = if c.name("cc").is_some() {
+                &c["cc"]
+            } else {
+                "XX"
+            };
+            asn.insert(
+                c[1].to_string(),
+                format!("ASNDESC={desc}\0ASNCC={cc}\0ASN={num}"),
+            );
+        }
+
+        for d in data.keys() {
+            if asn.get(data.get(d).unwrap()).is_some() {
+                if let Err(e) = cdb.add(
+                    d.as_bytes(),
+                    asn.get(data.get(d).unwrap()).unwrap().as_bytes(),
+                ) {
+                    eprintln!("Could not add {}: {}", d, e);
+                    std::process::exit(1);
+                }
+            }
+        }
+
+        for k in asn_list.keys() {
+            if let Err(e) = cdb.add(k.as_bytes(), asn_list.get(k).unwrap().join("\0").as_bytes()) {
+                eprintln!("Could not add {}: {}", k, e);
+                std::process::exit(1);
+            }
+        }
+    }
+
+    fn get_or_exit(url: &str, client: &reqwest::blocking::Client) -> String {
+        let response = client.get(url).send();
+        if response.as_ref().is_err() {
+            eprintln!("Could not communicate with {}", url);
+            std::process::exit(1);
+        }
+        if let Err(error) = response.as_ref().unwrap().error_for_status_ref() {
+            eprintln!("Could not get a text response from {}: {}", url, error);
+            std::process::exit(1);
+        }
+
+        let response = response.unwrap();
+        let t = response.text();
+
+        match t {
+            Ok(x) => x.to_string(),
+            Err(ref error) => {
+                eprintln!("Could not get a text response from {}: {}", url, error);
+                std::process::exit(1);
+            }
+        }
+    }
+
+    let base_url = "https://thyme.apnic.net/.combined";
+    //let base_url = "http://localhost/.combined";
+
+    let client = reqwest::blocking::Client::new();
+    let tmp_file = format!("{}.tmp", &location);
+    let cdb = cdb::CDBWriter::create(&tmp_file);
+
+    if let Err(msg) = cdb {
+        eprintln!("Cannot create {}: {}", &tmp_file, msg);
+        std::process::exit(1);
+    }
+    let mut cdb = cdb.unwrap();
+
+    let mut asn: HashMap<String, String> = HashMap::new();
+    let mut asn_list: HashMap<String, Vec<String>> = HashMap::new();
+    let mut data: HashMap<String, String> = HashMap::new();
+
+    let url = format!("{}/data-raw-table", base_url);
+    let data_raw = get_or_exit(&url, &client);
+    process_raw(data_raw, &mut data, &mut asn_list);
+
+    let url = format!("{}/ipv6-raw-table", base_url);
+    let ipv6_raw = get_or_exit(&url, &client);
+    process_ipv6(ipv6_raw, &mut data, &mut asn_list);
+
+    let url = format!("{}/data-used-autnums", base_url);
+    let data_used = get_or_exit(&url, &client);
+    process_asn(&mut cdb, data_used, &mut asn, &data, &mut asn_list);
+    if let Err(error) = cdb.finish() {
+        eprintln!("Cannot write {}: {}", tmp_file, error);
+        std::process::exit(1);
+    }
+
+    if let Err(error) = fs::rename(&tmp_file, &location) {
+        eprintln!("Cannot rename {} to {}: {}", &tmp_file, &location, &error);
+        std::process::exit(1);
+    }
+}
+
 fn main() {
     let mut opts = Options::new();
     let mut rows: Option<HashMap<Ip, NetRow>> = None;
@@ -700,7 +865,7 @@ fn main() {
     opts.optflag(
         "",
         "allowemptyrow",
-        "when no matching csv network, use empty fields",
+        "when no matching cdb/csv network, use empty fields",
     );
     opts.optopt("b", "base", "ipv4 base format, default to oct", "INTEGER");
     opts.optopt("", "cdb", "cdb reference file", "PATH");
@@ -745,6 +910,12 @@ fn main() {
     );
     opts.optflag("", "inside", "display when extremities are inside network");
     opts.optopt("", "makecdb", "build a cdb file from STDIN", "PATH");
+    opts.optopt(
+        "",
+        "makethymecdb",
+        "download and build a cdb file from thyme.apnic.net data",
+        "PATH",
+    );
     opts.optopt("m", "mask", "cidr mask", "CIDR");
     opts.optopt(
         "n",
@@ -908,6 +1079,11 @@ fn main() {
 
     if let Some(v) = matches.opt_str("mask") {
         input_mask = parse_mask(&v);
+    }
+
+    if let Some(v) = matches.opt_str("makethymecdb") {
+        make_thyme_cdb(v);
+        std::process::exit(0);
     }
 
     if let Some(v) = matches.opt_str("makecdb") {

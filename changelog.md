@@ -7,6 +7,7 @@
  * add cdb pairs to output when no format is specified
  * when cdb or abuseipdb are present, without a format, all key pairs will be
    shown
+ * option makethymecdb to download IP information from thyme.apnic.net
 
 0.2.7
 
