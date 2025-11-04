@@ -4,7 +4,7 @@ section: 1
 header: User Manual
 footer: ripcalc 0.2.7
 author: Ed Neville (ed-ripcalc@s5h.net)
-date: 31 October 2025
+date: 04 November 2025
 ---
 
 # NAME
@@ -42,6 +42,8 @@ ripcalc - a tool for network addresses
 **ripcalc -d/--divide [CIDR] 127.0.0.1/24**
 
 **ripcalc --makecdb [PATH]**
+
+**ripcalc --makethymecdb [PATH]**
 
 **ripcalc --networks [CIDR] 127.0.0.1/24**
 
@@ -198,4 +200,6 @@ When using `group` the unique IP address count is available in the `%C` format s
 CDB files can be used for address lookup. `--cdb` should hold a path to a valid CDB file, in which a CIDR network address should be used as a key, and NULL-separated key=value pairs should be the lookup data.
 
 CDB files can be created with `--makecdb`, which reads comma separated input, the first value is a CIDR network, followed by `,` joined key=value pairs. See `cdb_maker.pl` for an example script which can be used to create such files.
+
+The option `--makethymecdb` can be used to download an IP database from `https://thyme.apnic.net/`.
 
