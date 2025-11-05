@@ -5,6 +5,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs;
 use std::fs::File;
+use std::io::prelude::*;
 use std::io::{BufRead, BufReader};
 use std::os::fd::AsFd;
 use std::str::FromStr;
@@ -680,7 +681,7 @@ fn make_cdb(path: String, config: &RefCell<Config>) {
     }
 }
 
-fn make_thyme_cdb(location: String) {
+fn make_thyme_cdb(location: String, config: &RefCell<Config>) {
     fn process_raw(
         data: String,
         db: &mut HashMap<String, String>,
@@ -783,6 +784,29 @@ fn make_thyme_cdb(location: String) {
     }
 
     fn get_or_exit(url: &str, client: &reqwest::blocking::Client) -> String {
+        if !url.starts_with("http") {
+            let path = std::path::Path::new(&url);
+            if !path.exists() {
+                println!(
+                    "Could not open {} as it does not exist",
+                    path.to_string_lossy()
+                );
+                std::process::exit(1);
+            }
+            let f = File::open(path);
+            if let Err(error) = f {
+                eprintln!("cannot open {}: {}", url, error);
+                std::process::exit(1);
+            };
+            let mut f = f.unwrap();
+            let mut content = String::new();
+            if let Err(error) = f.read_to_string(&mut content) {
+                eprintln!("cannot read {}: {}", url, error);
+                std::process::exit(1);
+            };
+            return content;
+        }
+
         let response = client.get(url).send();
         if response.as_ref().is_err() {
             eprintln!("Could not communicate with {}", url);
@@ -805,9 +829,6 @@ fn make_thyme_cdb(location: String) {
         }
     }
 
-    let base_url = "https://thyme.apnic.net/.combined";
-    //let base_url = "http://localhost/.combined";
-
     let client = reqwest::blocking::Client::new();
     let tmp_file = format!("{}.tmp", &location);
     let cdb = cdb::CDBWriter::create(&tmp_file);
@@ -822,17 +843,24 @@ fn make_thyme_cdb(location: String) {
     let mut asn_list: HashMap<String, Vec<String>> = HashMap::new();
     let mut data: HashMap<String, String> = HashMap::new();
 
-    let url = format!("{}/data-raw-table", base_url);
-    let data_raw = get_or_exit(&url, &client);
+    let data_raw = get_or_exit(
+        config.borrow().options.get("data-raw-table").unwrap(),
+        &client,
+    );
     process_raw(data_raw, &mut data, &mut asn_list);
 
-    let url = format!("{}/ipv6-raw-table", base_url);
-    let ipv6_raw = get_or_exit(&url, &client);
+    let ipv6_raw = get_or_exit(
+        config.borrow().options.get("ipv6-raw-table").unwrap(),
+        &client,
+    );
     process_ipv6(ipv6_raw, &mut data, &mut asn_list);
 
-    let url = format!("{}/data-used-autnums", base_url);
-    let data_used = get_or_exit(&url, &client);
+    let data_used = get_or_exit(
+        config.borrow().options.get("data-used-autnums").unwrap(),
+        &client,
+    );
     process_asn(&mut cdb, data_used, &mut asn, &data, &mut asn_list);
+
     if let Err(error) = cdb.finish() {
         eprintln!("Cannot write {}: {}", tmp_file, error);
         std::process::exit(1);
@@ -913,9 +941,13 @@ fn main() {
     opts.optopt(
         "",
         "makethymecdb",
-        "download and build a cdb file from thyme.apnic.net data",
+        "download and build a cdb file, defaults to thyme.apnic.net data",
         "PATH",
     );
+    opts.optopt("", "data-raw-table", "URL/path of raw data", "URL or PATH");
+    opts.optopt("", "ipv6-raw-table", "URL/path of ipv6 data", "URL or PATH");
+    opts.optopt("", "data-used-autnums", "URL/path of ASN data", "URL or PATH");
+
     opts.optopt("m", "mask", "cidr mask", "CIDR");
     opts.optopt(
         "n",
@@ -1082,7 +1114,26 @@ fn main() {
     }
 
     if let Some(v) = matches.opt_str("makethymecdb") {
-        make_thyme_cdb(v);
+        config.borrow_mut().options.insert(
+            "data-raw-table".to_string(),
+            matches
+                .opt_str("data-raw-table")
+                .unwrap_or("https://thyme.apnic.net/.combined/data-raw-table".to_string()),
+        );
+        config.borrow_mut().options.insert(
+            "ipv6-raw-table".to_string(),
+            matches
+                .opt_str("ipv6-raw-table")
+                .unwrap_or("https://thyme.apnic.net/.combined/ipv6-raw-table".to_string()),
+        );
+        config.borrow_mut().options.insert(
+            "data-used-autnums".to_string(),
+            matches
+                .opt_str("data-used-autnums")
+                .unwrap_or("https://thyme.apnic.net/.combined/data-used-autnums".to_string()),
+        );
+
+        make_thyme_cdb(v, &config);
         std::process::exit(0);
     }
 
