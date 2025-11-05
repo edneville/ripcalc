@@ -4,7 +4,7 @@ section: 1
 header: User Manual
 footer: ripcalc 0.2.7
 author: Ed Neville (ed-ripcalc@s5h.net)
-date: 04 November 2025
+date: 05 November 2025
 ---
 
 # NAME
@@ -43,7 +43,7 @@ ripcalc - a tool for network addresses
 
 **ripcalc --makecdb [PATH]**
 
-**ripcalc --makethymecdb [PATH]**
+**ripcalc --makethymecdb [PATH] [--data-raw-table PATH] [--ipv6-raw-table PATH] [--data-used-autnums PATH]**
 
 **ripcalc --networks [CIDR] 127.0.0.1/24**
 
