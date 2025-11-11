@@ -10,6 +10,7 @@
  * option makethymecdb to download IP information from thyme.apnic.net, options
    --data-raw-table, --ipv6-raw-table, --data-used-autnums can be used with a
    file or URL
+ * if format is specified filter should output that style
 
 0.2.7
 

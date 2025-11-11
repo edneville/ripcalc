@@ -429,6 +429,7 @@ fn process_input_filter(
     ip_args: &[Ip],
     inside: Option<bool>,
     config: &RefCell<Config>,
+    matches: &getopts::Matches,
 ) {
     let filterany = config_option_true(&config.borrow(), "filterany".to_string());
 
@@ -459,15 +460,15 @@ fn process_input_filter(
 
     for line in reader.lines() {
         match line {
-            Ok(_) => {
-                let line = line.unwrap();
+            Ok(line) => {
                 let parts: Vec<&str> = line.split(' ').collect();
 
                 if parts.is_empty() || parts.len() < position as usize {
                     continue;
                 }
 
-                let mut found = false;
+                let mut found: Option<Ip> = None;
+
                 if filterany {
                     for p in &parts {
                         let p = p.trim();
@@ -478,7 +479,7 @@ fn process_input_filter(
 
                         if let Some(ip) = parse_address_mask(p, None, None, None, false, config) {
                             if inside_filter(Some(inside.unwrap_or(true)), ip_args, &ip) {
-                                found = true;
+                                found = Some(ip);
                                 break;
                             }
                         }
@@ -495,13 +496,17 @@ fn process_input_filter(
                         config,
                     ) {
                         if inside_filter(Some(inside.unwrap_or(true)), ip_args, &ip) {
-                            found = true;
+                            found = Some(ip);
                         }
                     }
                 }
 
-                if found {
-                    println!("{}", line);
+                if let Some(found) = found {
+                    if matches.opt_present("format") {
+                        print_details(&found, matches, &None, None, config);
+                    } else {
+                        println!("{}", line);
+                    }
                 }
             }
             Err(x) => {
@@ -541,7 +546,7 @@ fn process_input_file(
         || matches.opt_present("filterany")
         || matches.opt_present("filternum")
     {
-        process_input_filter(&mut reader, ip_args, inside, config);
+        process_input_filter(&mut reader, ip_args, inside, config, matches);
 
         std::process::exit(0);
     }
