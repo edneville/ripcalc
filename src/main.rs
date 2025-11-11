@@ -430,6 +430,7 @@ fn process_input_filter(
     inside: Option<bool>,
     config: &RefCell<Config>,
     matches: &getopts::Matches,
+    rows: &Option<HashMap<Ip, NetRow>>,
 ) {
     let filterany = config_option_true(&config.borrow(), "filterany".to_string());
 
@@ -503,7 +504,7 @@ fn process_input_filter(
 
                 if let Some(found) = found {
                     if matches.opt_present("format") {
-                        print_details(&found, matches, &None, None, config);
+                        print_details(&found, matches, rows, None, config);
                     } else {
                         println!("{}", line);
                     }
@@ -546,7 +547,7 @@ fn process_input_file(
         || matches.opt_present("filterany")
         || matches.opt_present("filternum")
     {
-        process_input_filter(&mut reader, ip_args, inside, config, matches);
+        process_input_filter(&mut reader, ip_args, inside, config, matches, rows);
 
         std::process::exit(0);
     }
@@ -951,7 +952,12 @@ fn main() {
     );
     opts.optopt("", "data-raw-table", "URL/path of raw data", "URL or PATH");
     opts.optopt("", "ipv6-raw-table", "URL/path of ipv6 data", "URL or PATH");
-    opts.optopt("", "data-used-autnums", "URL/path of ASN data", "URL or PATH");
+    opts.optopt(
+        "",
+        "data-used-autnums",
+        "URL/path of ASN data",
+        "URL or PATH",
+    );
 
     opts.optopt("m", "mask", "cidr mask", "CIDR");
     opts.optopt(
