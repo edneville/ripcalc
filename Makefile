@@ -20,55 +20,55 @@ test:
 	cargo test
 
 bintest:
-	printf "127.0.0.1\n" | $(RELEASE) --available --list --format short -s - 127.0.0.1/30 | wc -l | tr -d '[:blank:]' | grep -x 3
-	printf "127.0.0.1\n" | $(RELEASE) --list --format short -s - 127.0.0.1/30 | wc -l | tr -d '[:blank:]' | grep -x 5
-	printf '10.0.0.0/30\n' | $(RELEASE) --list --format short -s - 127.0.0.1/30 | wc -l | tr -d '[:blank:]' | grep -x 8
-	( printf '10.0.0.0/30\n127.0.0.1/30' | $(RELEASE) --list --format short -s - --outside 10.0.0.0/24; if test $$? -ne 1; then exit 1; fi; exit 0 ) | wc -l | tr -d '[:blank:]' | grep -x 4
-	printf '10.0.0.0/28\n127.0.0.1/30' | $(RELEASE) --list --format short -s - --inside 10.0.0.0/24 | wc -l | tr -d '[:blank:]' | grep -x 16
-	printf '10.0.0.0/28\n127.0.0.1/30' | $(RELEASE) --list --format short --inside 10.0.0.0/24 | wc -l | tr -d '[:blank:]' | grep -x 16
-	printf '85.119.82.90\n' | $(RELEASE) -s - --inside 85.119.82.99/16 192.73.234.6/24 45.77.251.199/24 --format short | grep 85.119.82.90 | wc -l | tr -d '[:blank:]' | grep -x 1
-	printf '10.0.0.0/28\n127.0.0.1/30' | $(RELEASE) --list --format short -s - --inside 10.0.0.0/24 192.168.1.1/16 | wc -l | tr -d '[:blank:]' | grep -x 16
-	printf '127.0.0.1\n' | $(RELEASE) --format short -s - --inside 10.0.0.0/24 192.168.1.1/16 127.0.0.1/28 | wc -l | tr -d '[:blank:]' | grep -x 1
-	$(RELEASE) --format '%k.all.s5h.net' 127.0.0.2 # if there's no list/available option AND has an IP as an argument, it should not wait
-	echo 192.168.1.2 | $(RELEASE) -l --inside 192.168.1.1/28 --format 'short' | wc -l | tr -d '[:blank:]' | grep -x 1
-	echo 192.168.0.0/16 | $(RELEASE) -l --inside 192.168.0.0/24 --format 'short' | wc -l | tr -d '[:blank:]' | grep -x 0
-	echo 192.168.0.0/28 | $(RELEASE) --list --noexpand --inside 192.168.0.0/24 --format 'short' | wc -l | tr -d '[:blank:]' | grep -x 1
-	echo 192.168.0.0/28 | $(RELEASE) --list -a --noexpand --inside 192.168.0.0/24 --format 'short' | wc -l | tr -d '[:blank:]' | grep -x 1
-	echo 338288524927261089655243473518709748348 | $(RELEASE) --base 10 -s - --format 'short' | tr -d '[:blank:]' | grep -x fe80::10fe:91ff:fe64:b27c
-	echo 3558236161 | $(RELEASE) --base 10 -s - --format 'short' | tr -d '[:blank:]' | grep -x 212.22.96.1
-	echo '185.27.20.54' | $(RELEASE) --outside 185.27.20.54/23 --format short | wc -l | tr -d '[:blank:]' | grep -Fx 0
-	printf '192.168.1.1\n192.168.2.1\n127.0.0.1\n10.10.10.10\n192.168.3.1\n' | $(RELEASE) --inside 192.168.1.0/24 192.168.2.0/24 --format short | wc -l | tr -d '[:blank:]' | grep -Fx 2
-	printf '192.168.1.1\n' | $(RELEASE) --format short --inside 80.87.128.0/20 185.27.20.0/22 216.116.64.0/20 67.214.98.0/24 2606:1F00::/32 2a04:1300::/29 | wc -l | tr -d '[:blank:]' | grep -Fx 0
-	printf '192.168.1.1\n' | $(RELEASE) --format short --outside 80.87.128.0/20 185.27.20.0/22 216.116.64.0/20 67.214.98.0/24 2606:1F00::/32 2a04:1300::/29 | wc -l | tr -d '[:blank:]' | grep -Fx 1
-	printf 'https://www.usenix.org.uk/content/\n' | $(RELEASE) --format short -s - | wc -l | tr -d '[:blank:]' | grep -Fx 1
-	printf '2001067c26600425001d0000000003d2' | $(RELEASE) --base 16 --format short -s - | wc -l | tr -d '[:blank:]' | grep -Fx 1
-	$(RELEASE) -e 10.0.0.0 10.10.0.0 --format cidr | grep 10.0.0.0/12
-	printf '10.0.0.0/24\n10.0.0.1/24\n' | $(RELEASE) -e -s - --format cidr | grep 10.0.0.0/24 | wc -l | tr -d '[:blank:]' | grep -Fx 1
-	printf '192.168.0.0/16' | $(RELEASE) --format cidr | grep 192.168.0.0/16 | wc -l | tr -d '[:blank:]' | grep -Fx 1
-	$(RELEASE) 192.168.0.0/16 --format cidr | grep 192.168.0.0/16 | wc -l | tr -d '[:blank:]' | grep -Fx 1
-	printf "127.0.0.1/8\n" | $(RELEASE) | grep "IP is: 127.0.0.1/8" | wc -l | tr -d '[:blank:]' | grep -Fx 1 
-	printf " 127.0.0.1/8 \n " | $(RELEASE) | grep "IP is: 127.0.0.1/8" | wc -l | tr -d '[:blank:]' | grep -Fx 1 
-	$(RELEASE) --base 10 -6 55835323703435061617372717077650323870 | grep "IP is: 2a01:7e00::f03c:92ff:fe35:b99e/128" | wc -l | tr -d '[:blank:]' | grep -Fx 1
-	printf '10.0.1.0 10.0.255.0' | $(RELEASE) -e --format cidr | grep "10.0.0.0/16" | wc -l | tr -d '[:blank:]' | grep -Fx 1
-	printf '10.0.1.0 10.0.255.0\n10.2.0.0    10.2.2.2\n10.3.0.0\n10.10.10.10\n' | $(RELEASE) --format cidr | wc -l | tr -d '[:blank:]' | grep -Fx 6
-	printf '2a0a:1100:1002::/48' | $(RELEASE) --networks 64 | tr -d '[:blank:]' | grep -Fx "Networks(64):65536"
-	printf '2a0a:1100:1002::/48' | $(RELEASE) --networks 64 --format '%D:%N' | grep -Fx '64:65536'
-	for i in 1 2 3 4; do for j in 1 2 3 4; do echo 192.$$i.$$j.1; done; done | $(RELEASE) --group 16 --format short --encapsulating | wc -l | tr -d '[:blank:]' | grep -Fx 4
-	printf 'name,network\na,192.168.0.0/16\n' >ips.csv; $(RELEASE) --csv ips.csv 127.0.0.1 --allowemptyrow --format '%{name} %a/%c\n' | grep -Fx '{name} 127.0.0.1/32' && rm ips.csv
-	printf 'name,network\na,192.168.0.0\n' >ips.csv; $(RELEASE) --csv ips.csv 127.0.0.1 --allowemptyrow --format '%{name} %a/%c\n' | grep -Fx '{name} 127.0.0.1/32' && rm ips.csv
-	printf 'name,network\na,2001:db8::\n' >ips.csv; $(RELEASE) --csv ips.csv   2001:db8::0 --allowemptyrow --format '%{name} %a/%c\n' | grep -Fx 'a 2001:db8::/128' && rm ips.csv
-	printf 'name,network\na,192.168.0.0/24\n' >ips.csv; $(RELEASE) --csv ips.csv 192.168.0.1 --allowemptyrow --format '%{name} %a/%c\n' | grep -Fx 'a 192.168.0.1/24' && rm ips.csv
-	printf 'name,network\na,192.168.0.0/24\n' >ips.csv; echo 192.168.0.1 | $(RELEASE) --csv ips.csv --allowemptyrow --format '%{name} %a/%c\n' | grep -Fx 'a 192.168.0.1/24' && rm ips.csv
-	printf 'name,network\nloop,127.0.0.0/8\nprinters,172.16.0.0/12\niot1,192.168.0.0/24\niot2,192.168.1.0/24\niot3,192.168.2.0/24\niot4,192.168.3.0/24' >ips.csv; echo 192.168.0.1 | $(RELEASE) --csv ips.csv --allowemptyrow --format '%{name} %a/%c\n' | grep -Fx 'iot1 192.168.0.1/24' && rm ips.csv
-	$(RELEASE) 8.8.4.4 --format '%p\n' | grep -Fx dns.google
-	$(RELEASE) -e 10.10.10.10 10.20.10.10 10.20.10.20 --group 24 --format '%a %c %C\n' | wc -l | grep -Fx 2
-	for i in `seq 1 20`; do for j in `seq 1 50`; do printf '192.168.%d.%d\n' $$i $$j; done; done | $(RELEASE) --group 24 --encapsulating --format '%a/%c %C\n' | grep '/26 50$$' | wc -l | grep -Fx 20
-	for i in `seq 1 20`; do for j in `seq 1 50`; do printf '192.168.%d.%d\n' $$i $$j; done; done | $(RELEASE) --group 24 --inside 192.168.1.1/24 --encapsulating --format '%a/%c %C\n' | grep '/26 50$$' | wc -l | grep -Fx 1
-	for i in `seq 1 20`; do for j in `seq 1 50`; do printf '192.168.%d.%d\n' $$i $$j; done; done | $(RELEASE) --group 24 --outside 192.168.1.1 --encapsulating --format '%a/%c %C\n' | grep '/26 50$$' | wc -l | grep -Fx 19
-	printf '3558236161\n' | $(RELEASE) --base 10 --format '%a\n' | grep -Fx 212.22.96.1
-	printf -- '-736731135\n' | $(RELEASE) --base -10 --format '%a\n' | grep -Fx 212.22.96.1
-	printf -- '-13259686110696736936355904651228348417\n' | $(RELEASE) --base -10 --format '%a\n' | grep -Fx f606:4700:3035:0:ffff:ffff:ffff:ffff
-	printf -- '42540766411282592856903984951653826560\n' | $(RELEASE) --base 10 --format '%a\n' | grep -Fx 2001:db8::
+	printf "127.0.0.1\n" | $(RELEASE) --available --list --format short -s - 127.0.0.1/30 | wc -l | tr -d '[:blank:]' | grep -x 3 >/dev/null
+	printf "127.0.0.1\n" | $(RELEASE) --list --format short -s - 127.0.0.1/30 | wc -l | tr -d '[:blank:]' | grep -x 5 >/dev/null
+	printf '10.0.0.0/30\n' | $(RELEASE) --list --format short -s - 127.0.0.1/30 | wc -l | tr -d '[:blank:]' | grep -x 8 >/dev/null
+	( printf '10.0.0.0/30\n127.0.0.1/30' | $(RELEASE) --list --format short -s - --outside 10.0.0.0/24; if test $$? -ne 1; then exit 1; fi; exit 0 ) | wc -l | tr -d '[:blank:]' | grep -x 4 >/dev/null
+	printf '10.0.0.0/28\n127.0.0.1/30' | $(RELEASE) --list --format short -s - --inside 10.0.0.0/24 | wc -l | tr -d '[:blank:]' | grep -x 16 >/dev/null
+	printf '10.0.0.0/28\n127.0.0.1/30' | $(RELEASE) --list --format short --inside 10.0.0.0/24 | wc -l | tr -d '[:blank:]' | grep -x 16 >/dev/null
+	printf '85.119.82.90\n' | $(RELEASE) -s - --inside 85.119.82.99/16 192.73.234.6/24 45.77.251.199/24 --format short | grep 85.119.82.90 | wc -l | tr -d '[:blank:]' | grep -x 1 >/dev/null
+	printf '10.0.0.0/28\n127.0.0.1/30' | $(RELEASE) --list --format short -s - --inside 10.0.0.0/24 192.168.1.1/16 | wc -l | tr -d '[:blank:]' | grep -x 16 >/dev/null
+	printf '127.0.0.1\n' | $(RELEASE) --format short -s - --inside 10.0.0.0/24 192.168.1.1/16 127.0.0.1/28 | wc -l | tr -d '[:blank:]' | grep -x 1 >/dev/null
+	$(RELEASE) --format '%k.all.s5h.net' 127.0.0.2 | grep 2.0.0.127.all.s5h.net >/dev/null # if there's no list/available option AND has an IP as an argument, it should not wait
+	echo 192.168.1.2 | $(RELEASE) -l --inside 192.168.1.1/28 --format 'short' | wc -l | tr -d '[:blank:]' | grep -x 1 >/dev/null 
+	echo 192.168.0.0/16 | $(RELEASE) -l --inside 192.168.0.0/24 --format 'short' | wc -l | tr -d '[:blank:]' | grep -x 0 >/dev/null 
+	echo 192.168.0.0/28 | $(RELEASE) --list --noexpand --inside 192.168.0.0/24 --format 'short' | wc -l | tr -d '[:blank:]' | grep -x 1 >/dev/null 
+	echo 192.168.0.0/28 | $(RELEASE) --list -a --noexpand --inside 192.168.0.0/24 --format 'short' | wc -l | tr -d '[:blank:]' | grep -x 1 >/dev/null 
+	echo 338288524927261089655243473518709748348 | $(RELEASE) --base 10 -s - --format 'short' | tr -d '[:blank:]' | grep -x fe80::10fe:91ff:fe64:b27c >/dev/null 
+	echo 3558236161 | $(RELEASE) --base 10 -s - --format 'short' | tr -d '[:blank:]' | grep -x 212.22.96.1 >/dev/null 
+	echo '185.27.20.54' | $(RELEASE) --outside 185.27.20.54/23 --format short | wc -l | tr -d '[:blank:]' | grep -Fx 0 >/dev/null 
+	printf '192.168.1.1\n192.168.2.1\n127.0.0.1\n10.10.10.10\n192.168.3.1\n' | $(RELEASE) --inside 192.168.1.0/24 192.168.2.0/24 --format short | wc -l | tr -d '[:blank:]' | grep -Fx 2 >/dev/null 
+	printf '192.168.1.1\n' | $(RELEASE) --format short --inside 80.87.128.0/20 185.27.20.0/22 216.116.64.0/20 67.214.98.0/24 2606:1F00::/32 2a04:1300::/29 | wc -l | tr -d '[:blank:]' | grep -Fx 0 >/dev/null 
+	printf '192.168.1.1\n' | $(RELEASE) --format short --outside 80.87.128.0/20 185.27.20.0/22 216.116.64.0/20 67.214.98.0/24 2606:1F00::/32 2a04:1300::/29 | wc -l | tr -d '[:blank:]' | grep -Fx 1 >/dev/null 
+	printf 'https://www.usenix.org.uk/content/\n' | $(RELEASE) --format short -s - | wc -l | tr -d '[:blank:]' | grep -Fx 1 >/dev/null 
+	printf '2001067c26600425001d0000000003d2' | $(RELEASE) --base 16 --format short -s - | wc -l | tr -d '[:blank:]' | grep -Fx 1 >/dev/null 
+	$(RELEASE) -e 10.0.0.0 10.10.0.0 --format cidr | grep 10.0.0.0/12 >/dev/null 
+	printf '10.0.0.0/24\n10.0.0.1/24\n' | $(RELEASE) -e -s - --format cidr | grep 10.0.0.0/24 | wc -l | tr -d '[:blank:]' | grep -Fx 1 >/dev/null 
+	printf '192.168.0.0/16' | $(RELEASE) --format cidr | grep 192.168.0.0/16 | wc -l | tr -d '[:blank:]' | grep -Fx 1 >/dev/null 
+	$(RELEASE) 192.168.0.0/16 --format cidr | grep 192.168.0.0/16 | wc -l | tr -d '[:blank:]' | grep -Fx 1 >/dev/null 
+	printf "127.0.0.1/8\n" | $(RELEASE) | grep "IP is: 127.0.0.1/8" | wc -l | tr -d '[:blank:]' | grep -Fx 1 >/dev/null 
+	printf " 127.0.0.1/8 \n " | $(RELEASE) | grep "IP is: 127.0.0.1/8" | wc -l | tr -d '[:blank:]' | grep -Fx 1 >/dev/null 
+	$(RELEASE) --base 10 -6 55835323703435061617372717077650323870 | grep "IP is: 2a01:7e00::f03c:92ff:fe35:b99e/128" | wc -l | tr -d '[:blank:]' | grep -Fx 1 >/dev/null 
+	printf '10.0.1.0 10.0.255.0' | $(RELEASE) -e --format cidr | grep "10.0.0.0/16" | wc -l | tr -d '[:blank:]' | grep -Fx 1 >/dev/null 
+	printf '10.0.1.0 10.0.255.0\n10.2.0.0    10.2.2.2\n10.3.0.0\n10.10.10.10\n' | $(RELEASE) --format cidr | wc -l | tr -d '[:blank:]' | grep -Fx 6 >/dev/null 
+	printf '2a0a:1100:1002::/48' | $(RELEASE) --networks 64 | tr -d '[:blank:]' | grep -Fx "Networks(64):65536" >/dev/null 
+	printf '2a0a:1100:1002::/48' | $(RELEASE) --networks 64 --format '%D:%N' | grep -Fx '64:65536' >/dev/null 
+	for i in 1 2 3 4; do for j in 1 2 3 4; do echo 192.$$i.$$j.1; done; done | $(RELEASE) --group 16 --format short --encapsulating | wc -l | tr -d '[:blank:]' | grep -Fx 4 >/dev/null 
+	printf 'name,network\na,192.168.0.0/16\n' >ips.csv; $(RELEASE) --csv ips.csv 127.0.0.1 --allowemptyrow --format '%{name} %a/%c\n' | grep -Fx '{name} 127.0.0.1/32' >/dev/null && rm ips.csv
+	printf 'name,network\na,192.168.0.0\n' >ips.csv; $(RELEASE) --csv ips.csv 127.0.0.1 --allowemptyrow --format '%{name} %a/%c\n' | grep -Fx '{name} 127.0.0.1/32' >/dev/null && rm ips.csv
+	printf 'name,network\na,2001:db8::\n' >ips.csv; $(RELEASE) --csv ips.csv   2001:db8::0 --allowemptyrow --format '%{name} %a/%c\n' | grep -Fx 'a 2001:db8::/128' >/dev/null && rm ips.csv
+	printf 'name,network\na,192.168.0.0/24\n' >ips.csv; $(RELEASE) --csv ips.csv 192.168.0.1 --allowemptyrow --format '%{name} %a/%c\n' | grep -Fx 'a 192.168.0.1/24' >/dev/null && rm ips.csv
+	printf 'name,network\na,192.168.0.0/24\n' >ips.csv; echo 192.168.0.1 | $(RELEASE) --csv ips.csv --allowemptyrow --format '%{name} %a/%c\n' | grep -Fx 'a 192.168.0.1/24' >/dev/null && rm ips.csv
+	printf 'name,network\nloop,127.0.0.0/8\nprinters,172.16.0.0/12\niot1,192.168.0.0/24\niot2,192.168.1.0/24\niot3,192.168.2.0/24\niot4,192.168.3.0/24' >ips.csv; echo 192.168.0.1 | $(RELEASE) --csv ips.csv --allowemptyrow --format '%{name} %a/%c\n' | grep -Fx 'iot1 192.168.0.1/24' >/dev/null && rm ips.csv
+	$(RELEASE) 8.8.4.4 --format '%p\n' | grep -Fx dns.google >/dev/null 
+	$(RELEASE) -e 10.10.10.10 10.20.10.10 10.20.10.20 --group 24 --format '%a %c %C\n' | wc -l | grep -Fx 2 >/dev/null
+	for i in `seq 1 20`; do for j in `seq 1 50`; do printf '192.168.%d.%d\n' $$i $$j; done; done | $(RELEASE) --group 24 --encapsulating --format '%a/%c %C\n' | grep '/26 50$$' | wc -l | grep -Fx 20 >/dev/null
+	for i in `seq 1 20`; do for j in `seq 1 50`; do printf '192.168.%d.%d\n' $$i $$j; done; done | $(RELEASE) --group 24 --inside 192.168.1.1/24 --encapsulating --format '%a/%c %C\n' | grep '/26 50$$' | wc -l | grep -Fx 1 >/dev/null
+	for i in `seq 1 20`; do for j in `seq 1 50`; do printf '192.168.%d.%d\n' $$i $$j; done; done | $(RELEASE) --group 24 --outside 192.168.1.1 --encapsulating --format '%a/%c %C\n' | grep '/26 50$$' | wc -l | grep -Fx 19 >/dev/null
+	printf '3558236161\n' | $(RELEASE) --base 10 --format '%a\n' | grep -Fx 212.22.96.1 >/dev/null
+	printf -- '-736731135\n' | $(RELEASE) --base -10 --format '%a\n' | grep -Fx 212.22.96.1 >/dev/null
+	printf -- '-13259686110696736936355904651228348417\n' | $(RELEASE) --base -10 --format '%a\n' | grep -Fx f606:4700:3035:0:ffff:ffff:ffff:ffff >/dev/null
+	printf -- '42540766411282592856903984951653826560\n' | $(RELEASE) --base 10 --format '%a\n' | grep -Fx 2001:db8:: >/dev/null
 	$(RELEASE) -e 10.0.0.0 10.10.0.0 --group 24 --format '%a/%c %C ' | grep -Fx '10.0.0.0/32 1 10.10.0.0/32 1 ' >/dev/null
 	$(RELEASE) -e 10.0.0.0 10.10.0.0 10.10.0.1 --group 24 --format '%a/%c %C ' | grep -Fx '10.0.0.0/32 1 10.10.0.0/31 2 ' >/dev/null
 	printf '10.0.0.0 10.10.0.0 10.10.0.1\n' | $(RELEASE) -e --group 24 --format '%a/%c %C ' | sort -n | paste -sd' ' | grep -Fx '10.0.0.0/32 1 10.10.0.0/31 2 ' >/dev/null

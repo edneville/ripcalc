@@ -71,6 +71,17 @@ pub enum FormatProcessor {
     None,
 }
 
+pub struct FormatDetail<'a> {
+    pub ip: Option<&'a Ip>,
+    pub line: Option<&'a String>,
+}
+
+impl<'a> FormatDetail<'a> {
+    pub fn new(ip: Option<&'a Ip>, line: Option<&'a String>) -> FormatDetail<'a> {
+        FormatDetail { ip, line }
+    }
+}
+
 pub enum Reverse {
     None,
     Input,
@@ -1338,14 +1349,14 @@ pub fn config_option_true(config: &Config, opt: String) -> bool {
 }
 
 pub fn format_details(
-    ip: &Ip,
+    format_detail: &FormatDetail,
     formatted: String,
     rows: &Option<HashMap<Ip, NetRow>>,
     subnet_size: Option<u32>,
     matches: Option<&getopts::Matches>,
     config: &RefCell<Config>,
 ) -> Option<String> {
-    let ip = &mut ip.clone();
+    let ip = &mut (*format_detail.ip.as_ref().unwrap()).clone();
     let mut reformatted = formatted;
 
     if rows.is_some() {
@@ -1415,6 +1426,10 @@ pub fn format_details(
                 return None;
             }
         }
+    }
+
+    if let Some(line) = &format_detail.line {
+        reformatted = reformatted.replace("%{line}", line);
     }
 
     let b = broadcast(ip);

@@ -69,13 +69,14 @@ fn default_abuseipdb_format(
 }
 
 fn print_details(
-    ip: &Ip,
+    format_detail: &FormatDetail,
     matches: &getopts::Matches,
     rows: &Option<HashMap<Ip, NetRow>>,
     used: Option<&HashMap<Addr, bool>>,
     config: &RefCell<Config>,
 ) {
     let mut networks: Option<u32> = None;
+    let ip = format_detail.ip.unwrap();
 
     if matches.opt_present("networks") {
         let nets = matches.opt_str("networks").unwrap().trim().parse().unwrap();
@@ -168,7 +169,10 @@ fn print_details(
 
         for ip_copy in addresses(ip, used, Some(divide)) {
             if let Some(m) = format_details(
-                &ip_copy,
+                &FormatDetail {
+                    ip: Some(&ip_copy),
+                    line: None,
+                },
                 formatted.to_string(),
                 rows,
                 networks,
@@ -183,7 +187,14 @@ fn print_details(
 
     if matches.opt_present("list") {
         if matches.opt_present("noexpand") {
-            if let Some(m) = format_details(ip, formatted, rows, networks, Some(matches), config) {
+            if let Some(m) = format_details(
+                format_detail,
+                formatted,
+                rows,
+                networks,
+                Some(matches),
+                config,
+            ) {
                 print!("{}", m);
             }
             return;
@@ -191,7 +202,10 @@ fn print_details(
 
         for ip_copy in addresses(ip, used, None) {
             if let Some(m) = format_details(
-                &ip_copy,
+                &FormatDetail {
+                    ip: Some(&ip_copy),
+                    line: None,
+                },
                 formatted.to_string(),
                 rows,
                 networks,
@@ -204,7 +218,14 @@ fn print_details(
         return;
     }
 
-    if let Some(m) = format_details(ip, formatted, rows, networks, Some(matches), config) {
+    if let Some(m) = format_details(
+        format_detail,
+        formatted,
+        rows,
+        networks,
+        Some(matches),
+        config,
+    ) {
         print!("{}", m);
     }
 }
@@ -403,7 +424,16 @@ fn process_group_encapsulation(
                         cfg.used = Some(nm.clone());
                     }
 
-                    print_details(&y, matches, rows, None, config);
+                    print_details(
+                        &FormatDetail {
+                            ip: Some(&y),
+                            line: None,
+                        },
+                        matches,
+                        rows,
+                        None,
+                        config,
+                    );
                 }
             }
             None => {
@@ -414,7 +444,16 @@ fn process_group_encapsulation(
     } else {
         match smallest_group_network(&used) {
             Some(x) => {
-                print_details(&x, matches, rows, None, config);
+                print_details(
+                    &FormatDetail {
+                        ip: Some(&x),
+                        line: None,
+                    },
+                    matches,
+                    rows,
+                    None,
+                    config,
+                );
             }
             None => {
                 eprintln!("Could not find an encapsulating network, sorry");
@@ -504,7 +543,8 @@ fn process_input_filter(
 
                 if let Some(found) = found {
                     if matches.opt_present("format") {
-                        print_details(&found, matches, rows, None, config);
+                        let n = FormatDetail::new(Some(&found), Some(&line));
+                        print_details(&n, matches, rows, None, config);
                     } else {
                         println!("{}", line);
                     }
@@ -561,7 +601,16 @@ fn process_input_file(
         }
 
         for arg in ip_args {
-            print_details(arg, matches, rows, Some(&used), config);
+            print_details(
+                &FormatDetail {
+                    ip: Some(arg),
+                    line: None,
+                },
+                matches,
+                rows,
+                Some(&used),
+                config,
+            );
         }
         std::process::exit(0);
     }
@@ -601,7 +650,16 @@ fn process_input_file(
             increment_seen_count(&mut config.borrow_mut(), ip.clone());
             if inside_filter(inside, ip_args, &ip) {
                 found_match = true;
-                print_details(&ip, matches, rows, None, config);
+                print_details(
+                    &FormatDetail {
+                        ip: Some(&ip),
+                        line: None,
+                    },
+                    matches,
+                    rows,
+                    None,
+                    config,
+                );
             }
         }
     }
@@ -1290,7 +1348,16 @@ fn main() {
             used.insert(arg.clone(), true);
             continue;
         }
-        print_details(arg, &matches, &rows, None, &config);
+        print_details(
+            &FormatDetail {
+                ip: Some(arg),
+                line: None,
+            },
+            &matches,
+            &rows,
+            None,
+            &config,
+        );
     }
 
     config.borrow_mut().used = Some(used.clone());
