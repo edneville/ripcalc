@@ -283,7 +283,17 @@ mod test {
         };
         let config = RefCell::new(default_config());
 
-        let f = format_details(&net, "%a".to_string(), &None, None, None, &config);
+        let f = format_details(
+            &FormatDetail {
+                ip: Some(&net),
+                line: None,
+            },
+            "%a".to_string(),
+            &None,
+            None,
+            None,
+            &config,
+        );
 
         assert_eq!(f, Some("192.168.0.0".to_string()));
     }
@@ -292,9 +302,12 @@ mod test {
     fn test_format_ng_percent() {
         let config = RefCell::new(default_config());
         let f = format_details(
-            &Ip {
-                address: Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()),
-                cidr: 30,
+            &FormatDetail {
+                ip: Some(&Ip {
+                    address: Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()),
+                    cidr: 30,
+                }),
+                line: None,
             },
             "%".to_string(),
             &None,
@@ -306,9 +319,12 @@ mod test {
         assert_eq!(f, Some("%".to_string()));
 
         let f = format_details(
-            &Ip {
-                address: Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()),
-                cidr: 30,
+            &FormatDetail {
+                ip: Some(&Ip {
+                    address: Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()),
+                    cidr: 30,
+                }),
+                line: None,
             },
             "%%".to_string(),
             &None,
@@ -320,9 +336,12 @@ mod test {
         assert_eq!(f, Some("%".to_string()));
 
         let f = format_details(
-            &Ip {
-                address: Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()),
-                cidr: 30,
+            &FormatDetail {
+                ip: Some(&Ip {
+                    address: Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()),
+                    cidr: 30,
+                }),
+                line: None,
             },
             "%%%".to_string(),
             &None,
@@ -334,9 +353,12 @@ mod test {
         assert_eq!(f, Some("%%".to_string()));
 
         let f = format_details(
-            &Ip {
-                address: Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()),
-                cidr: 30,
+            &FormatDetail {
+                ip: Some(&Ip {
+                    address: Addr::V4(Ipv4Addr::from_str("192.168.0.0").unwrap()),
+                    cidr: 30,
+                }),
+                line: None,
             },
             "%%%%".to_string(),
             &None,
@@ -356,7 +378,7 @@ mod test {
         };
 
         let config = RefCell::new(default_config());
-        let f = format_details(&net, "select * from IP6 where (ip >= %ln and ip <= %lb) and active = 1;\nupdate IP6 set active = 0 where (ip >= %ln and ip <= %lb) and active = 1;".to_string(), &None, None, None, &config);
+        let f = format_details(&FormatDetail { ip: Some(&net), line: None }, "select * from IP6 where (ip >= %ln and ip <= %lb) and active = 1;\nupdate IP6 set active = 0 where (ip >= %ln and ip <= %lb) and active = 1;".to_string(), &None, None, None, &config);
 
         assert_eq!(f, Some("select * from IP6 where (ip >= 42540724579414763292693624807812497408 and ip <= 42540724579414763311140368881522049023) and active = 1;
 update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 and ip <= 42540724579414763311140368881522049023) and active = 1;".to_string()));
@@ -370,7 +392,17 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
         };
 
         let config = RefCell::new(default_config());
-        let f = format_details(&net, "%%b".to_string(), &None, None, None, &config);
+        let f = format_details(
+            &FormatDetail {
+                ip: Some(&net),
+                line: None,
+            },
+            "%%b".to_string(),
+            &None,
+            None,
+            None,
+            &config,
+        );
 
         assert_eq!(f, Some("%b".to_string()));
     }
@@ -383,7 +415,17 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
         };
 
         let config = RefCell::new(default_config());
-        let f = format_details(&net, "%lb".to_string(), &None, None, None, &config);
+        let f = format_details(
+            &FormatDetail {
+                ip: Some(&net),
+                line: None,
+            },
+            "%lb".to_string(),
+            &None,
+            None,
+            None,
+            &config,
+        );
 
         assert_eq!(
             f,
@@ -399,7 +441,17 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
         };
 
         let config = RefCell::new(default_config());
-        let f = format_details(&net, "%lb\n\n\n%%".to_string(), &None, None, None, &config);
+        let f = format_details(
+            &FormatDetail {
+                ip: Some(&net),
+                line: None,
+            },
+            "%lb\n\n\n%%".to_string(),
+            &None,
+            None,
+            None,
+            &config,
+        );
 
         assert_eq!(
             f,
@@ -415,16 +467,56 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
         };
         let config = RefCell::new(default_config());
 
-        let f = format_details(&net, "\n".to_string(), &None, None, None, &config);
+        let f = format_details(
+            &FormatDetail {
+                ip: Some(&net),
+                line: None,
+            },
+            "\n".to_string(),
+            &None,
+            None,
+            None,
+            &config,
+        );
         assert_eq!(f, Some("\n".to_string()));
 
-        let f = format_details(&net, "\\".to_string(), &None, None, None, &config);
+        let f = format_details(
+            &FormatDetail {
+                ip: Some(&net),
+                line: None,
+            },
+            "\\".to_string(),
+            &None,
+            None,
+            None,
+            &config,
+        );
         assert_eq!(f, Some('\\'.to_string()));
 
-        let f = format_details(&net, "\\i".to_string(), &None, None, None, &config);
+        let f = format_details(
+            &FormatDetail {
+                ip: Some(&net),
+                line: None,
+            },
+            "\\i".to_string(),
+            &None,
+            None,
+            None,
+            &config,
+        );
         assert_eq!(f, Some("i".to_string()));
 
-        let f = format_details(&net, "\\t".to_string(), &None, None, None, &config);
+        let f = format_details(
+            &FormatDetail {
+                ip: Some(&net),
+                line: None,
+            },
+            "\\t".to_string(),
+            &None,
+            None,
+            None,
+            &config,
+        );
         assert_eq!(f, Some("\t".to_string()));
     }
 
@@ -655,9 +747,29 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
 
         let mut config = RefCell::new(default_config());
 
-        let f = format_details(&net, "%La".to_string(), &None, None, None, &mut config);
+        let f = format_details(
+            &FormatDetail {
+                ip: Some(&net),
+                line: None,
+            },
+            "%La".to_string(),
+            &None,
+            None,
+            None,
+            &mut config,
+        );
         assert_eq!(f, Some("-1819047474".to_string()));
-        let f = format_details(&net, "%la".to_string(), &None, None, None, &mut config);
+        let f = format_details(
+            &FormatDetail {
+                ip: Some(&net),
+                line: None,
+            },
+            "%la".to_string(),
+            &None,
+            None,
+            None,
+            &mut config,
+        );
         assert_eq!(f, Some("2475919822".to_string()));
 
         let net = Ip {
@@ -665,9 +777,29 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             cidr: 30,
         };
 
-        let f = format_details(&net, "%La".to_string(), &None, None, None, &mut config);
+        let f = format_details(
+            &FormatDetail {
+                ip: Some(&net),
+                line: None,
+            },
+            "%La".to_string(),
+            &None,
+            None,
+            None,
+            &mut config,
+        );
         assert_eq!(f, Some("-5192296858534827628530496329154561".to_string()));
-        let f = format_details(&net, "%la".to_string(), &None, None, None, &mut config);
+        let f = format_details(
+            &FormatDetail {
+                ip: Some(&net),
+                line: None,
+            },
+            "%la".to_string(),
+            &None,
+            None,
+            None,
+            &mut config,
+        );
         assert_eq!(
             f,
             Some("340277174624079928635746076935439056895".to_string())
