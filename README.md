@@ -242,7 +242,9 @@ CDB databases are fast and if you have a large list of networks they offer a goo
 192.168.1.0/24 name=lan\0owner=build\0service=web
 ```
 
-Files can be made using `--makecdb`, the stdin should be in the format of:
+The `--makethymecdb` argument will download ASN information from thyme.apnic.net and build that into a `cdb` file, or you can make your own. I find the data from thyme perfect for my needs, but this is the internet and geo-IP, please don't rely on geo-IP being accurate.
+
+Files can also be made using `--makecdb`, the stdin should be in the format of:
 
 ```
 2600:3c0f:25::/48,ASNDESC=AKAMAI-LINODE-AP Akamai Connected Cloud,ASNCC=SG,ASN=2600:3c0f:25::/48,NET=63949
@@ -271,6 +273,12 @@ cat /var/log/apache/access.log | ripcalc --filter 1.1.1.0/24 --outside
 
 `--filter` will use the first word in the inputline and try to parse that for an IP address, if the IP address is not the first word in the input, then `--filternum` can be used to indicate which word number holds the IP.
 
+If you'd like to see the country code that the requests in your log are from:
+
+```
+cat /var/log/apache/access.log | ripcalc --filter --outside --cdb ipdb.cdb --format '%{ASNCC} %{line}\n'
+```
+
 # abuseipdb
 
 If `--abuseipdb [key]` is used then a successful lookup will populate `%{abuseipdb_var}` (where `var` is the lookup result data field) for use in a `--format` string.
@@ -282,12 +290,15 @@ If only the country code or ISP is needed, then using a locally generated `cdb` 
 # help
 
 ```
+ripcalc version 0.2.7
+
+Options:
     -4, --ipv4          treat inputs as ipv4 address
     -6, --ipv6          treat inputs as ipv6 address
     -a, --available     display unused addresses
         --abuseipdb KEY abuseipdb API
         --allowemptyrow 
-                        when no matching csv network, use empty fields
+                        when no matching cdb/csv network, use empty fields
     -b, --base INTEGER  ipv4 base format, default to oct
         --cdb PATH      cdb reference file
         --countseen     count times an ip is seen
@@ -303,6 +314,7 @@ If only the country code or ISP is needed, then using a locally generated `cdb` 
                         See manual for more options
         --filter        print STDIN line if field parses as an IP and matches,
                         defaults to 1, use filternum to adjust
+        --filterany     print STDIN line if any IP on STDIN matches
         --filternum NUMBER
                         change position NUMBER for IP filter, enables --filter
         --group CIDR    maximum network group size for encapsulation
@@ -312,6 +324,15 @@ If only the country code or ISP is needed, then using a locally generated `cdb` 
         --outside       display when extremities are outside network
         --inside        display when extremities are inside network
         --makecdb PATH  build a cdb file from STDIN
+        --makethymecdb PATH
+                        download and build a cdb file, defaults to
+                        thyme.apnic.net data
+        --data-raw-table URL or PATH
+                        URL/path of raw data
+        --ipv6-raw-table URL or PATH
+                        URL/path of ipv6 data
+        --data-used-autnums URL or PATH
+                        URL/path of ASN data
     -m, --mask CIDR     cidr mask
     -n, --networks CIDR instead of hosts, display number of subnets of this
                         size
@@ -319,6 +340,5 @@ If only the country code or ISP is needed, then using a locally generated `cdb` 
     -r, --reverse       (none, inputs, sources or both) v4 octets, v6 hex
     -s, --file PATH     lookup addresses from, - for stdin
     -v, --version       print version
-
 ```
 

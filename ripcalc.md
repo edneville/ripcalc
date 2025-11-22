@@ -4,7 +4,7 @@ section: 1
 header: User Manual
 footer: ripcalc 0.2.7
 author: Ed Neville (ed-ripcalc@s5h.net)
-date: 11 November 2025
+date: 19 November 2025
 ---
 
 # NAME

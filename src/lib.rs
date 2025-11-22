@@ -229,10 +229,7 @@ pub fn host_address(ip: Addr) -> Ip {
 }
 
 pub fn parse_mask(mask: &str) -> Option<u32> {
-    match mask.parse::<u32>() {
-        Ok(n) => Some(n),
-        Err(_) => None,
-    }
+    mask.parse::<u32>().ok()
 }
 
 pub fn parse_v6(address: &str, input_base: Option<i32>, reverse: bool) -> Option<Addr> {
