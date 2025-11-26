@@ -244,6 +244,8 @@ CDB databases are fast and if you have a large list of networks they offer a goo
 
 The `--makethymecdb` argument will download ASN information from thyme.apnic.net and build that into a `cdb` file, or you can make your own. I find the data from thyme perfect for my needs, but this is the internet and geo-IP, please don't rely on geo-IP being accurate.
 
+Obviously, if you have a fleet of computers using this data, it is best to download and build in one location then fan it out using `rsync` to your other computers to save resources and processing power.
+
 Files can also be made using `--makecdb`, the stdin should be in the format of:
 
 ```

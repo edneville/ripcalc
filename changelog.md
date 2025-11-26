@@ -11,6 +11,7 @@
    --data-raw-table, --ipv6-raw-table, --data-used-autnums can be used with a
    file or URL
  * if format is specified filter should output that style
+ * add a useragent string to http client
 
 0.2.7
 

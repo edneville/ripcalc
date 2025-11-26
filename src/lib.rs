@@ -1735,6 +1735,17 @@ pub fn get_seen_count(config: &Config, i: &Ip) -> usize {
     0
 }
 
+pub fn ua_client() -> Option<reqwest::blocking::Client> {
+    reqwest::blocking::Client::builder()
+        .user_agent(format!(
+            "{}/{}",
+            env!("CARGO_PKG_NAME"),
+            env!("CARGO_PKG_VERSION")
+        ))
+        .build()
+        .ok()
+}
+
 pub fn get_abuseipdb_details(
     config: &RefCell<Config>,
     ip: &Ip,
@@ -1743,7 +1754,7 @@ pub fn get_abuseipdb_details(
     let mut headers = HeaderMap::new();
     headers.insert("Key", key.parse().unwrap());
 
-    let client = reqwest::blocking::Client::new();
+    let client = ua_client().expect("Cannot make user-agent");
     let response = client
         .get(format!(
             "https://api.abuseipdb.com/api/v2/check?ipAddress={}&maxAgeInDays={}",
