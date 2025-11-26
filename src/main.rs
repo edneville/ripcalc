@@ -9,6 +9,7 @@ use std::io::prelude::*;
 use std::io::{BufRead, BufReader};
 use std::os::fd::AsFd;
 use std::str::FromStr;
+use chrono::{DateTime, Utc};
 
 fn default_cdb_format(
     distance: usize,
@@ -688,6 +689,12 @@ fn wait_stdin(matches: &getopts::Matches) -> bool {
     false
 }
 
+fn generated_date(cdb: &mut cdb::CDBWriter, dt: DateTime<Utc>) {
+    let _ = cdb.add("generated_on".as_bytes(), dt.format("%Y-%m-%d %H:%M:%S").to_string().as_bytes());
+    let _ = cdb.add("version".as_bytes(), "1".as_bytes());
+}
+
+
 fn make_cdb(path: String, config: &RefCell<Config>) {
     let reader = BufReader::new(std::io::stdin());
     let tmp_file = format!("{}.tmp", path);
@@ -893,7 +900,7 @@ fn make_thyme_cdb(location: String, config: &RefCell<Config>) {
         }
     }
 
-    let client = reqwest::blocking::Client::new();
+    let client = ua_client().expect("Cannot make user-agent");
     let tmp_file = format!("{}.tmp", &location);
     let cdb = cdb::CDBWriter::create(&tmp_file);
 
@@ -924,6 +931,8 @@ fn make_thyme_cdb(location: String, config: &RefCell<Config>) {
         &client,
     );
     process_asn(&mut cdb, data_used, &mut asn, &data, &mut asn_list);
+
+    generated_date(&mut cdb, Utc::now());
 
     if let Err(error) = cdb.finish() {
         eprintln!("Cannot write {}: {}", tmp_file, error);
