@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use getopts::Options;
 use regex::Regex;
 use ripcalc::*;
@@ -9,7 +10,9 @@ use std::io::prelude::*;
 use std::io::{BufRead, BufReader};
 use std::os::fd::AsFd;
 use std::str::FromStr;
-use chrono::{DateTime, Utc};
+use std::sync::Arc;
+use std::sync::Mutex;
+use std::{str, thread, time};
 
 fn default_cdb_format(
     distance: usize,
@@ -690,10 +693,12 @@ fn wait_stdin(matches: &getopts::Matches) -> bool {
 }
 
 fn generated_date(cdb: &mut cdb::CDBWriter, dt: DateTime<Utc>) {
-    let _ = cdb.add("generated_on".as_bytes(), dt.format("%Y-%m-%d %H:%M:%S").to_string().as_bytes());
+    let _ = cdb.add(
+        "generated_on".as_bytes(),
+        dt.format("%Y-%m-%d %H:%M:%S").to_string().as_bytes(),
+    );
     let _ = cdb.add("version".as_bytes(), "1".as_bytes());
 }
-
 
 fn make_cdb(path: String, config: &RefCell<Config>) {
     let reader = BufReader::new(std::io::stdin());
@@ -945,18 +950,7 @@ fn make_thyme_cdb(location: String, config: &RefCell<Config>) {
     }
 }
 
-fn main() {
-    let mut opts = Options::new();
-    let mut rows: Option<HashMap<Ip, NetRow>> = None;
-    let input_ip: Option<Addr> = None;
-    let mut input_mask: Option<u32> = None;
-    let mut input_base: Option<i32> = None;
-    let mut reverse = Reverse::None;
-    let mut inside: Option<bool> = None;
-    let args: Vec<String> = std::env::args().collect();
-    let mut ip_args: Vec<Ip> = vec![];
-    let config = RefCell::new(Config::new());
-
+fn set_opts(opts: &mut Options) {
     opts.parsing_style(getopts::ParsingStyle::FloatingFrees);
     opts.optflag("4", "ipv4", "treat inputs as ipv4 address");
     opts.optflag("6", "ipv6", "treat inputs as ipv6 address");
@@ -1026,6 +1020,7 @@ fn main() {
         "URL or PATH",
     );
 
+    opts.optflag("", "iptop", "show IP frequency like top");
     opts.optopt("m", "mask", "cidr mask", "CIDR");
     opts.optopt(
         "n",
@@ -1045,6 +1040,145 @@ fn main() {
     opts.optopt("s", "file", "lookup addresses from, - for stdin", "PATH");
 
     opts.optflag("v", "version", "print version");
+}
+
+fn sleep(millis: u64) {
+    let duration = time::Duration::from_millis(millis);
+    thread::sleep(duration);
+}
+
+fn read_loop(
+    config: &RefCell<Config>,
+    matches: &getopts::Matches,
+    inside: Option<bool>,
+    ip_args: &[Ip],
+) {
+    let ip_args: Vec<_> = ip_args.to_vec();
+
+    fn cidr_optional_mask(i: &Ip) -> String {
+        format!(
+            "{}{}",
+            i,
+            match i.address {
+                Addr::V4(_) => {
+                    if i.cidr != 32 {
+                        format!("/{}", i.cidr)
+                    } else {
+                        String::new()
+                    }
+                }
+                Addr::V6(_) => {
+                    if i.cidr != 128 {
+                        format!("/{}", i.cidr)
+                    } else {
+                        String::new()
+                    }
+                }
+            }
+        )
+    }
+
+    let mut reader = BufReader::new(std::io::stdin());
+    config
+        .borrow_mut()
+        .options
+        .insert("countseen".to_string(), "true".to_string());
+    config.borrow_mut().count = Some(HashMap::new());
+    let count: Arc<Mutex<Config>> = Mutex::new(config.borrow().clone()).into();
+
+    let count_lock = count.clone();
+
+    thread::spawn(move || {
+        let config = RefCell::new(count_lock.lock().unwrap().clone());
+
+        loop {
+            let mut m = String::new();
+            let _ = reader.read_line(&mut m);
+            let parts = m.trim().split(" ").collect::<Vec<&str>>();
+            {
+                let mut counter_lock = count_lock.lock().unwrap();
+                if let Some(ip) = parse_address_mask(parts[0], None, None, None, false, &config) {
+                    if !inside_filter(inside, &ip_args, &ip) {
+                        continue;
+                    }
+
+                    increment_seen_count(&mut counter_lock, ip);
+                }
+            }
+        }
+    });
+
+    loop {
+        print!("\x1b\x5b\x48\x1b\x5b\x32\x4a");
+        let _ = std::io::stdout().flush();
+        let hm;
+        {
+            hm = count.lock().unwrap().clone();
+            count.lock().unwrap().count = Some(HashMap::new());
+        }
+
+        if let Some(count) = hm.count {
+            let mut v: Vec<_> = count.iter().collect();
+            v.sort_by(|x, y| y.1.cmp(x.1));
+            let mut c = 0;
+            let mut total = 0;
+            for i in &v {
+                total += i.1;
+            }
+
+            for i in v {
+                let pct = (30.0 / total as f64) * (*i.1 as f64);
+                let cidr = cidr_optional_mask(i.0);
+
+                let fmt_str = matches.opt_str("format").unwrap_or("".to_string());
+
+                if let Some(m) = format_details(
+                    &FormatDetail {
+                        ip: Some(&i.0.clone()),
+                        line: None,
+                    },
+                    fmt_str,
+                    &None,
+                    None,
+                    Some(matches),
+                    config,
+                ) {
+                    let s = format!(
+                        "{:40} {:4} {empty:#<pct$}",
+                        m.clone() + &cidr,
+                        i.1,
+                        empty = "",
+                        pct = pct as usize
+                    );
+
+                    println!("{}", s);
+                    c += 1;
+                    if c > 20 {
+                        break;
+                    }
+                }
+            }
+            if c > 0 {
+                println!();
+            }
+        }
+        sleep(1000);
+    }
+}
+
+fn main() {
+    let mut opts = Options::new();
+    let mut rows: Option<HashMap<Ip, NetRow>> = None;
+    let input_ip: Option<Addr> = None;
+    let mut input_mask: Option<u32> = None;
+    let mut input_base: Option<i32> = None;
+    let mut reverse = Reverse::None;
+    let mut inside: Option<bool> = None;
+    let args: Vec<String> = std::env::args().collect();
+    let mut ip_args: Vec<Ip> = vec![];
+    let config = RefCell::new(Config::new());
+
+    set_opts(&mut opts);
 
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
@@ -1310,6 +1444,16 @@ fn main() {
                 ip_args.push(ip);
             }
         }
+    }
+
+    if matches.opt_present("iptop") {
+        config
+            .borrow_mut()
+            .options
+            .insert("iptop".to_string(), "true".to_string());
+
+        read_loop(&config, &matches, inside, &ip_args);
+        std::process::exit(0);
     }
 
     let stdin_ready = fd_ready(std::io::stdin().as_fd());

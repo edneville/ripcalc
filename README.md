@@ -289,6 +289,19 @@ Replace `[key]` with your abuseipdb API key.
 
 If only the country code or ISP is needed, then using a locally generated `cdb` is more efficient, see the CDB section above as that can be much faster if you don't require an external abuse score.
 
+# iptop
+
+Basic report of IP frequency, as read from `stdin`. Can be used with `--group` or `--inside` to show which networks appear most frequently.
+
+```
+10.4.0.0/14                              4800 ######
+10.8.0.0/14                              4800 ######
+10.16.0.0/14                             4800 ######
+10.12.0.0/14                             4800 ######
+10.0.0.0/14                              2834 ###
+10.20.0.0/14                             1200 #
+```
+
 # help
 
 ```
@@ -335,6 +348,7 @@ Options:
                         URL/path of ipv6 data
         --data-used-autnums URL or PATH
                         URL/path of ASN data
+        --iptop         show IP frequency like top
     -m, --mask CIDR     cidr mask
     -n, --networks CIDR instead of hosts, display number of subnets of this
                         size
