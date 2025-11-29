@@ -12,6 +12,7 @@
    file or URL
  * if format is specified filter should output that style
  * add a useragent string to http client
+ * basic top-like function
 
 0.2.7
 
