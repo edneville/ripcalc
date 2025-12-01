@@ -1020,7 +1020,8 @@ fn set_opts(opts: &mut Options) {
         "URL or PATH",
     );
 
-    opts.optflag("", "iptop", "show IP frequency like top");
+    opts.optflag("", "top", "show IP frequency like top");
+    opts.optopt("", "delay", "top update delay in seconds", "SECONDS");
     opts.optopt("m", "mask", "cidr mask", "CIDR");
     opts.optopt(
         "n",
@@ -1108,6 +1109,17 @@ fn read_loop(
         }
     });
 
+    let delay = {
+        let cfg = config.borrow();
+        let delay = cfg
+            .options
+            .get("delay")
+            .map_or("1", |v| v)
+            .parse::<u64>()
+            .unwrap_or(1);
+        delay * 1000
+    };
+
     loop {
         print!("\x1b\x5b\x48\x1b\x5b\x32\x4a");
         let _ = std::io::stdout().flush();
@@ -1127,25 +1139,50 @@ fn read_loop(
             }
 
             for i in v {
-                let pct = (30.0 / total as f64) * (*i.1 as f64);
+                let pct = (10.0 / total as f64) * (*i.1 as f64);
                 let cidr = cidr_optional_mask(i.0);
 
-                let fmt_str = matches.opt_str("format").unwrap_or("".to_string());
+                let fmt_str = match matches.opt_str("format") {
+                    Some(x) => x,
+                    None => {
+                        if matches.opt_str("cdb").is_some() {
+                            "%{ASNCC} %{ASNDESC}".to_string()
+                        } else {
+                            "".to_string()
+                        }
+                    }
+                };
 
                 if let Some(m) = format_details(
                     &FormatDetail {
                         ip: Some(&i.0.clone()),
                         line: None,
                     },
-                    fmt_str,
+                    fmt_str.clone(),
                     &None,
                     None,
                     Some(matches),
                     config,
                 ) {
+                    let asn_col = 47;
+                    let ip_len = 15;
+                    let m = &m[..if m.len() > asn_col { asn_col } else { m.len() }];
+                    let ipcol = if !fmt_str.is_empty() {
+                        let asn_col = if cidr.len() > ip_len {
+                            asn_col + ip_len - cidr.len()
+                        } else {
+                            asn_col
+                        };
+
+                        let m = &m[..if m.len() > asn_col { asn_col } else { m.len() }];
+                        format!("{:asn_col$} {:>ip_len$}", m, cidr)
+                    } else {
+                        format!("{:>width$}", cidr, width = asn_col + ip_len + 1)
+                    };
+
                     let s = format!(
-                        "{:40} {:4} {empty:#<pct$}",
-                        m.clone() + &cidr,
+                        "{:60} {:4} {empty:#<pct$}",
+                        ipcol,
                         i.1,
                         empty = "",
                         pct = pct as usize
@@ -1162,7 +1199,7 @@ fn read_loop(
                 println!();
             }
         }
-        sleep(1000);
+        sleep(delay);
     }
 }
 
@@ -1446,11 +1483,18 @@ fn main() {
         }
     }
 
-    if matches.opt_present("iptop") {
+    if matches.opt_present("delay") {
+        config.borrow_mut().options.insert(
+            "delay".to_string(),
+            matches.opt_str("delay").unwrap().to_string(),
+        );
+    }
+
+    if matches.opt_present("top") {
         config
             .borrow_mut()
             .options
-            .insert("iptop".to_string(), "true".to_string());
+            .insert("top".to_string(), "true".to_string());
 
         read_loop(&config, &matches, inside, &ip_args);
         std::process::exit(0);
