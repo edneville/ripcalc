@@ -1145,11 +1145,20 @@ fn read_loop(
                 let fmt_str = match matches.opt_str("format") {
                     Some(x) => x,
                     None => {
+                        let mut parts = vec![];
                         if matches.opt_str("cdb").is_some() {
-                            "%{ASNCC} %{ASNDESC}".to_string()
-                        } else {
-                            "".to_string()
+                            parts.push("%{ASNCC}".to_string());
                         }
+
+                        if matches.opt_str("abuseipdb").is_some() {
+                            parts.push("%{abuseipdb_abuseConfidenceScore}".to_string());
+                        }
+
+                        if matches.opt_str("cdb").is_some() {
+                            parts.push("%{ASNDESC} ".to_string());
+                        }
+
+                        parts.join(" ")
                     }
                 };
 

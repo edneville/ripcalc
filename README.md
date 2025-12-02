@@ -305,7 +305,7 @@ ripcalc --allowemptyrow --top --inside 10.0.0.0/8 --group 24 --delay 1
 
 ```
 
-A cdb IP database can be used in conjunction:
+A cdb IP database can be used in conjunction, which defaults to `%{ASNCC} %{ASNDESC}`:
 
 ```
 ripcalc --top --inside 10.0.0.0/8 --group 14 --delay 1 --allowemptyrow --cdb ipdb.cdb
@@ -316,6 +316,8 @@ XX PRIVATE                                         10.16.0.0/14 3200 ##
 XX PRIVATE                                          10.0.0.0/14 2400 #
 XX PRIVATE                                         10.20.0.0/14  800 
 ```
+
+If you want to show the abuse score from AbuseIPDB at the same time you can use a format string or allow the default to be used which shows the abuse score.
 
 # help
 
