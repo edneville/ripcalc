@@ -41,6 +41,8 @@ ripcalc - a tool for network addresses
 
 **ripcalc -d/--divide [CIDR] 127.0.0.1/24**
 
+**ripcalc --top [--delay SECONDS]**
+
 **ripcalc --makecdb [PATH]**
 
 **ripcalc --makethymecdb [PATH] [--data-raw-table PATH] [--ipv6-raw-table PATH] [--data-used-autnums PATH]**
@@ -76,6 +78,8 @@ When `--encapsulating` is used the containing network will be returned, use with
 The number (**%D**) of subnets can be printed when using the `--group` argument with the **%N** formatters. The argument should be the CIDR mask, see below for example.
 
 If **base** is a negative number, input addresses are treated as though the input is a signed integer in **base**.
+
+If `--top` is given a frequency of IP addresses will be shown and updated every `--delay SECONDS` (defaults to 1). This can be used with `--cdb` and `--abuseipdb`.
 
 If `--quiet` is specified then parsing error messages will be suppressed.
 

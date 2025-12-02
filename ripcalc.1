@@ -35,6 +35,8 @@ ripcalc \- a tool for network addresses
 .PP
 \f[B]ripcalc \-d/\-\-divide [CIDR] 127.0.0.1/24\f[R]
 .PP
+\f[B]ripcalc \[en]top [\-\-delay SECONDS]\f[R]
+.PP
 \f[B]ripcalc \[en]makecdb [PATH]\f[R]
 .PP
 \f[B]ripcalc \[en]makethymecdb [PATH] [\-\-data\-raw\-table PATH]
@@ -90,6 +92,10 @@ The argument should be the CIDR mask, see below for example.
 .PP
 If \f[B]base\f[R] is a negative number, input addresses are treated as
 though the input is a signed integer in \f[B]base\f[R].
+.PP
+If \f[CR]\-\-top\f[R] is given a frequency of IP addresses will be shown
+and updated every \f[CR]\-\-delay SECONDS\f[R] (defaults to 1).
+This can be used with \f[CR]\-\-cdb\f[R] and \f[CR]\-\-abuseipdb\f[R].
 .PP
 If \f[CR]\-\-quiet\f[R] is specified then parsing error messages will be
 suppressed.
