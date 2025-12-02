@@ -1756,19 +1756,31 @@ pub fn get_abuseipdb_details(
     ip: &Ip,
     key: &str,
 ) -> HashMap<String, String> {
-
     if config.borrow().abuse_cache.is_none() {
         {
-        config.borrow_mut().abuse_cache = Some(HashMap::new());
+            config.borrow_mut().abuse_cache = Some(HashMap::new());
         }
     }
 
     let body = {
         // let abuse_cache = &config.borrow().abuse_cache;
-        if config.borrow().abuse_cache.as_ref().unwrap().get(ip).is_some() {
-            config.borrow().abuse_cache.as_ref().unwrap().get(ip).unwrap().to_string()
-        }
-        else {
+        if config
+            .borrow()
+            .abuse_cache
+            .as_ref()
+            .unwrap()
+            .get(ip)
+            .is_some()
+        {
+            config
+                .borrow()
+                .abuse_cache
+                .as_ref()
+                .unwrap()
+                .get(ip)
+                .unwrap()
+                .to_string()
+        } else {
             let mut headers = HeaderMap::new();
             headers.insert("Key", key.parse().unwrap());
 
@@ -1787,7 +1799,12 @@ pub fn get_abuseipdb_details(
             }
 
             let resp = response.unwrap().text().unwrap();
-            config.borrow_mut().abuse_cache.as_mut().unwrap().insert(ip.clone(), resp.clone());
+            config
+                .borrow_mut()
+                .abuse_cache
+                .as_mut()
+                .unwrap()
+                .insert(ip.clone(), resp.clone());
             resp
         }
     };
