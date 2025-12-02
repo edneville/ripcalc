@@ -246,6 +246,13 @@ fn print_version() {
     println!("{}", &banner());
 }
 
+fn base_parse(base: Option<&String>) -> Option<i32> {
+    match base {
+        Some(x) => i32::from_str(x).ok(),
+        None => None,
+    }
+}
+
 fn process_csv(
     mut reader: csv::Reader<File>,
     field_name: String,
@@ -1091,6 +1098,7 @@ fn read_loop(
 
     thread::spawn(move || {
         let config = RefCell::new(count_lock.lock().unwrap().clone());
+        let base = base_parse(config.borrow().options.get("base"));
 
         loop {
             let mut m = String::new();
@@ -1098,7 +1106,7 @@ fn read_loop(
             let parts = m.trim().split(" ").collect::<Vec<&str>>();
             {
                 let mut counter_lock = count_lock.lock().unwrap();
-                if let Some(ip) = parse_address_mask(parts[0], None, None, None, false, &config) {
+                if let Some(ip) = parse_address_mask(parts[0], None, None, base, false, &config) {
                     if !inside_filter(inside, &ip_args, &ip) {
                         continue;
                     }
@@ -1313,13 +1321,17 @@ fn main() {
     }
 
     if matches.opt_present("base") {
-        input_base = match i32::from_str(&matches.opt_str("base").unwrap()) {
-            Ok(x) => Some(x),
-            Err(x) => {
-                println!("Cannot convert to an integer base: {}", x);
-                std::process::exit(1);
-            }
-        };
+        let param = matches.opt_str("base");
+        input_base = base_parse(param.as_ref());
+        if let Some(input) = input_base {
+            config
+                .borrow_mut()
+                .options
+                .insert("base".to_string(), input.to_string());
+        } else {
+            println!("Cannot convert to an integer base: {}", param.unwrap());
+            std::process::exit(1);
+        }
     }
 
     if matches.opt_present("csv") {
