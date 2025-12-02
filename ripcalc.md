@@ -205,5 +205,5 @@ CDB files can be used for address lookup. `--cdb` should hold a path to a valid 
 
 CDB files can be created with `--makecdb`, which reads comma separated input, the first value is a CIDR network, followed by `,` joined key=value pairs. See `cdb_maker.pl` for an example script which can be used to create such files.
 
-The option `--makethymecdb` can be used to download an IP database from `https://thyme.apnic.net/`.
+The option `--makethymecdb` can be used to download an IP database from `https://thyme.apnic.net/`. Alternatively, if the argument does not start with http, it is treated as file to read instead of download.
 
