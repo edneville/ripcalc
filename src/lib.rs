@@ -46,6 +46,7 @@ pub struct Config {
     pub options: HashMap<String, String>,
     pub cdb: Option<Arc<CDB>>,
     pub count: Option<HashMap<Ip, usize>>,
+    pub abuse_cache: Option<HashMap<Ip, String>>,
 }
 
 #[derive(Debug, Clone)]
@@ -107,6 +108,7 @@ impl Config {
             options: HashMap::new(),
             cdb: None,
             count: None,
+            abuse_cache: None,
         }
     }
 }
@@ -129,6 +131,7 @@ impl fmt::Debug for Config {
             net_used: &'a HashMap<Ip, HashMap<Ip, bool>>,
             options: &'a HashMap<String, String>,
             count: &'a Option<HashMap<Ip, usize>>,
+            abuse_cache: &'a Option<HashMap<Ip, String>>,
         }
 
         let Self {
@@ -140,6 +143,7 @@ impl fmt::Debug for Config {
             options,
             cdb: _,
             count,
+            abuse_cache,
         } = self;
 
         fmt::Debug::fmt(
@@ -151,6 +155,7 @@ impl fmt::Debug for Config {
                 net_used,
                 options,
                 count,
+                abuse_cache,
             },
             f,
         )
@@ -1751,31 +1756,47 @@ pub fn get_abuseipdb_details(
     ip: &Ip,
     key: &str,
 ) -> HashMap<String, String> {
-    let mut headers = HeaderMap::new();
-    headers.insert("Key", key.parse().unwrap());
 
-    let client = ua_client().expect("Cannot make user-agent");
-    let response = client
-        .get(format!(
-            "https://api.abuseipdb.com/api/v2/check?ipAddress={}&maxAgeInDays={}",
-            ip, 30
-        ))
-        .header("Key".to_string(), key)
-        .send();
-
-    if response.as_ref().is_err() {
-        eprintln!("Could not communicate with abuseipdb.com");
-        std::process::exit(1);
+    if config.borrow().abuse_cache.is_none() {
+        {
+        config.borrow_mut().abuse_cache = Some(HashMap::new());
+        }
     }
 
-    let status = response.as_ref().unwrap().status();
-    let body = response.unwrap().text().unwrap();
+    let body = {
+        // let abuse_cache = &config.borrow().abuse_cache;
+        if config.borrow().abuse_cache.as_ref().unwrap().get(ip).is_some() {
+            config.borrow().abuse_cache.as_ref().unwrap().get(ip).unwrap().to_string()
+        }
+        else {
+            let mut headers = HeaderMap::new();
+            headers.insert("Key", key.parse().unwrap());
+
+            let client = ua_client().expect("Cannot make user-agent");
+            let response = client
+                .get(format!(
+                    "https://api.abuseipdb.com/api/v2/check?ipAddress={}&maxAgeInDays={}",
+                    ip, 30
+                ))
+                .header("Key".to_string(), key)
+                .send();
+
+            if response.as_ref().is_err() {
+                eprintln!("Could not communicate with abuseipdb.com");
+                std::process::exit(1);
+            }
+
+            let resp = response.unwrap().text().unwrap();
+            config.borrow_mut().abuse_cache.as_mut().unwrap().insert(ip.clone(), resp.clone());
+            resp
+        }
+    };
+
     let h: Value = serde_json::from_str(&body).unwrap();
 
     let mut config = config.borrow_mut();
     if h["data"].as_object().is_none() {
         eprintln!("Error communicating with abuseipdb.com");
-        eprintln!("{}", status);
         std::process::exit(1);
     }
 
