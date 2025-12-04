@@ -1547,8 +1547,8 @@ fn main() {
         for arg in &free_arg {
             let ip = parse_address_mask(
                 arg,
-                input_mask,
-                input_mask,
+                None,
+                None,
                 input_base,
                 matches!(reverse, Reverse::Both | Reverse::Input),
                 &config,
