@@ -13,6 +13,7 @@
  * if format is specified filter should output that style
  * add a useragent string to http client
  * basic top-like function
+ * --group4 and --group6 to override --group respectively
 
 0.2.7
 
