@@ -627,7 +627,11 @@ pub fn smallest_group_network(networks: &HashMap<Ip, bool>) -> Option<Ip> {
     Some(ip)
 }
 
-pub fn smallest_group_network_limited(networks: &HashMap<Ip, bool>, cidr: u32) -> Option<Vec<Ip>> {
+pub fn smallest_group_network_limited(
+    networks: &HashMap<Ip, bool>,
+    cidr4: u32,
+    cidr6: u32,
+) -> Option<Vec<Ip>> {
     if networks.is_empty() {
         return None;
     }
@@ -635,8 +639,15 @@ pub fn smallest_group_network_limited(networks: &HashMap<Ip, bool>, cidr: u32) -
     let mut net_list: HashMap<Ip, Ip> = HashMap::new();
 
     for key in networks.keys() {
+        let cidr;
         let mut bucket_ip = key.clone();
-        bucket_ip.cidr = cidr;
+        bucket_ip.cidr = if let Addr::V4(_) = key.address {
+            cidr = cidr4;
+            cidr4
+        } else {
+            cidr = cidr6;
+            cidr6
+        };
 
         let mut key_copy = key.clone();
 
@@ -1706,16 +1717,55 @@ pub fn inside_filter(inside: Option<bool>, ip_args: &[Ip], ip: &Ip) -> bool {
     false
 }
 
-pub fn increment_seen_count(config: &mut Config, i: Ip) {
+pub fn group_mask(config: &Config, i: &Ip) -> u32 {
+    match i.address {
+        Addr::V4(_) => {
+            if config_option_true(config, "group4".to_string()) {
+                return config
+                    .options
+                    .get("group4")
+                    .expect("cannot read group4")
+                    .parse::<u32>()
+                    .unwrap();
+            }
+        }
+        Addr::V6(_) => {
+            if config_option_true(config, "group6".to_string()) {
+                return config
+                    .options
+                    .get("group6")
+                    .expect("cannot read group6")
+                    .parse::<u32>()
+                    .unwrap();
+            }
+        }
+    }
+
+    if config_option_true(config, "group".to_string()) {
+        return config
+            .options
+            .get("group")
+            .expect("cannot read group")
+            .parse::<u32>()
+            .unwrap();
+    }
+
+    128
+}
+
+pub fn config_cidr_grouping(config: &Config) -> bool {
+    config_option_true(config, "group".to_string())
+        || config_option_true(config, "group4".to_string())
+        || config_option_true(config, "group6".to_string())
+}
+
+pub fn increment_seen_count(config: &mut Config, ip: Ip) {
     if config_option_true(config, "countseen".to_string()) && config.count.is_some() {
+        let cidr = group_mask(config, &ip);
+
         let net_mask = network(&Ip {
-            address: i.address.clone(),
-            cidr: config
-                .options
-                .get("group")
-                .unwrap_or(&"128".to_string())
-                .parse()
-                .unwrap(),
+            address: ip.address.clone(),
+            cidr,
         });
 
         let count = config.count.as_ref().unwrap().get(&net_mask).unwrap_or(&0) + 1;

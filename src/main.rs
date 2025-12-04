@@ -406,20 +406,26 @@ fn process_group_encapsulation(
     rows: &Option<HashMap<Ip, NetRow>>,
     config: &RefCell<Config>,
 ) {
-    if config_option_true(&config.borrow(), "group".to_string()) {
-        let network_size: u32 = config
-            .borrow()
-            .options
-            .get("group")
-            .unwrap()
-            .trim()
-            .parse()
-            .unwrap();
-        match smallest_group_network_limited(&used, network_size) {
+    if config_cidr_grouping(&config.borrow()) {
+        let group4 = group_mask(
+            &config.borrow(),
+            &parse_address_mask("127.0.0.1", None, None, None, false, config).unwrap(),
+        );
+        let group6 = group_mask(
+            &config.borrow(),
+            &parse_address_mask("::1", None, None, None, false, config).unwrap(),
+        );
+
+        match smallest_group_network_limited(&used, group4, group6) {
             Some(mut x) => {
                 x.sort_by(|a, b| a.partial_cmp(b).unwrap());
                 for y in x {
                     {
+                        let network_size = match y.address {
+                            Addr::V4(_) => group4,
+                            Addr::V6(_) => group6,
+                        };
+
                         let net_mask = network(&Ip {
                             address: y.address.clone(),
                             cidr: network_size,
@@ -630,19 +636,12 @@ fn process_input_file(
         let mut used: HashMap<Ip, bool> = HashMap::new();
         let mut network_size: u32 = 0;
 
-        if config_option_true(&config.borrow(), "group".to_string()) {
-            network_size = config
-                .borrow()
-                .options
-                .get("group")
-                .unwrap()
-                .trim()
-                .parse()
-                .unwrap();
-        }
-
         for a in find_ips(&mut reader, input_base, reverse, config) {
             for i in a {
+                if config_cidr_grouping(&config.borrow()) {
+                    network_size = group_mask(&config.borrow(), &i);
+                }
+
                 process_encapsulated_input(inside, ip_args, &i, network_size, &mut used, config);
             }
         }
@@ -1001,6 +1000,19 @@ fn set_opts(opts: &mut Options) {
         "maximum network group size for encapsulation",
         "CIDR",
     );
+    opts.optopt(
+        "",
+        "group4",
+        "v4 specific group, overrides group in top mode",
+        "CIDR",
+    );
+    opts.optopt(
+        "",
+        "group6",
+        "v6 specific group, overrides group in top mode",
+        "CIDR",
+    );
+
     opts.optflag("h", "help", "display help");
 
     opts.optopt("i", "field", "csv/db field", "FIELD");
@@ -1220,6 +1232,68 @@ fn read_loop(
     }
 }
 
+fn set_group_options(config: &RefCell<Config>, matches: &getopts::Matches) {
+    if matches.opt_present("group") {
+        let n: u32 = match matches.opt_str("group").unwrap().trim().parse() {
+            Ok(x) => {
+                if x > 128 {
+                    eprintln!("Cannot use a group greater than 128");
+                    std::process::exit(1);
+                }
+                x
+            }
+            Err(x) => {
+                eprintln!("Cannot convert {} to number", x);
+                std::process::exit(1);
+            }
+        };
+        config
+            .borrow_mut()
+            .options
+            .insert("group".to_string(), n.to_string());
+    }
+
+    if matches.opt_present("group4") {
+        let n: u32 = match matches.opt_str("group4").unwrap().trim().parse() {
+            Ok(x) => {
+                if x > 32 {
+                    eprintln!("Cannot use a group greater than 32");
+                    std::process::exit(1);
+                }
+                x
+            }
+            Err(x) => {
+                eprintln!("Cannot convert {} to number", x);
+                std::process::exit(1);
+            }
+        };
+        config
+            .borrow_mut()
+            .options
+            .insert("group4".to_string(), n.to_string());
+    }
+
+    if matches.opt_present("group6") {
+        let n: u32 = match matches.opt_str("group6").unwrap().trim().parse() {
+            Ok(x) => {
+                if x > 128 {
+                    eprintln!("Cannot use a group greater than 128");
+                    std::process::exit(1);
+                }
+                x
+            }
+            Err(x) => {
+                eprintln!("Cannot convert {} to number", x);
+                std::process::exit(1);
+            }
+        };
+        config
+            .borrow_mut()
+            .options
+            .insert("group6".to_string(), n.to_string());
+    }
+}
+
 fn main() {
     let mut opts = Options::new();
     let mut rows: Option<HashMap<Ip, NetRow>> = None;
@@ -1272,25 +1346,7 @@ fn main() {
             .insert("quiet".to_string(), "true".to_string());
     }
 
-    if matches.opt_present("group") {
-        let n: u32 = match matches.opt_str("group").unwrap().trim().parse() {
-            Ok(x) => {
-                if x > 128 {
-                    eprintln!("Cannot use a group greater than 128");
-                    std::process::exit(1);
-                }
-                x
-            }
-            Err(x) => {
-                eprintln!("Cannot convert {} to number", x);
-                std::process::exit(1);
-            }
-        };
-        config
-            .borrow_mut()
-            .options
-            .insert("group".to_string(), n.to_string());
-    }
+    set_group_options(&config, &matches);
 
     if matches.opt_present("networks") {
         let _: u32 = match matches.opt_str("networks").unwrap().trim().parse() {

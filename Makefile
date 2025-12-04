@@ -86,6 +86,8 @@ bintest:
 	for i in `seq 1 255`; do printf "192.168.1.$$i\n"; done | $(RELEASE) --countseen --group 24 --format '%C %a/%c\n' | grep -Fx '255 192.168.1.0/24' >/dev/null
 	printf "127.0.0.1 foo 192.168.1.1 bar 10.10.10.10\n" | $(RELEASE) --filterany 10.0.0.0/8 | grep -Fx '127.0.0.1 foo 192.168.1.1 bar 10.10.10.10' >/dev/null
 	printf "127.0.0.1 foo 192.168.1.1 bar 10.10.10.10\n" | $(RELEASE) --filterany 10.20.30.0/24 | wc -l | tr -d '[:blank:]' | grep -Fx 0 >/dev/null
+	$(RELEASE) 2001:DB8:2::/128 2001:DB8:1::/128 --encapsulating --format cidr | grep 2001:db8::/46 >/dev/null
+	$(RELEASE) 2001:DB8:2::/128 2001:DB8:1::/128 --encapsulating --format cidr --group6 64 | grep 2001:db8:[12]::/128 -c | grep '^2$$' >/dev/null
 
 install: all
 	command -v please && please install -m 0755 -s $(RELEASE) /usr/local/bin || sudo install -m 0755 -s $(RELEASE) /usr/local/bin 

@@ -997,7 +997,7 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
     #[test]
     fn test_smallest_network_limited() {
         let empty: HashMap<Ip, bool> = HashMap::new();
-        assert_eq!(smallest_group_network_limited(&empty, 32), None);
+        assert_eq!(smallest_group_network_limited(&empty, 32, 64), None);
     }
 
     #[test]
@@ -1017,7 +1017,7 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             }
         }
 
-        let mut resp = smallest_group_network_limited(&net_list, 22).unwrap();
+        let mut resp = smallest_group_network_limited(&net_list, 22, 48).unwrap();
         resp.sort_by(|a, b| a.partial_cmp(b).unwrap());
         assert_eq!(
             resp,
@@ -1045,7 +1045,7 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             }
         }
 
-        let mut resp = smallest_group_network_limited(&net_list, 22).unwrap();
+        let mut resp = smallest_group_network_limited(&net_list, 22, 32).unwrap();
         resp.sort_by(|a, b| a.partial_cmp(b).unwrap());
         assert_eq!(
             resp,
@@ -1087,7 +1087,7 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             }
         }
 
-        let mut resp = smallest_group_network_limited(&net_list, 24).unwrap();
+        let mut resp = smallest_group_network_limited(&net_list, 24, 48).unwrap();
         resp.sort_by(|a, b| a.partial_cmp(b).unwrap());
         assert_eq!(
             resp,
