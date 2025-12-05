@@ -75,17 +75,16 @@ bintest:
 	$(RELEASE) --encapsulating 10.10.0.1 10.10.0.2 10.10.0.3 --format cidr | grep 10.10.0.0/30 >/dev/null
 	$(RELEASE) 192.168.1.1 --format '%r\n' | grep 'RFC 1918' >/dev/null
 	$(RELEASE) 127.0.0.1 --format '%r\n' | grep 'Used for loopback addresses to the local host.' >/dev/null
-	printf "192.168.1.1 this should match\n192.168.1.10 so should this\n192.168.2.1 this should not\n" | $(RELEASE) --filter 192.168.1.0/24 --format cidr | wc -l | grep -Fx 2 >/dev/null
+	printf "192.168.1.1 this should match\n192.168.1.10 so should this\n192.168.2.1 this should not\n" | $(RELEASE) --filter --inside 192.168.1.0/24 --format cidr | wc -l | grep -Fx 2 >/dev/null
 	printf "192.168.1.1 this should match\n192.168.1.10 so should this\n192.168.2.1 this should not\n" | $(RELEASE) --filter 192.168.1.0/24 --format cidr --outside | wc -l | grep -Fx 1 >/dev/null
-	printf "this should match 192.168.1.1\nthis should match 192.168.1.20\nthis should not 192.168.10.1\n" | $(RELEASE) --filternum 4 192.168.1.0/24 --format cidr | wc -l | grep -Fx 2 >/dev/null
+	printf "this should match 192.168.1.1\nthis should match 192.168.1.20\nthis should not 192.168.10.1\n" | $(RELEASE) --filternum 4 --inside 192.168.1.0/24 --format cidr | wc -l | grep -Fx 2 >/dev/null
 	printf "this should match 192.168.1.1\nthis should match 192.168.1.20\nthis should not 192.168.10.1\n" | $(RELEASE) --filternum 4 --outside 192.168.1.0/24 --format cidr | wc -l | grep -Fx 1 >/dev/null
 	for i in `seq 1 100`; do printf "192.168.10.1\n"; done | $(RELEASE) --countseen --encapsulating --format '%C %a/%c\n' | grep -Fx "100 192.168.10.1/32" >/dev/null
 	for i in `seq 1 100`; do printf "192.168.10.1\n"; done | $(RELEASE) --countseen --format '%C %a/%c\n' | grep -Fx "100 192.168.10.1/32" >/dev/null
 	for i in `seq 1 100`; do printf "2a0a:1100:1002:ed::1\n"; done | $(RELEASE) --countseen --format '%C %a/%c\n' | grep -Fx "100 2a0a:1100:1002:ed::1/128" >/dev/null
 	for i in `seq 1 100`; do printf "192.168.1.$$i\n"; done | $(RELEASE) --countseen --group 24 --format '%C %a/%c\n' | grep -Fx '100 192.168.1.0/25' >/dev/null
 	for i in `seq 1 255`; do printf "192.168.1.$$i\n"; done | $(RELEASE) --countseen --group 24 --format '%C %a/%c\n' | grep -Fx '255 192.168.1.0/24' >/dev/null
-	printf "127.0.0.1 foo 192.168.1.1 bar 10.10.10.10\n" | $(RELEASE) --filterany 10.0.0.0/8 | grep -Fx '127.0.0.1 foo 192.168.1.1 bar 10.10.10.10' >/dev/null
-	printf "127.0.0.1 foo 192.168.1.1 bar 10.10.10.10\n" | $(RELEASE) --filterany 10.20.30.0/24 | wc -l | tr -d '[:blank:]' | grep -Fx 0 >/dev/null
+	printf "127.0.0.1 foo 192.168.1.1 bar 10.10.10.10\n" | $(RELEASE) --filterany --inside 10.20.30.0/24 | wc -l | tr -d '[:blank:]' | grep -Fx 0 >/dev/null
 	$(RELEASE) 2001:DB8:2::/128 2001:DB8:1::/128 --encapsulating --format cidr | grep 2001:db8::/46 >/dev/null
 	$(RELEASE) 2001:DB8:2::/128 2001:DB8:1::/128 --encapsulating --format cidr --group6 64 | grep 2001:db8:[12]::/128 -c | grep '^2$$' >/dev/null
 

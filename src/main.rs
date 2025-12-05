@@ -480,15 +480,10 @@ fn process_group_encapsulation(
     }
 }
 
-fn process_input_filter(
-    reader: &mut Box<dyn BufRead>,
-    ip_args: &[Ip],
-    inside: Option<bool>,
-    config: &RefCell<Config>,
-    matches: &getopts::Matches,
-    rows: &Option<HashMap<Ip, NetRow>>,
-) {
-    let filterany = config_option_true(&config.borrow(), "filterany".to_string());
+fn filter_pos(config: &RefCell<Config>) -> Option<u32> {
+    if config_option_true(&config.borrow(), "filterany".to_string()) {
+        return None;
+    }
 
     let position: u32 = if config_option_true(&config.borrow(), "filter".to_string()) {
         match config
@@ -497,14 +492,14 @@ fn process_input_filter(
             .get("filter")
             .unwrap()
             .trim()
-            .parse()
+            .parse::<u32>()
         {
             Ok(x) => {
                 if x < 1 {
                     eprintln!("filternum {} should be 1 or more", x);
                     std::process::exit(1);
                 }
-                x
+                x - 1
             }
             Err(x) => {
                 eprintln!("Cannot convert {} to number", x);
@@ -515,50 +510,70 @@ fn process_input_filter(
         0
     };
 
+    Some(position)
+}
+
+fn line_filter(
+    config: &RefCell<Config>,
+    position: Option<u32>,
+    line: &str,
+    base: Option<i32>,
+) -> Option<Ip> {
+    let parts: Vec<&str> = line.split(' ').collect();
+
+    if parts.is_empty() {
+        return None;
+    }
+
+    if let Some(x) = position {
+        if parts.len() < x as usize {
+            return None;
+        }
+
+        if let Some(ip) =
+            parse_address_mask(parts[x as usize].trim(), None, None, base, false, config)
+        {
+            return Some(ip);
+        }
+    }
+
+    if position.is_none() {
+        for p in &parts {
+            let p = p.trim();
+
+            if p.is_empty() {
+                continue;
+            }
+
+            if let Some(ip) = parse_address_mask(p, None, None, base, false, config) {
+                return Some(ip);
+            }
+        }
+    }
+
+    None
+}
+
+fn process_input_filter(
+    reader: &mut Box<dyn BufRead>,
+    ip_args: &[Ip],
+    inside: Option<bool>,
+    config: &RefCell<Config>,
+    matches: &getopts::Matches,
+    rows: &Option<HashMap<Ip, NetRow>>,
+) {
+    let base = base_parse(config.borrow().options.get("base"));
+    let position = filter_pos(config);
+
     for line in reader.lines() {
         match line {
             Ok(line) => {
-                let parts: Vec<&str> = line.split(' ').collect();
-
-                if parts.is_empty() || parts.len() < position as usize {
-                    continue;
-                }
-
-                let mut found: Option<Ip> = None;
-
-                if filterany {
-                    for p in &parts {
-                        let p = p.trim();
-
-                        if p.is_empty() {
-                            continue;
-                        }
-
-                        if let Some(ip) = parse_address_mask(p, None, None, None, false, config) {
-                            if inside_filter(Some(inside.unwrap_or(true)), ip_args, &ip) {
-                                found = Some(ip);
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                if !filterany {
-                    if let Some(ip) = parse_address_mask(
-                        parts[(position - 1) as usize],
-                        None,
-                        None,
-                        None,
-                        false,
-                        config,
-                    ) {
-                        if inside_filter(Some(inside.unwrap_or(true)), ip_args, &ip) {
-                            found = Some(ip);
-                        }
-                    }
-                }
+                let found = line_filter(config, position, &line, base);
 
                 if let Some(found) = found {
+                    if !inside_filter(inside, ip_args, &found) {
+                        continue;
+                    }
                     if matches.opt_present("format") {
                         let n = FormatDetail::new(Some(&found), Some(&line));
                         print_details(&n, matches, rows, None, config);
@@ -1111,20 +1126,19 @@ fn read_loop(
     thread::spawn(move || {
         let config = RefCell::new(count_lock.lock().unwrap().clone());
         let base = base_parse(config.borrow().options.get("base"));
+        let position = filter_pos(&config);
 
         loop {
             let mut m = String::new();
             let _ = reader.read_line(&mut m);
-            let parts = m.trim().split(" ").collect::<Vec<&str>>();
-            {
-                let mut counter_lock = count_lock.lock().unwrap();
-                if let Some(ip) = parse_address_mask(parts[0], None, None, base, false, &config) {
-                    if !inside_filter(inside, &ip_args, &ip) {
-                        continue;
-                    }
-
-                    increment_seen_count(&mut counter_lock, ip);
+            let found = line_filter(&config, position, &m, base);
+            if let Some(ip) = found {
+                if !inside_filter(inside, &ip_args, &ip) {
+                    continue;
                 }
+
+                let mut counter_lock = count_lock.lock().unwrap();
+                increment_seen_count(&mut counter_lock, ip);
             }
         }
     });
@@ -1532,14 +1546,6 @@ fn main() {
             address: input_ip,
             cidr: input_mask.unwrap(),
         });
-    }
-
-    if !matches.opt_present("inside")
-        && !matches.opt_present("outside")
-        && config_option_true(&config.borrow(), "encapsulating".to_string())
-        && !matches.opt_present("mask")
-    {
-        input_mask = Some(32);
     }
 
     let free_arg = matches.free.clone();
