@@ -1879,3 +1879,44 @@ pub fn get_abuseipdb_details(
 
     map
 }
+
+pub fn line_filter(
+    config: &RefCell<Config>,
+    position: Option<u32>,
+    line: &str,
+    base: Option<i32>,
+) -> Option<Ip> {
+    let parts: Vec<&str> = line.split(' ').collect();
+
+    if parts.is_empty() {
+        return None;
+    }
+
+    if let Some(x) = position {
+        if parts.len() < x as usize {
+            return None;
+        }
+
+        if let Some(ip) =
+            parse_address_mask(parts[x as usize].trim(), None, None, base, false, config)
+        {
+            return Some(ip);
+        }
+    }
+
+    if position.is_none() {
+        for p in &parts {
+            let p = p.trim();
+
+            if p.is_empty() {
+                continue;
+            }
+
+            if let Some(ip) = parse_address_mask(p, None, None, base, false, config) {
+                return Some(ip);
+            }
+        }
+    }
+
+    None
+}

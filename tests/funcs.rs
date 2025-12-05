@@ -1754,4 +1754,38 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             Some("Reserved for limited broadcast destination address.".to_string())
         );
     }
+
+    #[test]
+    fn test_line_filter_filternum() {
+        let config = RefCell::new(default_config());
+
+        assert_eq!(
+            line_filter(&config, Some(1), "foo 192.168.1.1", None),
+            Some(Ip {
+                address: Addr::V4(Ipv4Addr::from_str("192.168.1.1").unwrap()),
+                cidr: 32
+            }),
+        );
+
+        let config = RefCell::new(default_config());
+
+        assert_eq!(line_filter(&config, Some(0), "foo 192.168.1.1", None), None,);
+    }
+
+    #[test]
+    fn test_line_filter_filterany() {
+        let config = RefCell::new(default_config());
+        config
+            .borrow_mut()
+            .options
+            .insert("filterany".to_string(), "".to_string());
+
+        assert_eq!(
+            line_filter(&config, None, "foo 192.168.1.1", None),
+            Some(Ip {
+                address: Addr::V4(Ipv4Addr::from_str("192.168.1.1").unwrap()),
+                cidr: 32
+            }),
+        );
+    }
 }
