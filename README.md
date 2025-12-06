@@ -291,7 +291,7 @@ If only the country code or ISP is needed, then using a locally generated `cdb` 
 
 # top
 
-Basic report of IP frequency, as read from `stdin`. Can be used with `--group` or `--inside` to show which networks appear most frequently.
+Basic report of IP frequency, as read from `stdin`. Can be used with `--group`, `--group[46]`, `--filter`, `--filterany`, `--filternum` or `--inside` to show which networks appear most frequently.
 
 ```
 ripcalc --allowemptyrow --top --inside 10.0.0.0/8 --group 24 --delay 1
@@ -318,6 +318,15 @@ XX PRIVATE                                         10.20.0.0/14  800
 ```
 
 If you want to show the abuse score from AbuseIPDB at the same time you can use a format string or allow the default to be used which shows the abuse score.
+
+`--iterations [num]` can set the number of display iterations. If you wish to run a number of displays for an email report, use with `--noclear`:
+
+```
+( printf 'To: you\nFrom: me\nSubject: IP report\n\n';
+tail -Fq /var/log/apache2/*log
+| ripcalc --top --cdb ipdb.cdb --group4 24 --group6 64 --allowemptyrow --iterations 3 --noclear )
+| /usr/sbin/sendmail -fme@example you@example
+```
 
 # help
 
@@ -350,6 +359,8 @@ Options:
         --filternum NUMBER
                         change position NUMBER for IP filter, enables --filter
         --group CIDR    maximum network group size for encapsulation
+        --group4 CIDR   v4 specific group, overrides group in top mode
+        --group6 CIDR   v6 specific group, overrides group in top mode
     -h, --help          display help
     -i, --field FIELD   csv/db field
     -l, --list          list all addresses in network
@@ -367,6 +378,9 @@ Options:
                         URL/path of ASN data
         --top           show IP frequency like top
         --delay SECONDS top update delay in seconds
+        --iterations NUMBER
+                        top iterations
+        --noclear       don't print clear screen codes
     -m, --mask CIDR     cidr mask
     -n, --networks CIDR instead of hosts, display number of subnets of this
                         size
@@ -374,6 +388,5 @@ Options:
     -r, --reverse       (none, inputs, sources or both) v4 octets, v6 hex
     -s, --file PATH     lookup addresses from, - for stdin
     -v, --version       print version
-
 ```
 

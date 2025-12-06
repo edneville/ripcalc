@@ -1893,7 +1893,7 @@ pub fn line_filter(
     }
 
     if let Some(x) = position {
-        if parts.len() < x as usize {
+        if parts.len() < (x+1) as usize {
             return None;
         }
 

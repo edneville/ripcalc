@@ -1015,6 +1015,8 @@ fn set_opts(opts: &mut Options) {
 
     opts.optflag("", "top", "show IP frequency like top");
     opts.optopt("", "delay", "top update delay in seconds", "SECONDS");
+    opts.optopt("", "iterations", "top iterations ", "NUMBER");
+    opts.optflag("", "noclear", "don't print clear screen codes");
     opts.optopt("m", "mask", "cidr mask", "CIDR");
     opts.optopt(
         "n",
@@ -1113,8 +1115,27 @@ fn read_loop(
         delay * 1000
     };
 
+    let iterations = {
+        if config_option_true(&config.borrow(), "iterations".to_string()) {
+            let cfg = config.borrow();
+            let iterations = cfg.options.get("iterations").unwrap();
+
+            let iterations = iterations
+                .parse::<u32>()
+                .unwrap_or_else(|_| panic!("Cannot convert {} to number", iterations));
+
+            Some(iterations)
+        } else {
+            None
+        }
+    };
+
+    let mut loops = 0;
+    let clear_screen = !config_option_true(&config.borrow(), "noclear".to_string());
     loop {
-        print!("\x1b\x5b\x48\x1b\x5b\x32\x4a");
+        if clear_screen {
+            print!("\x1b\x5b\x48\x1b\x5b\x32\x4a");
+        }
         let _ = std::io::stdout().flush();
         let hm;
         {
@@ -1200,6 +1221,12 @@ fn read_loop(
             if c > 0 {
                 println!();
             }
+        }
+        if let Some(iterations) = iterations {
+            if loops >= iterations {
+                return;
+            }
+            loops += 1;
         }
         sleep(delay);
     }
@@ -1530,6 +1557,28 @@ fn main() {
             "delay".to_string(),
             matches.opt_str("delay").unwrap().to_string(),
         );
+    }
+
+    if matches.opt_present("noclear") {
+        config
+            .borrow_mut()
+            .options
+            .insert("noclear".to_string(), "true".to_string());
+    }
+
+    if let Some(iterations) = matches.opt_str("iterations") {
+        match matches.opt_str("iterations").unwrap().trim().parse::<u32>() {
+            Ok(_) => {
+                config
+                    .borrow_mut()
+                    .options
+                    .insert("iterations".to_string(), iterations);
+            }
+            Err(x) => {
+                eprintln!("Cannot parse {} as a number: {}", iterations, x);
+                std::process::exit(1);
+            }
+        }
     }
 
     if matches.opt_present("top") {
