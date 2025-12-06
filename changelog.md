@@ -1,4 +1,4 @@
- * filter arguments to filter STDIN for matching address lines only
+ * filter arguments to filter STDIN for address lines only
  * read and make cdb files
  * example cdb maker
  * countseen adds occurrence count of IP when in encapsulating and group mode,
@@ -12,7 +12,7 @@
    file or URL
  * if format is specified filter should output that style
  * add a useragent string to http client
- * basic top-like function
+ * basic top-like function with --delay, --noclear and --iterations arguments
  * --group4 and --group6 to override --group respectively
 
 0.2.7
