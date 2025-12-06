@@ -4,7 +4,7 @@ section: 1
 header: User Manual
 footer: ripcalc 0.2.7
 author: Ed Neville (ed-ripcalc@s5h.net)
-date: 05 December 2025
+date: 06 December 2025
 ---
 
 # NAME
@@ -41,7 +41,7 @@ ripcalc - a tool for network addresses
 
 **ripcalc -d/--divide [CIDR] 127.0.0.1/24**
 
-**ripcalc --top [--delay SECONDS]**
+**ripcalc --top [--delay SECONDS] [--interations NUMBER] [--noclear]**
 
 **ripcalc --makecdb [PATH]**
 
@@ -83,7 +83,7 @@ If `--top` is given a frequency of IP addresses will be shown and updated every 
 
 If `--quiet` is specified then parsing error messages will be suppressed.
 
-When `--filter` is specified STDIN is filtered for inclusion addresses/masks given as arguments. Use `--filternum` to set the space delimited parameter that contains the input address.
+When `--filter` is specified STDIN is filtered for addresses/masks given as arguments. Use `--filternum` to set the space delimited parameter that contains the input address.
 
 Using `--abuseipdb [key]` can populate `%{abuseipdb_var}` values for `--format` strings, where `var` is the field name in a abuseipdb result structure.
 
