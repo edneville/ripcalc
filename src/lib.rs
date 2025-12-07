@@ -20,6 +20,7 @@ use std::net::Ipv6Addr;
 use std::os::fd::BorrowedFd;
 use std::str::FromStr;
 use std::sync::Arc;
+use std::net::IpAddr;
 
 #[derive(Debug, PartialEq, PartialOrd, Hash, Eq, Clone)]
 pub enum Addr {
@@ -1378,15 +1379,26 @@ pub fn config_option_true(config: &Config, opt: String) -> bool {
 }
 
 fn geoip2_city(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, String>> {
-    use std::net::IpAddr;
     let mut ret: HashMap<String, String> = HashMap::new();
 
-    let reader =
-        maxminddb::Reader::open_readfile(config.borrow().options.get("mmcity").unwrap()).unwrap();
+    if config.borrow().mmcity.is_none() {
+        let path = config.borrow().options.get("mmcity").unwrap().clone();
+        config.borrow_mut().mmcity = Some(
+            maxminddb::Reader::open_readfile(path).unwrap().into()
+        );
+    }
+
+    let binding = config.borrow();
+    let reader = binding.mmcity.as_ref().unwrap();
+
     let f: IpAddr = ip.to_string().parse().unwrap();
     let city: Option<geoip2::City> = reader.lookup(f).unwrap();
 
     if let Some(city) = city {
+        if city.city.is_none() {
+            return Some(ret);
+        }
+
         let config = config.borrow();
         let default_lang = "en".to_string();
         let lang = config.options.get("mmlang").unwrap_or(&default_lang);
@@ -1441,11 +1453,18 @@ fn geoip2_city(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, Stri
 }
 
 fn geoip2_asn(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, String>> {
-    use std::net::IpAddr;
     let mut ret: HashMap<String, String> = HashMap::new();
 
-    let reader =
-        maxminddb::Reader::open_readfile(config.borrow().options.get("mmasn").unwrap()).unwrap();
+    if config.borrow().mmasn.is_none() {
+        let path = config.borrow().options.get("mmasn").unwrap().clone();
+        config.borrow_mut().mmasn = Some(
+            maxminddb::Reader::open_readfile( path ).unwrap().into()
+        );
+    }
+
+    let binding = config.borrow();
+    let reader = binding.mmasn.as_ref().unwrap();
+
     let f: IpAddr = ip.to_string().parse().unwrap();
     let asn: Option<geoip2::Asn> = reader.lookup(f).unwrap();
 
@@ -1461,12 +1480,18 @@ fn geoip2_asn(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, Strin
 }
 
 fn geoip2_country(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, String>> {
-    use std::net::IpAddr;
     let mut ret: HashMap<String, String> = HashMap::new();
 
-    let reader =
-        maxminddb::Reader::open_readfile(config.borrow().options.get("mmcountry").unwrap())
-            .unwrap();
+    if config.borrow().mmcountry.is_none() {
+        let path = config.borrow().options.get("mmcountry").unwrap().clone();
+        config.borrow_mut().mmcountry = Some(
+            maxminddb::Reader::open_readfile(path).unwrap().into()
+        );
+    }
+
+    let binding = config.borrow();
+    let reader = binding.mmcountry.as_ref().unwrap();
+
     let f: IpAddr = ip.to_string().parse().unwrap();
     let country: Option<geoip2::Country> = reader.lookup(f).unwrap();
 
@@ -1602,22 +1627,22 @@ pub fn format_details(
             || reformatted.contains("%{mmcountry")
             || reformatted.contains("%{mmasn"))
     {
-        if reformatted.contains("%{mmcity") {
-            let map = geoip2_city(config, ip);
+        if reformatted.contains("%{mmasn") {
+            let map = geoip2_asn(config, ip);
             if let Some(map) = map {
                 for k in map.keys() {
-                    let word = format!("mmcity_{}", k);
+                    let word = format!("mmasn_{}", k);
                     reformatted =
                         reformatted.replace(&format!("%{{{}}}", word), map.get(k).unwrap());
                 }
             }
         }
 
-        if reformatted.contains("%{mmasn") {
-            let map = geoip2_asn(config, ip);
+        if reformatted.contains("%{mmcity") {
+            let map = geoip2_city(config, ip);
             if let Some(map) = map {
                 for k in map.keys() {
-                    let word = format!("mmasn_{}", k);
+                    let word = format!("mmcity_{}", k);
                     reformatted =
                         reformatted.replace(&format!("%{{{}}}", word), map.get(k).unwrap());
                 }

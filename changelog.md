@@ -14,6 +14,7 @@
  * add a useragent string to http client
  * basic top-like function with --delay, --noclear and --iterations arguments
  * --group4 and --group6 to override --group respectively
+ * experimental geoip2 lite support
 
 0.2.7
 
