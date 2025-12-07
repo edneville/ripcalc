@@ -1017,6 +1017,22 @@ fn set_opts(opts: &mut Options) {
     opts.optopt("", "delay", "top update delay in seconds", "SECONDS");
     opts.optopt("", "iterations", "top iterations ", "NUMBER");
     opts.optflag("", "noclear", "don't print clear screen codes");
+
+    opts.optopt(
+        "",
+        "mmlang",
+        "the lang to use in results, defaults to en",
+        "LANG",
+    );
+    opts.optopt("", "mmasn", "path to maxmind geoip2 asn file", "PATH");
+    opts.optopt("", "mmcity", "path to maxmind geoip2 city file", "PATH");
+    opts.optopt(
+        "",
+        "mmcountry",
+        "path to maxmind geoip2 country file",
+        "PATH",
+    );
+
     opts.optopt("m", "mask", "cidr mask", "CIDR");
     opts.optopt(
         "n",
@@ -1408,13 +1424,41 @@ fn main() {
         process_csv(reader, field_name, &mut rows, input_base, &reverse);
     }
 
-    if matches.opt_present("cdb") {
-        let path = matches.opt_str("cdb").unwrap();
-
+    if let Some(path) = matches.opt_str("cdb") {
         config
             .borrow_mut()
             .options
             .insert("cdb_path".to_string(), path);
+    }
+
+    if let Some(lang) = matches.opt_str("mmlang") {
+        config
+            .borrow_mut()
+            .options
+            .insert("mmlang".to_string(), lang.clone());
+    }
+
+    if let Some(path) = matches.opt_str("mmcity") {
+        config
+            .borrow_mut()
+            .options
+            .insert("mmcity".to_string(), path.clone());
+
+        config.borrow_mut().mmcity = Some(maxminddb::Reader::open_readfile(path).unwrap().into());
+    }
+
+    if let Some(path) = matches.opt_str("mmcountry") {
+        config
+            .borrow_mut()
+            .options
+            .insert("mmcountry".to_string(), path.clone());
+    }
+
+    if let Some(path) = matches.opt_str("mmasn") {
+        config
+            .borrow_mut()
+            .options
+            .insert("mmasn".to_string(), path.clone());
     }
 
     if matches.opt_present("countseen") {

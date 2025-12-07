@@ -1,5 +1,6 @@
 use cdb::CDB;
 use dns_lookup::{lookup_addr, lookup_host};
+use maxminddb::*;
 use nix::ifaddrs::*;
 use nix::sys::socket::AddressFamily;
 use nix::sys::socket::SockaddrLike;
@@ -47,6 +48,9 @@ pub struct Config {
     pub cdb: Option<Arc<CDB>>,
     pub count: Option<HashMap<Ip, usize>>,
     pub abuse_cache: Option<HashMap<Ip, String>>,
+    pub mmasn: Option<Arc<maxminddb::Reader<Vec<u8>>>>,
+    pub mmcity: Option<Arc<maxminddb::Reader<Vec<u8>>>>,
+    pub mmcountry: Option<Arc<maxminddb::Reader<Vec<u8>>>>,
 }
 
 #[derive(Debug, Clone)]
@@ -109,6 +113,9 @@ impl Config {
             cdb: None,
             count: None,
             abuse_cache: None,
+            mmasn: None,
+            mmcity: None,
+            mmcountry: None,
         }
     }
 }
@@ -132,6 +139,9 @@ impl fmt::Debug for Config {
             options: &'a HashMap<String, String>,
             count: &'a Option<HashMap<Ip, usize>>,
             abuse_cache: &'a Option<HashMap<Ip, String>>,
+            mmasn: &'a Option<Arc<maxminddb::Reader<Vec<u8>>>>,
+            mmcity: &'a Option<Arc<maxminddb::Reader<Vec<u8>>>>,
+            mmcountry: &'a Option<Arc<maxminddb::Reader<Vec<u8>>>>,
         }
 
         let Self {
@@ -144,6 +154,9 @@ impl fmt::Debug for Config {
             cdb: _,
             count,
             abuse_cache,
+            mmasn,
+            mmcity,
+            mmcountry,
         } = self;
 
         fmt::Debug::fmt(
@@ -156,6 +169,9 @@ impl fmt::Debug for Config {
                 options,
                 count,
                 abuse_cache,
+                mmasn,
+                mmcity,
+                mmcountry,
             },
             f,
         )
@@ -1361,6 +1377,144 @@ pub fn config_option_true(config: &Config, opt: String) -> bool {
     config.options.get(&opt).unwrap_or(&"false".to_string()) != "false"
 }
 
+fn geoip2_city(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, String>> {
+    use std::net::IpAddr;
+    let mut ret: HashMap<String, String> = HashMap::new();
+
+    let reader =
+        maxminddb::Reader::open_readfile(config.borrow().options.get("mmcity").unwrap()).unwrap();
+    let f: IpAddr = ip.to_string().parse().unwrap();
+    let city: Option<geoip2::City> = reader.lookup(f).unwrap();
+
+    if let Some(city) = city {
+        let config = config.borrow();
+        let default_lang = "en".to_string();
+        let lang = config.options.get("mmlang").unwrap_or(&default_lang);
+        let c = city
+            .city
+            .as_ref()
+            .unwrap()
+            .names
+            .as_ref()
+            .unwrap()
+            .get(lang as &str);
+        if let Some(c) = c {
+            ret.insert("city".to_string(), c.to_string());
+        }
+
+        let c = city
+            .continent
+            .as_ref()
+            .unwrap()
+            .names
+            .as_ref()
+            .unwrap()
+            .get(lang as &str);
+        if let Some(c) = c {
+            ret.insert("continent".to_string(), c.to_string());
+        }
+
+        let c = city
+            .country
+            .as_ref()
+            .unwrap()
+            .names
+            .as_ref()
+            .unwrap()
+            .get(lang as &str);
+        if let Some(c) = c {
+            ret.insert("country".to_string(), c.to_string());
+        }
+
+        let c = city.location.as_ref().unwrap().latitude;
+        if let Some(c) = c {
+            ret.insert("latitude".to_string(), c.to_string());
+        }
+
+        let c = city.location.as_ref().unwrap().longitude;
+        if let Some(c) = c {
+            ret.insert("longitude".to_string(), c.to_string());
+        }
+    }
+
+    Some(ret)
+}
+
+fn geoip2_asn(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, String>> {
+    use std::net::IpAddr;
+    let mut ret: HashMap<String, String> = HashMap::new();
+
+    let reader =
+        maxminddb::Reader::open_readfile(config.borrow().options.get("mmasn").unwrap()).unwrap();
+    let f: IpAddr = ip.to_string().parse().unwrap();
+    let asn: Option<geoip2::Asn> = reader.lookup(f).unwrap();
+
+    if let Some(asn) = asn {
+        let c = asn.autonomous_system_number.as_ref().unwrap();
+        ret.insert("autonomous_system_number".to_string(), c.to_string());
+
+        let c = asn.autonomous_system_organization.as_ref().unwrap();
+        ret.insert("autonomous_system_organization".to_string(), c.to_string());
+    }
+
+    Some(ret)
+}
+
+fn geoip2_country(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, String>> {
+    use std::net::IpAddr;
+    let mut ret: HashMap<String, String> = HashMap::new();
+
+    let reader =
+        maxminddb::Reader::open_readfile(config.borrow().options.get("mmcountry").unwrap())
+            .unwrap();
+    let f: IpAddr = ip.to_string().parse().unwrap();
+    let country: Option<geoip2::Country> = reader.lookup(f).unwrap();
+
+    if let Some(country) = country {
+        let config = config.borrow();
+        let default_lang = "en".to_string();
+        let lang = config.options.get("mmlang").unwrap_or(&default_lang);
+
+        let c = country
+            .continent
+            .as_ref()
+            .unwrap()
+            .names
+            .as_ref()
+            .unwrap()
+            .get(lang as &str);
+        if let Some(c) = c {
+            ret.insert("continent".to_string(), c.to_string());
+        }
+
+        let c = country
+            .country
+            .as_ref()
+            .unwrap()
+            .names
+            .as_ref()
+            .unwrap()
+            .get(lang as &str);
+        if let Some(c) = c {
+            ret.insert("country".to_string(), c.to_string());
+        }
+
+        let c = country
+            .registered_country
+            .as_ref()
+            .unwrap()
+            .names
+            .as_ref()
+            .unwrap()
+            .get(lang as &str);
+        if let Some(c) = c {
+            ret.insert("registered_country".to_string(), c.to_string());
+        }
+    }
+
+    Some(ret)
+}
+
 pub fn format_details(
     format_detail: &FormatDetail,
     formatted: String,
@@ -1437,6 +1591,47 @@ pub fn format_details(
         } else if let Some(m) = matches {
             if !m.opt_present("allowemptyrow") {
                 return None;
+            }
+        }
+    }
+
+    if (config_option_true(&config.borrow(), "mmasn".to_string())
+        || config_option_true(&config.borrow(), "mmcity".to_string())
+        || config_option_true(&config.borrow(), "mmcountry".to_string()))
+        && (reformatted.contains("%{mmcity")
+            || reformatted.contains("%{mmcountry")
+            || reformatted.contains("%{mmasn"))
+    {
+        if reformatted.contains("%{mmcity") {
+            let map = geoip2_city(config, ip);
+            if let Some(map) = map {
+                for k in map.keys() {
+                    let word = format!("mmcity_{}", k);
+                    reformatted =
+                        reformatted.replace(&format!("%{{{}}}", word), map.get(k).unwrap());
+                }
+            }
+        }
+
+        if reformatted.contains("%{mmasn") {
+            let map = geoip2_asn(config, ip);
+            if let Some(map) = map {
+                for k in map.keys() {
+                    let word = format!("mmasn_{}", k);
+                    reformatted =
+                        reformatted.replace(&format!("%{{{}}}", word), map.get(k).unwrap());
+                }
+            }
+        }
+
+        if reformatted.contains("%{mmcountry") {
+            let map = geoip2_country(config, ip);
+            if let Some(map) = map {
+                for k in map.keys() {
+                    let word = format!("mmcountry_{}", k);
+                    reformatted =
+                        reformatted.replace(&format!("%{{{}}}", word), map.get(k).unwrap());
+                }
             }
         }
     }
@@ -1893,7 +2088,7 @@ pub fn line_filter(
     }
 
     if let Some(x) = position {
-        if parts.len() < (x+1) as usize {
+        if parts.len() < (x + 1) as usize {
             return None;
         }
 
