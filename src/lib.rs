@@ -1378,7 +1378,7 @@ pub fn config_option_true(config: &Config, opt: String) -> bool {
     config.options.get(&opt).unwrap_or(&"false".to_string()) != "false"
 }
 
-fn geoip2_city(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, String>> {
+pub fn geoip2_city(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, String>> {
     let mut ret: HashMap<String, String> = HashMap::new();
 
     if config.borrow().mmcity.is_none() {
@@ -1438,6 +1438,15 @@ fn geoip2_city(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, Stri
             ret.insert("country".to_string(), c.to_string());
         }
 
+        let c = city
+            .country
+            .as_ref()
+            .unwrap()
+            .iso_code;
+        if let Some(c) = c {
+            ret.insert("code".to_string(), c.to_string());
+        }
+
         let c = city.location.as_ref().unwrap().latitude;
         if let Some(c) = c {
             ret.insert("latitude".to_string(), c.to_string());
@@ -1452,7 +1461,7 @@ fn geoip2_city(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, Stri
     Some(ret)
 }
 
-fn geoip2_asn(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, String>> {
+pub fn geoip2_asn(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, String>> {
     let mut ret: HashMap<String, String> = HashMap::new();
 
     if config.borrow().mmasn.is_none() {
@@ -1479,7 +1488,7 @@ fn geoip2_asn(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, Strin
     Some(ret)
 }
 
-fn geoip2_country(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, String>> {
+pub fn geoip2_country(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, String>> {
     let mut ret: HashMap<String, String> = HashMap::new();
 
     if config.borrow().mmcountry.is_none() {
