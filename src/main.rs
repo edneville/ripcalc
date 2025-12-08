@@ -37,6 +37,100 @@ fn default_cdb_format(
     ret_str.to_string()
 }
 
+fn default_mmasn_format(
+    distance: usize,
+    config: &RefCell<Config>,
+    lookup_ip: &Ip,
+    matches: &getopts::Matches,
+) -> String {
+    let mut ret_str = "".to_string();
+
+    if !matches.opt_present("mmasn") {
+        return "".to_string();
+    }
+
+    let map = geoip2_asn(config, lookup_ip);
+
+    if let Some(map) = map {
+        let mut k: Vec<_> = map.keys().collect();
+        k.sort();
+
+        for k in k {
+            ret_str.push_str(&format!(
+                "{f:>width$}: {v}\n",
+                width = distance,
+                f = k,
+                v = map.get(k).unwrap()
+            ));
+        }
+    }
+
+    ret_str.to_string()
+}
+
+fn default_mmcountry_format(
+    distance: usize,
+    config: &RefCell<Config>,
+    lookup_ip: &Ip,
+    matches: &getopts::Matches,
+) -> String {
+    let mut ret_str = "".to_string();
+
+    if !matches.opt_present("mmcountry") {
+        return "".to_string();
+    }
+
+    let map = geoip2_country(config, lookup_ip);
+
+    if let Some(map) = map {
+        let mut k: Vec<_> = map.keys().collect();
+        k.sort();
+
+        for k in k {
+            ret_str.push_str(&format!(
+                "{f:>width$}: {v}\n",
+                width = distance,
+                f = k,
+                v = map.get(k).unwrap()
+            ));
+        }
+    }
+
+    ret_str.to_string()
+}
+
+
+fn default_mmcity_format(
+    distance: usize,
+    config: &RefCell<Config>,
+    lookup_ip: &Ip,
+    matches: &getopts::Matches,
+) -> String {
+    let mut ret_str = "".to_string();
+
+    if !matches.opt_present("mmcity") {
+        return "".to_string();
+    }
+
+    let map = geoip2_city(config, lookup_ip);
+
+    if let Some(map) = map {
+        let mut k: Vec<_> = map.keys().collect();
+        k.sort();
+
+        for k in k {
+            ret_str.push_str(&format!(
+                "{f:>width$}: {v}\n",
+                width = distance,
+                f = k,
+                v = map.get(k).unwrap()
+            ));
+        }
+    }
+
+    ret_str.to_string()
+}
+
 fn default_abuseipdb_format(
     distance: usize,
     config: &RefCell<Config>,
@@ -114,19 +208,19 @@ fn print_details(
         matches.opt_str("f").unwrap()
     } else {
         let mut network_size = "Network size: %t".to_string();
-        let width = 25;
+        let width = 35;
         if matches.opt_present("networks") {
             network_size = format!("Networks ({}): %N", networks.as_ref().unwrap()).to_string();
         }
         let mut def = match ip.address {
             Addr::V4(_) => format!("{ip:>width$}/{cidr}\n{broadcast:>width$}\n{network:>width$}\n{subnet:>width$}\n{wildcard:>width$}\n{network_size:>width$}\n", ip="IP is: %a", cidr="%c", broadcast="Broadcast is: %b", network="Network is: %n", subnet="Subnet is: %s", wildcard="Wildcard is: %w", network_size=network_size, width=width),
-            Addr::V6(_) => format!("{ip:>widthn$}/{cidr}\n{expanded:>width$}\n{network:>width$}\n{last_host_address:>width$}\n{subnet:>width$}\n{network_size:>widthn$}\n", ip="IP is: %a", cidr="%c", expanded="Expanded: %xa", network="Network is: %xn", last_host_address="Last host address: %xb", subnet="Subnet is: %xs", network_size=network_size, width=width, widthn=width-1),
+            Addr::V6(_) => format!("{ip:>widthn$}/{cidr}\n{expanded:>width$}\n{network:>width$}\n{last_host_address:>width$}\n{subnet:>width$}\n{network_size:>widthn$}\n", ip="IP is: %a", cidr="%c", expanded="Expanded: %xa", network="Network is: %xn", last_host_address="Last host address: %xb", subnet="Subnet is: %xs", network_size=network_size, width=width+1, widthn=width),
         };
 
         if matches.opt_present("cdb") {
             let distance = match ip.address {
                 Addr::V4(_) => width - 4,
-                Addr::V6(_) => width - 5,
+                Addr::V6(_) => width - 4,
             };
 
             def.push_str(&default_cdb_format(
@@ -140,10 +234,52 @@ fn print_details(
         if matches.opt_present("abuseipdb") {
             let distance = match ip.address {
                 Addr::V4(_) => width - 4,
-                Addr::V6(_) => width - 5,
+                Addr::V6(_) => width - 4,
             };
 
             def.push_str(&default_abuseipdb_format(
+                distance,
+                config,
+                &ip.clone(),
+                matches,
+            ));
+        }
+
+        if matches.opt_present("mmcity") {
+            let distance = match ip.address {
+                Addr::V4(_) => width - 4,
+                Addr::V6(_) => width - 4,
+            };
+
+            def.push_str(&default_mmcity_format(
+                distance,
+                config,
+                &ip.clone(),
+                matches,
+            ));
+        }
+
+        if matches.opt_present("mmasn") {
+            let distance = match ip.address {
+                Addr::V4(_) => width - 4,
+                Addr::V6(_) => width - 4,
+            };
+
+            def.push_str(&default_mmasn_format(
+                distance,
+                config,
+                &ip.clone(),
+                matches,
+            ));
+        }
+
+        if matches.opt_present("mmcountry") {
+            let distance = match ip.address {
+                Addr::V4(_) => width - 4,
+                Addr::V6(_) => width - 4,
+            };
+
+            def.push_str(&default_mmcountry_format(
                 distance,
                 config,
                 &ip.clone(),
