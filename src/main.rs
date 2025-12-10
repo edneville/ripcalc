@@ -99,7 +99,6 @@ fn default_mmcountry_format(
     ret_str.to_string()
 }
 
-
 fn default_mmcity_format(
     distance: usize,
     config: &RefCell<Config>,

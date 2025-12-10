@@ -15,12 +15,12 @@ use std::collections::HashMap;
 use std::convert::TryInto;
 use std::fmt;
 use std::io::BufRead;
+use std::net::IpAddr;
 use std::net::Ipv4Addr;
 use std::net::Ipv6Addr;
 use std::os::fd::BorrowedFd;
 use std::str::FromStr;
 use std::sync::Arc;
-use std::net::IpAddr;
 
 #[derive(Debug, PartialEq, PartialOrd, Hash, Eq, Clone)]
 pub enum Addr {
@@ -1383,9 +1383,7 @@ pub fn geoip2_city(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, 
 
     if config.borrow().mmcity.is_none() {
         let path = config.borrow().options.get("mmcity").unwrap().clone();
-        config.borrow_mut().mmcity = Some(
-            maxminddb::Reader::open_readfile(path).unwrap().into()
-        );
+        config.borrow_mut().mmcity = Some(maxminddb::Reader::open_readfile(path).unwrap().into());
     }
 
     let binding = config.borrow();
@@ -1438,11 +1436,7 @@ pub fn geoip2_city(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, 
             ret.insert("country".to_string(), c.to_string());
         }
 
-        let c = city
-            .country
-            .as_ref()
-            .unwrap()
-            .iso_code;
+        let c = city.country.as_ref().unwrap().iso_code;
         if let Some(c) = c {
             ret.insert("code".to_string(), c.to_string());
         }
@@ -1466,9 +1460,7 @@ pub fn geoip2_asn(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, S
 
     if config.borrow().mmasn.is_none() {
         let path = config.borrow().options.get("mmasn").unwrap().clone();
-        config.borrow_mut().mmasn = Some(
-            maxminddb::Reader::open_readfile( path ).unwrap().into()
-        );
+        config.borrow_mut().mmasn = Some(maxminddb::Reader::open_readfile(path).unwrap().into());
     }
 
     let binding = config.borrow();
@@ -1493,9 +1485,8 @@ pub fn geoip2_country(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<Strin
 
     if config.borrow().mmcountry.is_none() {
         let path = config.borrow().options.get("mmcountry").unwrap().clone();
-        config.borrow_mut().mmcountry = Some(
-            maxminddb::Reader::open_readfile(path).unwrap().into()
-        );
+        config.borrow_mut().mmcountry =
+            Some(maxminddb::Reader::open_readfile(path).unwrap().into());
     }
 
     let binding = config.borrow();
