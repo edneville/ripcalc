@@ -1378,7 +1378,7 @@ pub fn config_option_true(config: &Config, opt: String) -> bool {
     config.options.get(&opt).unwrap_or(&"false".to_string()) != "false"
 }
 
-pub fn geoip2_city(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, String>> {
+pub fn geoip_city(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, String>> {
     let mut ret: HashMap<String, String> = HashMap::new();
 
     if config.borrow().mmcity.is_none() {
@@ -1460,7 +1460,7 @@ pub fn geoip2_city(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, 
     None
 }
 
-pub fn geoip2_asn(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, String>> {
+pub fn geoip_asn(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, String>> {
     let mut ret: HashMap<String, String> = HashMap::new();
 
     if config.borrow().mmasn.is_none() {
@@ -1487,7 +1487,7 @@ pub fn geoip2_asn(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, S
     None
 }
 
-pub fn geoip2_country(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, String>> {
+pub fn geoip_country(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, String>> {
     let mut ret: HashMap<String, String> = HashMap::new();
 
     if config.borrow().mmcountry.is_none() {
@@ -1642,7 +1642,7 @@ pub fn format_details(
             || reformatted.contains("%{mmasn"))
     {
         if reformatted.contains("%{mmasn") {
-            if let Some(map) = geoip2_asn(config, ip) {
+            if let Some(map) = geoip_asn(config, ip) {
                 for k in map.keys() {
                     let word = format!("mmasn_{}", k);
                     reformatted =
@@ -1652,7 +1652,7 @@ pub fn format_details(
         }
 
         if reformatted.contains("%{mmcity") {
-            if let Some(map) = geoip2_city(config, ip) {
+            if let Some(map) = geoip_city(config, ip) {
                 for k in map.keys() {
                     let word = format!("mmcity_{}", k);
                     reformatted =
@@ -1662,7 +1662,7 @@ pub fn format_details(
         }
 
         if reformatted.contains("%{mmcountry") {
-            if let Some(map) = geoip2_country(config, ip) {
+            if let Some(map) = geoip_country(config, ip) {
                 for k in map.keys() {
                     let word = format!("mmcountry_{}", k);
                     reformatted =

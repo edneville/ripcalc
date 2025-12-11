@@ -50,7 +50,7 @@ fn default_mmasn_format(
         return "".to_string();
     }
 
-    let map = geoip2_asn(config, lookup_ip);
+    let map = geoip_asn(config, lookup_ip);
 
     if let Some(map) = map {
         let mut k: Vec<_> = map.keys().collect();
@@ -81,7 +81,7 @@ fn default_mmcountry_format(
         return "".to_string();
     }
 
-    let map = geoip2_country(config, lookup_ip);
+    let map = geoip_country(config, lookup_ip);
 
     if let Some(map) = map {
         let mut k: Vec<_> = map.keys().collect();
@@ -112,7 +112,7 @@ fn default_mmcity_format(
         return "".to_string();
     }
 
-    let map = geoip2_city(config, lookup_ip);
+    let map = geoip_city(config, lookup_ip);
 
     if let Some(map) = map {
         let mut k: Vec<_> = map.keys().collect();
@@ -1206,12 +1206,12 @@ fn set_opts(opts: &mut Options) {
         "the lang to use in results, defaults to en",
         "LANG",
     );
-    opts.optopt("", "mmasn", "path to maxmind geoip2 asn file", "PATH");
-    opts.optopt("", "mmcity", "path to maxmind geoip2 city file", "PATH");
+    opts.optopt("", "mmasn", "path to maxmind geoip asn file", "PATH");
+    opts.optopt("", "mmcity", "path to maxmind geoip city file", "PATH");
     opts.optopt(
         "",
         "mmcountry",
-        "path to maxmind geoip2 country file",
+        "path to maxmind geoip country file",
         "PATH",
     );
 
@@ -1365,6 +1365,19 @@ fn read_loop(
 
                         if matches.opt_str("abuseipdb").is_some() {
                             parts.push("%{abuseipdb_abuseConfidenceScore}".to_string());
+                        }
+
+                        if matches.opt_str("mmcity").is_some() {
+                            parts.push("%{mmcity_code}".to_string());
+                            parts.push("%{mmcity_country}".to_string());
+                        }
+
+                        if matches.opt_str("mmasn").is_some() {
+                            parts.push("%{mmasn_autonomous_system_organization}".to_string());
+                        }
+
+                        if matches.opt_str("mmcountry").is_some() {
+                            parts.push("%{mmcountry_registered_country}".to_string());
                         }
 
                         if matches.opt_str("cdb").is_some() {
