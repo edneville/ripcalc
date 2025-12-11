@@ -289,6 +289,30 @@ Replace `[key]` with your abuseipdb API key.
 
 If only the country code or ISP is needed, then using a locally generated `cdb` is more efficient, see the CDB section above as that can be much faster if you don't require an external abuse score.
 
+# maxmind geolite
+
+MaxMind's geolite database files can be read using `--mmasn`, `--mmcountry` and `--mmcity` options. The text language can be defined with `--mmlang`.
+
+In normal context the following are returned:
+
+mmcity: %{mmcity_city}, %{mmcity_continent}, %{mmcity_country}, %{mmcity_code}, %{mmcity_latitude}, %{mmcity_longitude}
+
+mmcountry: %{mmcountry_continent}, %{mmcountry_country}, %{mmcountry_registered_country}
+
+mmasn: %{mmasn_autonomous_system_number}, %{mmasn_autonomous_system_organization
+}
+
+Less information is returned in `--top` context:
+
+```
+ripcalc --top --allowemptyrow \
+    --mmcity GeoLite2-City.mmdb \
+    --mmcountry GeoLite2-Country.mmdb \
+    --mmasn GeoLite2-ASN.mmdb 
+```
+
+Without needing to add a `--format` string, in `--top` context, this will display `%{mmcity_code}` and `%{mmcity_country}` for `--mmcity`, `%{mmasn_autonomous_system_organization}` for `--mmasn`, and `%{mmcountry_registered_country}` for `--mmcountry`.
+
 # top
 
 Basic report of IP frequency, as read from `stdin`. Can be used with `--group`, `--group[46]`, `--filter`, `--filterany`, `--filternum` or `--inside` to show which networks appear most frequently.
@@ -362,7 +386,7 @@ Options:
         --group4 CIDR   v4 specific group, overrides group in top mode
         --group6 CIDR   v6 specific group, overrides group in top mode
     -h, --help          display help
-    -i, --field FIELD   csv/db field
+    -i, --field FIELD   csv/db/json field
     -l, --list          list all addresses in network
         --outside       display when extremities are outside network
         --inside        display when extremities are inside network
@@ -381,9 +405,15 @@ Options:
         --iterations NUMBER
                         top iterations
         --noclear       don't print clear screen codes
+        --mmlang LANG   the lang to use in results, defaults to en
+        --mmasn PATH    path to maxmind geoip asn file
+        --mmcity PATH   path to maxmind geoip city file
+        --mmcountry PATH
+                        path to maxmind geoip country file
     -m, --mask CIDR     cidr mask
     -n, --networks CIDR instead of hosts, display number of subnets of this
                         size
+        --json PATH     json prefix file
     -q, --quiet         don't report errors
     -r, --reverse       (none, inputs, sources or both) v4 octets, v6 hex
     -s, --file PATH     lookup addresses from, - for stdin
