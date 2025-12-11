@@ -47,6 +47,8 @@ ripcalc - a tool for network addresses
 
 **ripcalc --makethymecdb [PATH] [--data-raw-table PATH] [--ipv6-raw-table PATH] [--data-used-autnums PATH]**
 
+**ripcalc [--mmasn PATH] [--mmcountry PATH] [--mmcity PATH]**
+
 **ripcalc --networks [CIDR] 127.0.0.1/24**
 
 **ripcalc --filter [CIDR]**

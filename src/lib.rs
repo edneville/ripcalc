@@ -1380,10 +1380,18 @@ pub fn config_option_true(config: &Config, opt: String) -> bool {
 
 pub fn geoip_city(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, String>> {
     let mut ret: HashMap<String, String> = HashMap::new();
-
     if config.borrow().mmcity.is_none() {
         let path = config.borrow().options.get("mmcity").unwrap().clone();
-        config.borrow_mut().mmcity = Some(maxminddb::Reader::open_readfile(path).unwrap().into());
+
+        let mmdb = match maxminddb::Reader::open_readfile(&path) {
+            Ok(x) => x,
+            Err(x) => {
+                eprintln!("cannot open {}: {}", path, x);
+                std::process::exit(1);
+            }
+        };
+
+        config.borrow_mut().mmcity = Some(mmdb.into());
     }
 
     let binding = config.borrow();
@@ -1465,7 +1473,15 @@ pub fn geoip_asn(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, St
 
     if config.borrow().mmasn.is_none() {
         let path = config.borrow().options.get("mmasn").unwrap().clone();
-        config.borrow_mut().mmasn = Some(maxminddb::Reader::open_readfile(path).unwrap().into());
+        let mmdb = match maxminddb::Reader::open_readfile(&path) {
+            Ok(x) => x,
+            Err(x) => {
+                eprintln!("cannot open {}: {}", path, x);
+                std::process::exit(1);
+            }
+        };
+
+        config.borrow_mut().mmasn = Some(mmdb.into());
     }
 
     let binding = config.borrow();
@@ -1492,8 +1508,16 @@ pub fn geoip_country(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String
 
     if config.borrow().mmcountry.is_none() {
         let path = config.borrow().options.get("mmcountry").unwrap().clone();
-        config.borrow_mut().mmcountry =
-            Some(maxminddb::Reader::open_readfile(path).unwrap().into());
+
+        let mmdb = match maxminddb::Reader::open_readfile(&path) {
+            Ok(x) => x,
+            Err(x) => {
+                eprintln!("cannot open {}: {}", path, x);
+                std::process::exit(1);
+            }
+        };
+
+        config.borrow_mut().mmcountry = Some(mmdb.into());
     }
 
     let binding = config.borrow();
