@@ -2,6 +2,7 @@ use chrono::{DateTime, Utc};
 use getopts::Options;
 use regex::Regex;
 use ripcalc::*;
+use serde_json::Value;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs;
@@ -385,6 +386,52 @@ fn base_parse(base: Option<&String>) -> Option<i32> {
     match base {
         Some(x) => i32::from_str(x).ok(),
         None => None,
+    }
+}
+
+fn process_json(
+    u: &Value,
+    field_name: String,
+    rows: &mut Option<HashMap<Ip, NetRow>>,
+    input_base: Option<i32>,
+    _reverse: &Reverse,
+    config: &RefCell<Config>,
+) {
+    if let Value::Array(a) = &u[field_name] {
+        for i in a {
+            let mut hm: HashMap<String, String> = HashMap::new();
+            let mut ip: Option<Ip> = None;
+
+            for (key, value) in i.as_object().unwrap() {
+                let key = key.to_string();
+                let key = key.trim().strip_prefix('"').unwrap_or(&key);
+                let key = key.trim().strip_suffix('"').unwrap_or(key);
+
+                let value = value.to_string();
+                let value = value.trim().strip_prefix('"').unwrap_or(&value);
+                let value = value.trim().strip_suffix('"').unwrap_or(value);
+
+                hm.insert(key.to_string(), value.to_string());
+            }
+
+            if let Some(cidr) = hm.get("ipv6_prefix") {
+                ip = parse_address_mask(&cidr.to_string(), None, None, input_base, false, config);
+            }
+
+            if let Some(cidr) = hm.get("ip_prefix") {
+                ip = parse_address_mask(&cidr.to_string(), None, None, input_base, false, config);
+            }
+
+            if let Some(ip) = &ip {
+                if rows.is_none() {
+                    *rows = Some(HashMap::new());
+                }
+
+                rows.as_mut()
+                    .unwrap()
+                    .insert(ip.clone(), NetRow { row: hm.clone() });
+            }
+        }
     }
 }
 
@@ -1124,7 +1171,7 @@ fn set_opts(opts: &mut Options) {
 
     opts.optflag("h", "help", "display help");
 
-    opts.optopt("i", "field", "csv/db field", "FIELD");
+    opts.optopt("i", "field", "csv/db/json field", "FIELD");
     opts.optflag("l", "list", "list all addresses in network");
     opts.optflag(
         "",
@@ -1176,6 +1223,7 @@ fn set_opts(opts: &mut Options) {
         "CIDR",
     );
 
+    opts.optopt("", "json", "json prefix file", "PATH");
     opts.optflag("q", "quiet", "don't report errors");
 
     opts.optopt(
@@ -1557,6 +1605,23 @@ fn main() {
         };
 
         process_csv(reader, field_name, &mut rows, input_base, &reverse);
+    }
+
+    if matches.opt_present("json") {
+        if let Some(path) = matches.opt_str("json") {
+            let file = File::open(&path).unwrap_or_else(|_| panic!("Cannot open {}", path));
+            let reader = BufReader::new(file);
+
+            let field_name = if matches.opt_present("field") {
+                matches.opt_str("field").unwrap()
+            } else {
+                "prefixes".to_string()
+            };
+
+            let u: Value =
+                serde_json::from_reader(reader).unwrap_or_else(|_| panic!("Cannot parse {}", path));
+            process_json(&u, field_name, &mut rows, input_base, &reverse, &config);
+        }
     }
 
     if let Some(path) = matches.opt_str("cdb") {

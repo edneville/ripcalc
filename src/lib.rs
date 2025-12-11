@@ -1392,13 +1392,13 @@ pub fn geoip2_city(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, 
     let f: IpAddr = ip.to_string().parse().unwrap();
 
     if let Ok(Some(city)) = reader.lookup::<Option<geoip2::City>>(f) {
-        if city.city.is_none() {
-            return Some(ret);
-        }
-
         let config = config.borrow();
         let default_lang = "en".to_string();
         let lang = config.options.get("mmlang").unwrap_or(&default_lang);
+
+        city.city.as_ref()?;
+        city.city.as_ref().unwrap().names.as_ref()?;
+
         let c = city
             .city
             .as_ref()
@@ -1411,6 +1411,8 @@ pub fn geoip2_city(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, 
             ret.insert("city".to_string(), c.to_string());
         }
 
+        city.continent.as_ref()?;
+        city.continent.as_ref().unwrap().names.as_ref()?;
         let c = city
             .continent
             .as_ref()
@@ -1423,6 +1425,8 @@ pub fn geoip2_city(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, 
             ret.insert("continent".to_string(), c.to_string());
         }
 
+        city.country.as_ref()?;
+        city.country.as_ref().unwrap().names.as_ref()?;
         let c = city
             .country
             .as_ref()
@@ -1468,11 +1472,13 @@ pub fn geoip2_asn(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, S
     let reader = binding.mmasn.as_ref().unwrap();
 
     let f: IpAddr = ip.to_string().parse().unwrap();
-    
+
     if let Ok(Some(asn)) = reader.lookup::<Option<geoip2::Asn>>(f) {
+        asn.autonomous_system_number.as_ref()?;
         let c = asn.autonomous_system_number.as_ref().unwrap();
         ret.insert("autonomous_system_number".to_string(), c.to_string());
 
+        asn.autonomous_system_organization.as_ref()?;
         let c = asn.autonomous_system_organization.as_ref().unwrap();
         ret.insert("autonomous_system_organization".to_string(), c.to_string());
         return Some(ret);
@@ -1500,17 +1506,17 @@ pub fn geoip2_country(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<Strin
         let default_lang = "en".to_string();
         let lang = config.options.get("mmlang").unwrap_or(&default_lang);
 
-        let c = country
-            .continent
-            .as_ref()
-            .unwrap()
-            .names
-            .as_ref()
-            .unwrap()
-            .get(lang as &str);
-        if let Some(c) = c {
+        country.continent.as_ref()?;
+        country.continent.as_ref().unwrap().names.as_ref()?;
+
+        let c = &country.continent.as_ref().unwrap().names;
+
+        if let Some(c) = c.as_ref().unwrap().get(lang as &str) {
             ret.insert("continent".to_string(), c.to_string());
         }
+
+        country.country.as_ref()?;
+        country.country.as_ref().unwrap().names.as_ref()?;
 
         let c = country
             .country
@@ -1524,6 +1530,13 @@ pub fn geoip2_country(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<Strin
             ret.insert("country".to_string(), c.to_string());
         }
 
+        country.registered_country.as_ref()?;
+        country
+            .registered_country
+            .as_ref()
+            .unwrap()
+            .names
+            .as_ref()?;
         let c = country
             .registered_country
             .as_ref()
