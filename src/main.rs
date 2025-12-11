@@ -1656,8 +1656,6 @@ fn main() {
             .borrow_mut()
             .options
             .insert("mmcity".to_string(), path.clone());
-
-        config.borrow_mut().mmcity = Some(maxminddb::Reader::open_readfile(path).unwrap().into());
     }
 
     if let Some(path) = matches.opt_str("mmcountry") {
