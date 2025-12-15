@@ -436,6 +436,7 @@ fn process_json(
 }
 
 fn process_csv(
+    config: &RefCell<Config>,
     mut reader: csv::Reader<File>,
     field_name: String,
     rows: &mut Option<HashMap<Ip, NetRow>>,
@@ -459,6 +460,12 @@ fn process_csv(
     let field_num = field_num.unwrap();
 
     for result in reader.records() {
+        if result.is_err() {
+            if !config_option_true(&config.borrow(), "quiet".to_string()) {
+                eprintln!("{:?}", result.err());
+            }
+            continue;
+        }
         let record = result.unwrap();
 
         if record.get(field_num).is_some() {
@@ -1617,7 +1624,7 @@ fn main() {
             "network".to_string()
         };
 
-        process_csv(reader, field_name, &mut rows, input_base, &reverse);
+        process_csv(&config, reader, field_name, &mut rows, input_base, &reverse);
     }
 
     if matches.opt_present("json") {
