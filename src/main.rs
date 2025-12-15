@@ -466,75 +466,36 @@ fn process_csv(
             }
             continue;
         }
-        let record = result.unwrap();
+        let record = result.as_ref().unwrap();
 
         if record.get(field_num).is_some() {
             let rec = record.get(field_num).unwrap();
-            let mut parts: Vec<&str> = rec.split('/').collect();
-            let mut row_ip: Option<Addr> = None;
 
-            if parts[0].contains(':') {
-                if rows.is_none() {
-                    *rows = Some(HashMap::new());
+            let ip = parse_address_mask(
+                rec,
+                None,
+                None,
+                input_base,
+                matches!(reverse, Reverse::Both | Reverse::Input),
+                config,
+            );
+
+            if ip.is_none() {
+                if !config_option_true(&config.borrow(), "quiet".to_string()) {
+                    eprintln!("Could not parse {:?}", result.err());
                 }
-
-                if parts.len() == 1 {
-                    parts.push("128");
-                }
-
-                let v6 = parse_v6(
-                    parts[0],
-                    input_base,
-                    matches!(reverse, Reverse::Both | Reverse::Source),
-                );
-
-                if v6.is_none() {
-                    eprintln!("{}: not in ip/cidr format", rec);
-                    continue;
-                }
-                row_ip = v6;
-            }
-
-            if parts[0].contains('.') {
-                if rows.is_none() {
-                    *rows = Some(HashMap::new());
-                }
-
-                let v4 = parse_v4(
-                    parts[0],
-                    input_base,
-                    matches!(reverse, Reverse::Both | Reverse::Source),
-                );
-                if parts.len() == 1 {
-                    parts.push("32");
-                }
-
-                if v4.is_none() {
-                    eprintln!("{}: not in ip/cidr format", rec);
-                    continue;
-                }
-                row_ip = v4;
-            }
-
-            let cidr = parts[1].to_string().parse::<u32>();
-            if cidr.is_err() {
-                eprintln!("{}: not in ip/cidr format", rec);
-                continue;
-            }
-            let cidr = cidr.unwrap();
-
-            if row_ip.is_none() {
                 continue;
             }
 
-            let ip = Ip {
-                address: row_ip.unwrap(),
-                cidr,
-            };
+            let ip = ip.unwrap();
 
             let mut hm = HashMap::new();
             for i in 0..header_names.len() {
                 hm.insert(header_names[i].to_string(), record[i].to_string());
+            }
+
+            if rows.is_none() {
+                *rows = Some(HashMap::new());
             }
 
             rows.as_mut()
