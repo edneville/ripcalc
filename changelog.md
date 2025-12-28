@@ -1,3 +1,5 @@
+0.3.0
+
  * filter arguments to filter STDIN for address lines only
  * read and make cdb files
  * example cdb maker
