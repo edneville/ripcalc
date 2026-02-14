@@ -1,3 +1,5 @@
+ * --filter should assume --inside unless told otherwise
+
 0.3.0
 
  * filter arguments to filter STDIN for address lines only

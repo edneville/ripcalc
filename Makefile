@@ -76,6 +76,7 @@ bintest:
 	$(RELEASE) 192.168.1.1 --format '%r\n' | grep 'RFC 1918' >/dev/null
 	$(RELEASE) 127.0.0.1 --format '%r\n' | grep 'Used for loopback addresses to the local host.' >/dev/null
 	printf "192.168.1.1 this should match\n192.168.1.10 so should this\n192.168.2.1 this should not\n" | $(RELEASE) --filter --inside 192.168.1.0/24 --format cidr | wc -l | grep -Fx 2 >/dev/null
+	printf "192.168.1.1 this should match\n192.168.1.10 so should this\n192.168.2.1 this should not\n" | $(RELEASE) --filter 192.168.1.0/24 --format cidr | wc -l | grep -Fx 2 >/dev/null
 	printf "192.168.1.1 this should match\n192.168.1.10 so should this\n192.168.2.1 this should not\n" | $(RELEASE) --filter 192.168.1.0/24 --format cidr --outside | wc -l | grep -Fx 1 >/dev/null
 	printf "this should match 192.168.1.1\nthis should match 192.168.1.20\nthis should not 192.168.10.1\n" | $(RELEASE) --filternum 4 --inside 192.168.1.0/24 --format cidr | wc -l | grep -Fx 2 >/dev/null
 	printf "this should match 192.168.1.1\nthis should match 192.168.1.20\nthis should not 192.168.10.1\n" | $(RELEASE) --filternum 4 --outside 192.168.1.0/24 --format cidr | wc -l | grep -Fx 1 >/dev/null
