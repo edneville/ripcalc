@@ -314,12 +314,11 @@ MaxMind's geolite database files can be read using `--mmasn`, `--mmcountry` and 
 
 In normal context the following are returned:
 
-mmcity: %{mmcity_city}, %{mmcity_continent}, %{mmcity_country}, %{mmcity_code}, %{mmcity_latitude}, %{mmcity_longitude}
+mmcity: `%{mmcity_city}`, `%{mmcity_continent}`, `%{mmcity_country}`, `%{mmcity_code}`, `%{mmcity_latitude}`, `%{mmcity_longitude}`
 
-mmcountry: %{mmcountry_continent}, %{mmcountry_country}, %{mmcountry_registered_country}
+mmcountry: `%{mmcountry_continent}`, `%{mmcountry_country}`, `%{mmcountry_registered_country}`
 
-mmasn: %{mmasn_autonomous_system_number}, %{mmasn_autonomous_system_organization
-}
+mmasn: `%{mmasn_autonomous_system_number}`, `%{mmasn_autonomous_system_organization}`
 
 Less information is returned in `--top` context:
 
