@@ -281,6 +281,25 @@ If you'd like to see the country code that the requests in your log are from:
 cat /var/log/apache/access.log | ripcalc --filter --outside --cdb ipdb.cdb --format '%{ASNCC} %{line}\n'
 ```
 
+If you want to print certain IP ranges, perhaps for an email report or similar, the following could work:
+
+```
+#!/bin/sh
+
+A=`mktemp`
+cat /var/log/apache2/access.log | ripcalc --filter --inside 192.168.0.0/16 >"$A"
+
+if [ -s "$A" ]; then
+        (
+        printf "From: me@example.com\nTo: me@example.com\nSubject: 192.168.0.0/16 access\n\n"
+        cat "$A"
+        ) | /usr/sbin/sendmail -fme@example.com me@example.com
+fi
+
+rm "$A"
+
+```
+
 # abuseipdb
 
 If `--abuseipdb [key]` is used then a successful lookup will populate `%{abuseipdb_var}` (where `var` is the lookup result data field) for use in a `--format` string.
