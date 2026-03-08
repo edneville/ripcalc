@@ -3,6 +3,8 @@ use getopts::Options;
 use regex::Regex;
 use ripcalc::*;
 use serde_json::Value;
+use std::borrow::Borrow;
+use std::borrow::BorrowMut;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs;
@@ -14,7 +16,6 @@ use std::str::FromStr;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::{str, thread, time};
-
 fn default_cdb_format(
     distance: usize,
     config: &RefCell<Config>,
@@ -1102,6 +1103,7 @@ fn set_opts(opts: &mut Options) {
     opts.optopt("", "cdb", "cdb reference file", "PATH");
     opts.optflag("", "countseen", "count times an ip is seen");
     opts.optopt("c", "csv", "csv reference file", "PATH");
+    opts.optflag("", "consume", "read stdin until empty");
     opts.optopt("d", "divide", "divide network into chunks", "CIDR");
     opts.optflag("", "noexpand", "do not expand networks in list");
 
@@ -1171,7 +1173,12 @@ fn set_opts(opts: &mut Options) {
 
     opts.optflag("", "top", "show IP frequency like top");
     opts.optopt("", "delay", "top update delay in seconds", "SECONDS");
-    opts.optopt("", "iterations", "top iterations ", "NUMBER");
+    opts.optopt(
+        "",
+        "iterations",
+        "top iterations, use --consume to produce whole report of stdin",
+        "NUMBER",
+    );
     opts.optflag("", "noclear", "don't print clear screen codes");
 
     opts.optopt(
@@ -1263,6 +1270,15 @@ fn read_loop(
         let position = filter_pos(&config);
 
         loop {
+            if reader.fill_buf().unwrap().is_empty() {
+                let mut counter_lock = count_lock.lock().unwrap();
+                counter_lock
+                    .borrow_mut()
+                    .options
+                    .insert("consumed".to_string(), "true".to_string());
+                sleep(100);
+            }
+
             let mut m = String::new();
             let _ = reader.read_line(&mut m);
             let found = line_filter(&config, position, &m, base);
@@ -1302,6 +1318,17 @@ fn read_loop(
             None
         }
     };
+
+    if config_option_true(&config.borrow(), "consume".to_string()) {
+        loop {
+            let config = count.lock().unwrap().clone();
+            if !config_option_true(config.borrow(), "consumed".to_string()) {
+                sleep(100);
+            } else {
+                break;
+            }
+        }
+    }
 
     let mut loops = 0;
     let clear_screen = !config_option_true(&config.borrow(), "noclear".to_string());
@@ -1409,10 +1436,10 @@ fn read_loop(
             }
         }
         if let Some(iterations) = iterations {
+            loops += 1;
             if loops >= iterations {
                 return;
             }
-            loops += 1;
         }
         sleep(delay);
     }
@@ -1793,6 +1820,13 @@ fn main() {
             .borrow_mut()
             .options
             .insert("noclear".to_string(), "true".to_string());
+    }
+
+    if matches.opt_present("consume") {
+        config
+            .borrow_mut()
+            .options
+            .insert("consume".to_string(), "true".to_string());
     }
 
     if let Some(iterations) = matches.opt_str("iterations") {
