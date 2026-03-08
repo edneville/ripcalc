@@ -370,10 +370,13 @@ tail -Fq /var/log/apache2/*log
 | /usr/sbin/sendmail -fme@example you@example
 ```
 
+All input can be read with `--consume` so a report can be produced.
+
 # help
 
 ```
-ripcalc version 0.2.7
+
+ripcalc version 0.3.0
 
 Options:
     -4, --ipv4          treat inputs as ipv4 address
@@ -386,6 +389,7 @@ Options:
         --cdb PATH      cdb reference file
         --countseen     count times an ip is seen
     -c, --csv PATH      csv reference file
+        --consume       read stdin until empty
     -d, --divide CIDR   divide network into chunks
         --noexpand      do not expand networks in list
     -e, --encapsulating 
@@ -421,7 +425,8 @@ Options:
         --top           show IP frequency like top
         --delay SECONDS top update delay in seconds
         --iterations NUMBER
-                        top iterations
+                        top iterations, use --consume to produce whole report
+                        of stdin
         --noclear       don't print clear screen codes
         --mmlang LANG   the lang to use in results, defaults to en
         --mmasn PATH    path to maxmind geoip asn file

@@ -4,7 +4,7 @@ section: 1
 header: User Manual
 footer: ripcalc 0.3.0
 author: Ed Neville (ed-ripcalc@s5h.net)
-date: 14 February 2026
+date: 08 March 2026
 ---
 
 # NAME
@@ -41,7 +41,7 @@ ripcalc - a tool for network addresses
 
 **ripcalc -d/--divide [CIDR] 127.0.0.1/24**
 
-**ripcalc --top [--delay SECONDS] [--interations NUMBER] [--noclear]**
+**ripcalc --top [--delay SECONDS] [--interations NUMBER] [--noclear] [--consume]**
 
 **ripcalc --makecdb [PATH]**
 
@@ -81,7 +81,7 @@ The number (**%D**) of subnets can be printed when using the `--group` argument 
 
 If **base** is a negative number, input addresses are treated as though the input is a signed integer in **base**.
 
-If `--top` is given a frequency of IP addresses will be shown and updated every `--delay SECONDS` (defaults to 1). This can be used with `--cdb` and `--abuseipdb`.
+If `--top` is given a frequency of IP addresses will be shown and updated every `--delay SECONDS` (defaults to 1). This can be used with `--cdb` and `--abuseipdb`. `--consume` will read all stdin in for a report.
 
 If `--quiet` is specified then parsing error messages will be suppressed.
 
