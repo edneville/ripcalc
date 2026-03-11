@@ -16,6 +16,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::{str, thread, time};
+
 fn default_cdb_format(
     distance: usize,
     config: &RefCell<Config>,
@@ -729,11 +730,7 @@ fn process_input_file(
         || matches.opt_present("filterany")
         || matches.opt_present("filternum")
     {
-        let inside = if inside.is_none() {
-            Some(true)
-        } else {
-            inside.clone()
-        };
+        let inside = if inside.is_none() { Some(true) } else { inside };
 
         process_input_filter(&mut reader, ip_args, inside, config, matches, rows);
 
