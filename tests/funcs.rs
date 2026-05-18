@@ -1788,4 +1788,24 @@ update IP6 set active = 0 where (ip >= 42540724579414763292693624807812497408 an
             }),
         );
     }
+
+    #[test]
+    fn test_avg_count() {
+        let mut totals: Vec<usize> = vec![];
+
+        assert_eq!(avg_count(&totals, 1), 0);
+
+        totals.insert(0, 1);
+        assert_eq!(avg_count(&totals, 1), 1);
+
+        for _ in 0..30 {
+            totals.insert(0, 1);
+        }
+
+        for _ in 0..30 {
+            totals.insert(0, 3);
+        }
+
+        assert_eq!(avg_count(&totals, 60), 2);
+    }
 }
