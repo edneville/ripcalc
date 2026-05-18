@@ -2175,3 +2175,27 @@ pub fn line_filter(
 
     None
 }
+
+pub fn avg_count(totals: &[usize], num: usize) -> usize {
+    let total: usize = totals.iter().take(num).sum();
+    let div = if totals.len() > num {
+        num
+    } else {
+        totals.len()
+    };
+    if div == 0 {
+        0
+    } else {
+        total / div
+    }
+}
+
+pub fn totals_line(totals: &[usize]) -> String {
+    format!(
+        "Total: {:4}/sec {:4}/min {:4}/5 min {:4}/15 min\n",
+        avg_count(totals, 1),
+        avg_count(totals, 60),
+        avg_count(totals, 300),
+        avg_count(totals, 900),
+    )
+}

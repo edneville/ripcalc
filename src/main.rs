@@ -1329,6 +1329,7 @@ fn read_loop(
 
     let mut loops = 0;
     let clear_screen = !config_option_true(&config.borrow(), "noclear".to_string());
+    let mut totals: Vec<usize> = vec![];
     loop {
         if clear_screen {
             print!("\x1b\x5b\x48\x1b\x5b\x32\x4a");
@@ -1348,6 +1349,13 @@ fn read_loop(
             for i in &v {
                 total += i.1;
             }
+
+            totals.insert(0, total);
+            if totals.len() > 900 {
+                totals.pop();
+            }
+
+            print!("{}", totals_line(&totals));
 
             for i in v {
                 let pct = (10.0 / total as f64) * (*i.1 as f64);
@@ -1428,7 +1436,7 @@ fn read_loop(
                     }
                 }
             }
-            if c > 0 {
+            if c > 0 && c < 21 {
                 println!();
             }
         }
