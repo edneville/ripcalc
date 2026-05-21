@@ -1378,6 +1378,18 @@ pub fn config_option_true(config: &Config, opt: String) -> bool {
     config.options.get(&opt).unwrap_or(&"false".to_string()) != "false"
 }
 
+fn getnameforlang<'a>(names : &'a maxminddb::geoip2::Names, lang : &str) -> Option<&'a str> {
+    if lang == "de" { return names.german }
+    if lang == "en" { return names.english }
+    if lang == "es" { return names.spanish }
+    if lang == "fr" { return names.french }
+    if lang == "jp" { return names.japanese }
+    if lang == "pt-BR" { return names.brazilian_portuguese }
+    if lang == "ru" { return names.russian }
+    if lang == "zh-CN" { return names.simplified_chinese }
+    return None
+}
+
 pub fn geoip_city(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, String>> {
     let mut ret: HashMap<String, String> = HashMap::new();
     if config.borrow().mmcity.is_none() {
@@ -1399,65 +1411,37 @@ pub fn geoip_city(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, S
 
     let f: IpAddr = ip.to_string().parse().unwrap();
 
-    if let Ok(Some(city)) = reader.lookup::<Option<geoip2::City>>(f) {
+    if let Ok(Ok(Some(Some(city)))) = reader.lookup(f).map(|r| r.decode::<Option<geoip2::City>>()) {
         let config = config.borrow();
         let default_lang = "en".to_string();
         let lang = config.options.get("mmlang").unwrap_or(&default_lang);
 
-        city.city.as_ref()?;
-        city.city.as_ref().unwrap().names.as_ref()?;
-
-        let c = city
-            .city
-            .as_ref()
-            .unwrap()
-            .names
-            .as_ref()
-            .unwrap()
-            .get(lang as &str);
+        let c = getnameforlang(&city.city.names,lang);
         if let Some(c) = c {
             ret.insert("city".to_string(), c.to_string());
         }
 
-        city.continent.as_ref()?;
-        city.continent.as_ref().unwrap().names.as_ref()?;
-        let c = city
-            .continent
-            .as_ref()
-            .unwrap()
-            .names
-            .as_ref()
-            .unwrap()
-            .get(lang as &str);
+        let c = getnameforlang(&city.continent.names,lang);
         if let Some(c) = c {
             ret.insert("continent".to_string(), c.to_string());
         }
 
-        city.country.as_ref()?;
-        city.country.as_ref().unwrap().names.as_ref()?;
-        let c = city
-            .country
-            .as_ref()
-            .unwrap()
-            .names
-            .as_ref()
-            .unwrap()
-            .get(lang as &str);
+        let c = getnameforlang(&city.continent.names,lang);
         if let Some(c) = c {
             ret.insert("country".to_string(), c.to_string());
         }
 
-        let c = city.country.as_ref().unwrap().iso_code;
+        let c = city.country.iso_code;
         if let Some(c) = c {
             ret.insert("code".to_string(), c.to_string());
         }
 
-        let c = city.location.as_ref().unwrap().latitude;
+        let c = city.location.latitude;
         if let Some(c) = c {
             ret.insert("latitude".to_string(), c.to_string());
         }
 
-        let c = city.location.as_ref().unwrap().longitude;
+        let c = city.location.longitude;
         if let Some(c) = c {
             ret.insert("longitude".to_string(), c.to_string());
         }
@@ -1489,7 +1473,7 @@ pub fn geoip_asn(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, St
 
     let f: IpAddr = ip.to_string().parse().unwrap();
 
-    if let Ok(Some(asn)) = reader.lookup::<Option<geoip2::Asn>>(f) {
+    if let Ok(Ok(Some(Some(asn)))) = reader.lookup(f).map(|r| r.decode::<Option<geoip2::Asn>>()) {
         asn.autonomous_system_number.as_ref()?;
         let c = asn.autonomous_system_number.as_ref().unwrap();
         ret.insert("autonomous_system_number".to_string(), c.to_string());
@@ -1525,50 +1509,24 @@ pub fn geoip_country(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String
 
     let f: IpAddr = ip.to_string().parse().unwrap();
 
-    if let Ok(Some(country)) = reader.lookup::<Option<geoip2::Country>>(f) {
+    if let Ok(Ok(Some(Some(country)))) = reader.lookup(f).map(|r| r.decode::<Option<geoip2::Country>>()) {
         let config = config.borrow();
         let default_lang = "en".to_string();
         let lang = config.options.get("mmlang").unwrap_or(&default_lang);
 
-        country.continent.as_ref()?;
-        country.continent.as_ref().unwrap().names.as_ref()?;
+        let c = &country.continent.names;
 
-        let c = &country.continent.as_ref().unwrap().names;
-
-        if let Some(c) = c.as_ref().unwrap().get(lang as &str) {
+        if let Some(c) = getnameforlang(c,lang) {
             ret.insert("continent".to_string(), c.to_string());
         }
 
-        country.country.as_ref()?;
-        country.country.as_ref().unwrap().names.as_ref()?;
 
-        let c = country
-            .country
-            .as_ref()
-            .unwrap()
-            .names
-            .as_ref()
-            .unwrap()
-            .get(lang as &str);
+        let c = getnameforlang(&country.country.names,lang);
         if let Some(c) = c {
             ret.insert("country".to_string(), c.to_string());
         }
 
-        country.registered_country.as_ref()?;
-        country
-            .registered_country
-            .as_ref()
-            .unwrap()
-            .names
-            .as_ref()?;
-        let c = country
-            .registered_country
-            .as_ref()
-            .unwrap()
-            .names
-            .as_ref()
-            .unwrap()
-            .get(lang as &str);
+        let c = getnameforlang(&country.registered_country.names,lang);
         if let Some(c) = c {
             ret.insert("registered_country".to_string(), c.to_string());
         }

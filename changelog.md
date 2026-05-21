@@ -1,4 +1,7 @@
+0.3.1
+
  * --filter should assume --inside unless told otherwise
+ * bumping maxmind to 0.28, Patch taken from Debian/Peter Michael Green
 
 0.3.0
 

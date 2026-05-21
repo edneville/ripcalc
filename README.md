@@ -375,9 +375,6 @@ All input can be read with `--consume` so a report can be produced.
 # help
 
 ```
-
-ripcalc version 0.3.0
-
 Options:
     -4, --ipv4          treat inputs as ipv4 address
     -6, --ipv6          treat inputs as ipv6 address
