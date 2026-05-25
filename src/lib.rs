@@ -1374,8 +1374,8 @@ pub fn cdb_lookup(ip: &mut Ip, config: &RefCell<Config>) -> Option<HashMap<Strin
     None
 }
 
-pub fn config_option_true(config: &Config, opt: String) -> bool {
-    config.options.get(&opt).unwrap_or(&"false".to_string()) != "false"
+pub fn config_option_true(config: &Config, opt: &str) -> bool {
+    config.options.get(opt).unwrap_or(&"false".to_string()) != "false"
 }
 
 fn getnameforlang<'a>(names : &'a maxminddb::geoip2::Names, lang : &str) -> Option<&'a str> {
@@ -1583,7 +1583,7 @@ pub fn format_details(
         }
     }
 
-    if config_option_true(&config.borrow(), "abuseipdb".to_string())
+    if config_option_true(&config.borrow(), "abuseipdb")
         && reformatted.contains("%{abuseipdb")
     {
         let key = config
@@ -1616,9 +1616,9 @@ pub fn format_details(
         }
     }
 
-    if (config_option_true(&config.borrow(), "mmasn".to_string())
-        || config_option_true(&config.borrow(), "mmcity".to_string())
-        || config_option_true(&config.borrow(), "mmcountry".to_string()))
+    if (config_option_true(&config.borrow(), "mmasn")
+        || config_option_true(&config.borrow(), "mmcity")
+        || config_option_true(&config.borrow(), "mmcountry"))
         && (reformatted.contains("%{mmcity")
             || reformatted.contains("%{mmcountry")
             || reformatted.contains("%{mmasn"))
@@ -1757,7 +1757,7 @@ pub fn format_details(
                     }
                     'C' => {
                         let config = config.borrow();
-                        if config_option_true(&config, "countseen".to_string())
+                        if config_option_true(&config, "countseen")
                             && config.count.is_some()
                         {
                             out_str.push_str(&get_seen_count(&config, ip).to_string());
@@ -1933,7 +1933,7 @@ pub fn inside_filter(inside: Option<bool>, ip_args: &[Ip], ip: &Ip) -> bool {
 pub fn group_mask(config: &Config, i: &Ip) -> u32 {
     match i.address {
         Addr::V4(_) => {
-            if config_option_true(config, "group4".to_string()) {
+            if config_option_true(config, "group4") {
                 return config
                     .options
                     .get("group4")
@@ -1943,7 +1943,7 @@ pub fn group_mask(config: &Config, i: &Ip) -> u32 {
             }
         }
         Addr::V6(_) => {
-            if config_option_true(config, "group6".to_string()) {
+            if config_option_true(config, "group6") {
                 return config
                     .options
                     .get("group6")
@@ -1954,7 +1954,7 @@ pub fn group_mask(config: &Config, i: &Ip) -> u32 {
         }
     }
 
-    if config_option_true(config, "group".to_string()) {
+    if config_option_true(config, "group") {
         return config
             .options
             .get("group")
@@ -1967,13 +1967,13 @@ pub fn group_mask(config: &Config, i: &Ip) -> u32 {
 }
 
 pub fn config_cidr_grouping(config: &Config) -> bool {
-    config_option_true(config, "group".to_string())
-        || config_option_true(config, "group4".to_string())
-        || config_option_true(config, "group6".to_string())
+    config_option_true(config, "group")
+        || config_option_true(config, "group4")
+        || config_option_true(config, "group6")
 }
 
 pub fn increment_seen_count(config: &mut Config, ip: Ip) {
-    if config_option_true(config, "countseen".to_string()) && config.count.is_some() {
+    if config_option_true(config, "countseen") && config.count.is_some() {
         let cidr = group_mask(config, &ip);
 
         let net_mask = network(&Ip {
@@ -1987,7 +1987,7 @@ pub fn increment_seen_count(config: &mut Config, ip: Ip) {
 }
 
 pub fn get_seen_count(config: &Config, i: &Ip) -> usize {
-    if config_option_true(config, "countseen".to_string()) && config.count.is_some() {
+    if config_option_true(config, "countseen") && config.count.is_some() {
         let net_mask = network(&Ip {
             address: i.address.clone(),
             cidr: config

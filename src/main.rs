@@ -182,8 +182,8 @@ fn print_details(
         let nets = matches.opt_str("networks").unwrap().trim().parse().unwrap();
 
         if nets < ip.cidr
-            && !(config_option_true(&config.borrow(), "encapsulating".to_string())
-                && config_option_true(&config.borrow(), "group".to_string()))
+            && !(config_option_true(&config.borrow(), "encapsulating")
+                && config_option_true(&config.borrow(), "group"))
         {
             eprintln!("{} is bigger than the network mask {}", nets, ip.cidr);
             std::process::exit(1);
@@ -393,7 +393,7 @@ fn base_parse(base: Option<&String>) -> Option<i32> {
 
 fn process_json(
     u: &Value,
-    field_name: String,
+    field_name: &str,
     rows: &mut Option<HashMap<Ip, NetRow>>,
     input_base: Option<i32>,
     _reverse: &Reverse,
@@ -440,7 +440,7 @@ fn process_json(
 fn process_csv(
     config: &RefCell<Config>,
     mut reader: csv::Reader<File>,
-    field_name: String,
+    field_name: &str,
     rows: &mut Option<HashMap<Ip, NetRow>>,
     input_base: Option<i32>,
     reverse: &Reverse,
@@ -449,7 +449,7 @@ fn process_csv(
     let mut header_names: Vec<String> = vec![];
     let mut field_num: Option<usize> = None;
     for i in 0..headers.len() {
-        if headers[i] == field_name {
+        if headers[i] == *field_name {
             field_num = Some(i);
         }
         header_names.push(headers[i].to_string());
@@ -463,7 +463,7 @@ fn process_csv(
 
     for result in reader.records() {
         if result.is_err() {
-            if !config_option_true(&config.borrow(), "quiet".to_string()) {
+            if !config_option_true(&config.borrow(), "quiet") {
                 eprintln!("{:?}", result.err());
             }
             continue;
@@ -483,7 +483,7 @@ fn process_csv(
             );
 
             if ip.is_none() {
-                if !config_option_true(&config.borrow(), "quiet".to_string()) {
+                if !config_option_true(&config.borrow(), "quiet") {
                     eprintln!("Could not parse {:?}", result.err());
                 }
                 continue;
@@ -524,7 +524,7 @@ fn process_encapsulated_input(
 
     increment_seen_count(&mut config.borrow_mut(), i.clone());
 
-    if config_option_true(&config.borrow(), "group".to_string()) {
+    if config_option_true(&config.borrow(), "group") {
         match i.address {
             Addr::V4(_) => {
                 if network_size > 32 {
@@ -633,11 +633,11 @@ fn process_group_encapsulation(
 }
 
 fn filter_pos(config: &RefCell<Config>) -> Option<u32> {
-    if config_option_true(&config.borrow(), "filterany".to_string()) {
+    if config_option_true(&config.borrow(), "filterany") {
         return None;
     }
 
-    let position: u32 = if config_option_true(&config.borrow(), "filter".to_string()) {
+    let position: u32 = if config_option_true(&config.borrow(), "filter") {
         match config
             .borrow()
             .options
@@ -760,7 +760,7 @@ fn process_input_file(
         std::process::exit(0);
     }
 
-    if config_option_true(&config.borrow(), "encapsulating".to_string()) {
+    if config_option_true(&config.borrow(), "encapsulating") {
         let mut used: HashMap<Ip, bool> = HashMap::new();
         let mut network_size: u32 = 0;
 
@@ -834,7 +834,7 @@ fn generated_date(cdb: &mut cdb::CDBWriter, dt: DateTime<Utc>) {
     let _ = cdb.add("version".as_bytes(), "1".as_bytes());
 }
 
-fn make_cdb(path: String, config: &RefCell<Config>) {
+fn make_cdb(path: &str, config: &RefCell<Config>) {
     let reader = BufReader::new(std::io::stdin());
     let tmp_file = format!("{}.tmp", path);
     let cdb = cdb::CDBWriter::create(&tmp_file);
@@ -891,9 +891,9 @@ fn make_cdb(path: String, config: &RefCell<Config>) {
     }
 }
 
-fn make_thyme_cdb(location: String, config: &RefCell<Config>) {
+fn make_thyme_cdb(location: &str, config: &RefCell<Config>) {
     fn process_raw(
-        data: String,
+        data: &str,
         db: &mut HashMap<String, String>,
         asn_list: &mut HashMap<String, Vec<String>>,
     ) {
@@ -919,7 +919,7 @@ fn make_thyme_cdb(location: String, config: &RefCell<Config>) {
     }
 
     fn process_ipv6(
-        data: String,
+        data: &str,
         db: &mut HashMap<String, String>,
         asn_list: &mut HashMap<String, Vec<String>>,
     ) {
@@ -946,7 +946,7 @@ fn make_thyme_cdb(location: String, config: &RefCell<Config>) {
 
     fn process_asn(
         cdb: &mut cdb::CDBWriter,
-        lines: String,
+        lines: &str,
         asn: &mut HashMap<String, String>,
         data: &HashMap<String, String>,
         asn_list: &mut HashMap<String, Vec<String>>,
@@ -1057,19 +1057,19 @@ fn make_thyme_cdb(location: String, config: &RefCell<Config>) {
         config.borrow().options.get("data-raw-table").unwrap(),
         &client,
     );
-    process_raw(data_raw, &mut data, &mut asn_list);
+    process_raw(&data_raw, &mut data, &mut asn_list);
 
     let ipv6_raw = get_or_exit(
         config.borrow().options.get("ipv6-raw-table").unwrap(),
         &client,
     );
-    process_ipv6(ipv6_raw, &mut data, &mut asn_list);
+    process_ipv6(&ipv6_raw, &mut data, &mut asn_list);
 
     let data_used = get_or_exit(
         config.borrow().options.get("data-used-autnums").unwrap(),
         &client,
     );
-    process_asn(&mut cdb, data_used, &mut asn, &data, &mut asn_list);
+    process_asn(&mut cdb, &data_used, &mut asn, &data, &mut asn_list);
 
     generated_date(&mut cdb, Utc::now());
 
@@ -1302,7 +1302,7 @@ fn read_loop(
     };
 
     let iterations = {
-        if config_option_true(&config.borrow(), "iterations".to_string()) {
+        if config_option_true(&config.borrow(), "iterations") {
             let cfg = config.borrow();
             let iterations = cfg.options.get("iterations").unwrap();
 
@@ -1316,10 +1316,10 @@ fn read_loop(
         }
     };
 
-    if config_option_true(&config.borrow(), "consume".to_string()) {
+    if config_option_true(&config.borrow(), "consume") {
         loop {
             let config = count.lock().unwrap().clone();
-            if !config_option_true(config.borrow(), "consumed".to_string()) {
+            if !config_option_true(config.borrow(), "consumed") {
                 sleep(100);
             } else {
                 break;
@@ -1328,7 +1328,7 @@ fn read_loop(
     }
 
     let mut loops = 0;
-    let clear_screen = !config_option_true(&config.borrow(), "noclear".to_string());
+    let clear_screen = !config_option_true(&config.borrow(), "noclear");
     let mut totals: Vec<usize> = vec![];
     loop {
         if clear_screen {
@@ -1623,7 +1623,7 @@ fn main() {
             "network".to_string()
         };
 
-        process_csv(&config, reader, field_name, &mut rows, input_base, &reverse);
+        process_csv(&config, reader, &field_name, &mut rows, input_base, &reverse);
     }
 
     if matches.opt_present("json") {
@@ -1639,7 +1639,7 @@ fn main() {
 
             let u: Value =
                 serde_json::from_reader(reader).unwrap_or_else(|_| panic!("Cannot parse {}", path));
-            process_json(&u, field_name, &mut rows, input_base, &reverse, &config);
+            process_json(&u, &field_name, &mut rows, input_base, &reverse, &config);
         }
     }
 
@@ -1688,7 +1688,7 @@ fn main() {
             .borrow_mut()
             .options
             .insert("encapsulating".to_string(), "true".to_string());
-        if !config_option_true(&config.borrow(), "group".to_string()) {
+        if !config_option_true(&config.borrow(), "group") {
             config
                 .borrow_mut()
                 .options
@@ -1720,12 +1720,12 @@ fn main() {
                 .unwrap_or("https://thyme.apnic.net/.combined/data-used-autnums".to_string()),
         );
 
-        make_thyme_cdb(v, &config);
+        make_thyme_cdb(&v, &config);
         std::process::exit(0);
     }
 
     if let Some(v) = matches.opt_str("makecdb") {
-        make_cdb(v, &config);
+        make_cdb(&v, &config);
         std::process::exit(0);
     }
 
@@ -1893,7 +1893,7 @@ fn main() {
             }
         }
 
-        if config_option_true(&config.borrow(), "encapsulating".to_string()) {
+        if config_option_true(&config.borrow(), "encapsulating") {
             let mut network_size: u32 = 0;
 
             if let Some(group) = config.borrow().options.get("group") {
@@ -1918,7 +1918,7 @@ fn main() {
 
     config.borrow_mut().used = Some(used.clone());
 
-    if config_option_true(&config.borrow(), "encapsulating".to_string()) {
+    if config_option_true(&config.borrow(), "encapsulating") {
         process_group_encapsulation(&matches, used, &rows, &config);
         std::process::exit(0);
     }
