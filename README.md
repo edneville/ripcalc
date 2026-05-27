@@ -413,6 +413,7 @@ Options:
         --makethymecdb PATH
                         download and build a cdb file, defaults to
                         thyme.apnic.net data
+        --keepdata      keep data files after download
         --data-raw-table URL or PATH
                         URL/path of raw data
         --ipv6-raw-table URL or PATH

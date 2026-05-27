@@ -1378,16 +1378,32 @@ pub fn config_option_true(config: &Config, opt: &str) -> bool {
     config.options.get(opt).unwrap_or(&"false".to_string()) != "false"
 }
 
-fn getnameforlang<'a>(names : &'a maxminddb::geoip2::Names, lang : &str) -> Option<&'a str> {
-    if lang == "de" { return names.german }
-    if lang == "en" { return names.english }
-    if lang == "es" { return names.spanish }
-    if lang == "fr" { return names.french }
-    if lang == "jp" { return names.japanese }
-    if lang == "pt-BR" { return names.brazilian_portuguese }
-    if lang == "ru" { return names.russian }
-    if lang == "zh-CN" { return names.simplified_chinese }
-    return None
+fn getnameforlang<'a>(names: &'a maxminddb::geoip2::Names, lang: &str) -> Option<&'a str> {
+    if lang == "de" {
+        return names.german;
+    }
+    if lang == "en" {
+        return names.english;
+    }
+    if lang == "es" {
+        return names.spanish;
+    }
+    if lang == "fr" {
+        return names.french;
+    }
+    if lang == "jp" {
+        return names.japanese;
+    }
+    if lang == "pt-BR" {
+        return names.brazilian_portuguese;
+    }
+    if lang == "ru" {
+        return names.russian;
+    }
+    if lang == "zh-CN" {
+        return names.simplified_chinese;
+    }
+    None
 }
 
 pub fn geoip_city(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, String>> {
@@ -1416,17 +1432,17 @@ pub fn geoip_city(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String, S
         let default_lang = "en".to_string();
         let lang = config.options.get("mmlang").unwrap_or(&default_lang);
 
-        let c = getnameforlang(&city.city.names,lang);
+        let c = getnameforlang(&city.city.names, lang);
         if let Some(c) = c {
             ret.insert("city".to_string(), c.to_string());
         }
 
-        let c = getnameforlang(&city.continent.names,lang);
+        let c = getnameforlang(&city.continent.names, lang);
         if let Some(c) = c {
             ret.insert("continent".to_string(), c.to_string());
         }
 
-        let c = getnameforlang(&city.continent.names,lang);
+        let c = getnameforlang(&city.continent.names, lang);
         if let Some(c) = c {
             ret.insert("country".to_string(), c.to_string());
         }
@@ -1509,24 +1525,26 @@ pub fn geoip_country(config: &RefCell<Config>, ip: &Ip) -> Option<HashMap<String
 
     let f: IpAddr = ip.to_string().parse().unwrap();
 
-    if let Ok(Ok(Some(Some(country)))) = reader.lookup(f).map(|r| r.decode::<Option<geoip2::Country>>()) {
+    if let Ok(Ok(Some(Some(country)))) = reader
+        .lookup(f)
+        .map(|r| r.decode::<Option<geoip2::Country>>())
+    {
         let config = config.borrow();
         let default_lang = "en".to_string();
         let lang = config.options.get("mmlang").unwrap_or(&default_lang);
 
         let c = &country.continent.names;
 
-        if let Some(c) = getnameforlang(c,lang) {
+        if let Some(c) = getnameforlang(c, lang) {
             ret.insert("continent".to_string(), c.to_string());
         }
 
-
-        let c = getnameforlang(&country.country.names,lang);
+        let c = getnameforlang(&country.country.names, lang);
         if let Some(c) = c {
             ret.insert("country".to_string(), c.to_string());
         }
 
-        let c = getnameforlang(&country.registered_country.names,lang);
+        let c = getnameforlang(&country.registered_country.names, lang);
         if let Some(c) = c {
             ret.insert("registered_country".to_string(), c.to_string());
         }
@@ -1583,9 +1601,7 @@ pub fn format_details(
         }
     }
 
-    if config_option_true(&config.borrow(), "abuseipdb")
-        && reformatted.contains("%{abuseipdb")
-    {
+    if config_option_true(&config.borrow(), "abuseipdb") && reformatted.contains("%{abuseipdb") {
         let key = config
             .borrow()
             .options
@@ -1757,9 +1773,7 @@ pub fn format_details(
                     }
                     'C' => {
                         let config = config.borrow();
-                        if config_option_true(&config, "countseen")
-                            && config.count.is_some()
-                        {
+                        if config_option_true(&config, "countseen") && config.count.is_some() {
                             out_str.push_str(&get_seen_count(&config, ip).to_string());
                         } else if let Some(used) = &config.used {
                             let count = used.keys().count();

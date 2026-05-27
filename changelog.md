@@ -1,3 +1,5 @@
+ * --keepdata to store downloaded data
+
 0.3.1
 
  * --filter should assume --inside unless told otherwise
