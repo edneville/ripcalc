@@ -885,7 +885,7 @@ fn make_cdb(path: &str, config: &RefCell<Config>) {
         std::process::exit(1);
     }
 
-    if fs::rename(&tmp_file, &path).is_err() {
+    if fs::rename(&tmp_file, path).is_err() {
         eprintln!("Cannot rename {} to {}", tmp_file, path);
         std::process::exit(1);
     }
@@ -1039,6 +1039,21 @@ fn make_thyme_cdb(location: &str, config: &RefCell<Config>) {
         }
     }
 
+    fn save_data(data_file: &str, source: &str, path: &str) -> bool {
+        use std::io::BufWriter;
+
+        if !source.starts_with("http") {
+            return false;
+        }
+
+        let file = File::create(path).unwrap_or_else(|_| panic!("Cannot open {}", path));
+        let mut writer = BufWriter::new(file);
+
+        let _ = writer.write(data_file.as_bytes());
+
+        true
+    }
+
     let client = ua_client().expect("Cannot make user-agent");
     let tmp_file = format!("{}.tmp", &location);
     let cdb = cdb::CDBWriter::create(&tmp_file);
@@ -1057,18 +1072,36 @@ fn make_thyme_cdb(location: &str, config: &RefCell<Config>) {
         config.borrow().options.get("data-raw-table").unwrap(),
         &client,
     );
+    let _ = config_option_true(&config.borrow(), "keep_data")
+        && save_data(
+            &data_raw,
+            config.borrow().options.get("data-raw-table").unwrap(),
+            "data-raw-table",
+        );
     process_raw(&data_raw, &mut data, &mut asn_list);
 
     let ipv6_raw = get_or_exit(
         config.borrow().options.get("ipv6-raw-table").unwrap(),
         &client,
     );
+    let _ = config_option_true(&config.borrow(), "keep_data")
+        && save_data(
+            &ipv6_raw,
+            config.borrow().options.get("ipv6-raw-table").unwrap(),
+            "ipv6-raw-table",
+        );
     process_ipv6(&ipv6_raw, &mut data, &mut asn_list);
 
     let data_used = get_or_exit(
         config.borrow().options.get("data-used-autnums").unwrap(),
         &client,
     );
+    let _ = config_option_true(&config.borrow(), "keep_data")
+        && save_data(
+            &data_used,
+            config.borrow().options.get("data-used-autnums").unwrap(),
+            "data-used-autnums",
+        );
     process_asn(&mut cdb, &data_used, &mut asn, &data, &mut asn_list);
 
     generated_date(&mut cdb, Utc::now());
@@ -1078,7 +1111,7 @@ fn make_thyme_cdb(location: &str, config: &RefCell<Config>) {
         std::process::exit(1);
     }
 
-    if let Err(error) = fs::rename(&tmp_file, &location) {
+    if let Err(error) = fs::rename(&tmp_file, location) {
         eprintln!("Cannot rename {} to {}: {}", &tmp_file, &location, &error);
         std::process::exit(1);
     }
@@ -1159,6 +1192,7 @@ fn set_opts(opts: &mut Options) {
         "download and build a cdb file, defaults to thyme.apnic.net data",
         "PATH",
     );
+    opts.optflag("", "keepdata", "keep data files after download");
     opts.optopt("", "data-raw-table", "URL/path of raw data", "URL or PATH");
     opts.optopt("", "ipv6-raw-table", "URL/path of ipv6 data", "URL or PATH");
     opts.optopt(
@@ -1623,7 +1657,14 @@ fn main() {
             "network".to_string()
         };
 
-        process_csv(&config, reader, &field_name, &mut rows, input_base, &reverse);
+        process_csv(
+            &config,
+            reader,
+            &field_name,
+            &mut rows,
+            input_base,
+            &reverse,
+        );
     }
 
     if matches.opt_present("json") {
@@ -1698,6 +1739,13 @@ fn main() {
 
     if let Some(v) = matches.opt_str("mask") {
         input_mask = parse_mask(&v);
+    }
+
+    if matches.opt_present("keepdata") {
+        config
+            .borrow_mut()
+            .options
+            .insert("keep_data".to_string(), "true".to_string());
     }
 
     if let Some(v) = matches.opt_str("makethymecdb") {
